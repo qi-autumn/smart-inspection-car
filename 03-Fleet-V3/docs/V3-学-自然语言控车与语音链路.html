@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · 自然语言控车：语音采集 → 转文字 → 大模型解析 → 规范指令</title>
+<style>
+  :root{
+    --bg:#f5f8fc; --card:#ffffff; --ink:#1f2933; --dim:#5b6b7c; --line:#dde5ee;
+    --c0:#3f51b5; --c1:#0f8a8a; --c2:#d97706; --c3:#7c3aed;
+    --hot:#b23b2e; --shadow:0 2px 10px rgba(31,41,51,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:"Microsoft YaHei","PingFang SC","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+       line-height:1.75; font-size:15px;}
+  a{color:#1d6fa5; text-decoration:none} a:hover{text-decoration:underline}
+  code{background:#eef3f9; padding:1px 5px; border-radius:4px; font-size:.9em;
+       font-family:Consolas,"Courier New",monospace; color:#234;}
+  pre{background:#1e2a38; color:#e9f2f8; border-radius:8px; padding:12px 14px;
+      font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.6;
+      overflow-x:auto; margin:8px 0 0; white-space:pre-wrap; word-break:break-all}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a 0%,#1c5c6e 100%); color:#fff; padding:34px 20px 30px;}
+  .hero .inner{max-width:1120px; margin:0 auto}
+  .hero h1{margin:0 0 8px; font-size:26px; letter-spacing:.5px}
+  .hero .sub{font-size:14.5px; color:#c7dbe6; margin:0 0 12px}
+  .hero p{max-width:920px; margin:0 0 8px; color:#e6f0f5; font-size:14px}
+  .hero .back{display:inline-block; margin-top:12px; color:#a8f0dc; font-size:13px}
+  .topnav{position:sticky; top:0; z-index:9; background:#fff; border-bottom:1px solid var(--line);
+          box-shadow:0 1px 6px rgba(31,41,51,.05)}
+  .topnav .inner{max-width:1120px; margin:0 auto; display:flex; flex-wrap:wrap; gap:2px; padding:8px 20px}
+  .topnav a{font-size:13px; color:var(--dim); padding:6px 11px; border-radius:20px}
+  .topnav a:hover{background:#eef3f9; color:var(--ink); text-decoration:none}
+  section{margin-top:34px; scroll-margin-top:58px}
+  .sec-head{display:flex; align-items:center; gap:12px; margin:0 0 14px}
+  .sec-no{width:34px;height:34px;flex:none;border-radius:9px;color:#fff;font-weight:700;
+          display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--c1)}
+  .sec-head h2{margin:0; font-size:21px}
+  .sec-head .tag{font-size:12px; color:var(--dim); background:#eaf0f6; padding:3px 10px; border-radius:12px}
+  .lead{color:var(--dim); margin:0 0 14px; font-size:14px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px;
+        padding:16px 18px; box-shadow:var(--shadow); margin-bottom:12px}
+  .card h3{margin:0 0 8px; font-size:16px}
+  .card p{margin:0 0 8px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+  @media(max-width:900px){.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+  .concl{background:linear-gradient(100deg,#eef7f6,#f2f5ff); border-left:5px solid var(--c1);
+         border-radius:10px; padding:18px 20px; font-size:17px; font-weight:600; line-height:1.85}
+  .concl small{display:block; font-weight:400; font-size:14px; color:var(--dim); margin-top:8px}
+  .pill{display:inline-block; font-size:11px; padding:2px 9px; border-radius:10px;
+        background:#eaf0f6; color:var(--dim); margin:0 5px 3px 0; white-space:nowrap}
+  .pill.d{background:#fdf0dc; color:#a35b06} .pill.u{background:#e2f4f1; color:#0b6d68}
+  .pill.l{background:#f0e9fb; color:#6632ad} .pill.v{background:#e9ecfb; color:#34429c}
+  .pill.hot{background:#fdecea; color:#b23b2e} .pill.ok{background:#e5f5e9; color:#237a3a}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; background:#fff}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top}
+  th{background:#eef3f9; font-weight:700}
+  tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto; border-radius:10px; border:1px solid var(--line)}
+  .file{font-family:Consolas,"Courier New",monospace; font-size:.88em; color:#7a4b00;
+        background:#fff5e3; padding:1px 5px; border-radius:4px}
+  ul{margin:6px 0 8px; padding-left:22px} li{margin:4px 0}
+  .note{font-size:13px; color:var(--dim)}
+  .bar{border-left:4px solid var(--c1); border-radius:4px; padding-left:14px; margin:10px 0}
+  .warn{border-left-color:var(--hot); background:#fff6f5; padding:10px 14px; border-radius:6px}
+  .okbox{background:#eef9f2; border-left:4px solid #2f9e56; padding:10px 14px; border-radius:6px; margin:10px 0}
+
+  /* 播放器 */
+  .player{background:#fff; border:1px solid var(--line); border-radius:12px;
+          box-shadow:var(--shadow); overflow:hidden}
+  .player .hd{padding:12px 16px; border-bottom:1px solid var(--line); display:flex;
+              flex-wrap:wrap; align-items:center; gap:8px}
+  .btn{border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:7px;
+       padding:5px 12px; font-size:13px; cursor:pointer; font-family:inherit}
+  .btn:hover{background:#eef3f9}
+  .btn.pri{background:var(--c1); color:#fff; border-color:var(--c1)}
+  .btn.on{background:var(--c0); color:#fff; border-color:var(--c0)}
+  .stepbtns{display:flex; flex-wrap:wrap; gap:6px; padding:12px 16px 0}
+  .stepbtns button{border:1px solid var(--line); background:#fff; border-radius:20px;
+                   padding:5px 12px; font-size:12.5px; cursor:pointer; font-family:inherit; color:var(--dim)}
+  .stepbtns button.on{background:#20304a; color:#fff; border-color:#20304a}
+  .svgwrap{padding:8px 12px 0; overflow-x:auto}
+  svg{display:block; min-width:760px; width:100%; height:auto}
+  .pnode rect{fill:#f3f6fb; stroke:#d5dfeb; stroke-width:1.5; transition:all .25s}
+  .pnode text{fill:#415163; font-size:12px; text-anchor:middle}
+  .pnode .t2{fill:#8090a2; font-size:10.5px}
+  .pnode.on rect{fill:#1c5c6e; stroke:#0f8a8a; stroke-width:2.5}
+  .pnode.on text{fill:#ffffff} .pnode.on .t2{fill:#bfe9df}
+  .pnode{cursor:pointer}
+  .pedge{stroke:#cfd9e6; stroke-width:2.5; fill:none; transition:all .25s}
+  .pedge.on{stroke:#d97706; stroke-width:4}
+  .detail{margin:12px 16px 16px; border:1px solid var(--line); border-radius:9px; padding:14px 16px; background:#fbfcfe}
+  .detail h3{margin:0 0 6px; font-size:16px}
+  .detail .meta{font-size:12.5px; color:var(--dim); margin:6px 0 10px}
+  .detail .meta b{color:var(--ink); margin-right:5px}
+  .detail .meta span{margin-right:16px}
+  .tabs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px}
+  .tabs button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 14px;
+               font-size:13px; cursor:pointer; font-family:inherit; color:var(--dim)}
+  .tabs button.on{background:#20304a; color:#fff; border-color:#20304a}
+  .pane{display:none} .pane.on{display:block}
+  .qitem{border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin-bottom:10px; background:#fff}
+  .qitem p{margin:0 0 8px; font-weight:600}
+  .qitem label{display:block; font-size:13.5px; margin:4px 0; cursor:pointer; font-weight:400}
+  .qitem .fb{margin-top:8px; font-size:13px; display:none}
+  .qitem .fb.show{display:block}
+  .qitem .fb.good{color:#237a3a} .qitem .fb.bad{color:var(--hot)}
+  .copy{float:right}
+  footer{margin-top:36px; font-size:12.5px; color:var(--dim); text-align:center; line-height:2}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="inner">
+    <h1>自然语言控车 · 语音采集 → 转文字 → 大模型解析 → 规范指令</h1>
+    <div class="sub">V3 第 ⑦ 步「AI 增强」预习教材 · 按「一句话结论 → 生活比喻 → 项目位置 → 文件与接口 → 逐步拆解配图 → 常见坑 → 自测」组织</div>
+    <p>回答四个问题：你说的流程对不对？判定文字能不能用 Qwen？语音转文字有大模型可调用吗、还是必须本地解析？网页版和 APP 的语音采集都支持吗？</p>
+    <p>说明：本页是<strong>实现前的方案讲解 + 落地设计</strong>，文中「待新增」描述的是当时的状态；2026-11-08 已据此完成实现，实际结果见《AI 控车落地与验收》。</p>
+    <a class="back" href="V3-学习导航.html">← 返回学习导航</a>
+  </div>
+</div>
+<div class="topnav"><div class="inner">
+  <a href="#s1">① 一句话结论</a><a href="#s2">② 生活比喻</a><a href="#s3">③ 项目位置</a>
+  <a href="#s4">④ 文件与接口</a><a href="#s5">⑤ 逐步拆解</a><a href="#s6">⑥ 常见坑</a><a href="#s7">⑦ 自测</a>
+</div></div>
+
+<div class="wrap">
+
+  <div class="okbox" style="margin-top:18px;font-size:14px">
+    <strong>更新（2026-11-08）：本页写于功能实现之前，属于「方案讲解」。</strong>
+    第 ⑦ 步现已按本页这 7 跳流程<strong>真实落地</strong>：后端 <code>POST /ai/command</code>、
+    网页 <code>/ai/view</code>、APP 内嵌入口已实现并实测通过（解析 1.74s、真实下发拿到 command_id）。
+    实际改动文件、接口契约、真实报文与验收结果请看
+    <a href="V3-学-AI控车落地与验收.html"><strong>AI 控车落地与验收</strong></a>。
+  </div>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>一句话结论</h2><span class="tag">先把你的流程图补完整</span></div>
+  <div class="concl">
+    你画的<strong>方向完全对</strong>：采集语音 → 转成文字 → 让大模型把文字判成规范指令 → 下发。
+    <small>但要修正两点：①「语音转文字」是 <b>ASR 语音识别模型/服务</b>干的活，不是让 Qwen 这类文本大模型去"听"音频；② 大模型<strong>只负责翻译意图</strong>，绝不能让它直接开车——它输出的 JSON 必须先过项目已有的命令白名单和参数范围校验，再交给既有的 <code>POST /command</code>。而且所有 AI/ASR 调用都放在 PC 后端 :8000，密钥不能进网页、不能进 APP。</small>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3>你以为的 3 步</h3>
+      <p><span class="pill v">语音</span>→<span class="pill v">语音解析模块→文字</span>→<span class="pill v">AI 判含义</span>→<span class="pill v">规范指令</span></p>
+      <p class="note">问题：把"听"和"懂"混成一个模块；少了「谁校验」「谁执行」「谁回报」。</p>
+    </div>
+    <div class="card">
+      <h3>实际要落的 7 跳</h3>
+      <p><span class="pill l">① 采集</span><span class="pill l">② ASR 转写</span><span class="pill u">③ LLM 解析</span><span class="pill d">④ 白名单校验</span><span class="pill d">⑤ 任务排程</span><span class="pill d">⑥ /command</span><span class="pill ok">⑦ 反馈/播报</span></p>
+      <p class="note">前 2 跳解决"听见没有"，第 3 跳解决"是什么意思"，第 4~6 跳保证"不会乱开"，第 7 跳解决"用户知道结果"。</p>
+    </div>
+  </div>
+  <div class="okbox"><strong>四个直答：</strong>
+    <ul style="margin-bottom:0">
+      <li><b>Qwen 能判定文字吗？</b>能，而且很合适。用它的 <b>Function Calling / 结构化 JSON 输出</b>把"让 3 号车往东慢慢开三秒"填成固定槽位，别让它自由发挥写正文。</li>
+      <li><b>语音转文字有大模型可调用吗？</b>有。2026 年阿里云百炼提供 <code>Qwen3-ASR-Flash</code>（可 OpenAI 兼容方式调用）、<code>Fun-ASR</code>、<code>Paraformer</code> 实时识别等；也可以完全本地跑 <code>SenseVoice-Small / FunASR / Whisper</code>。<b>不是二选一，是三条路线</b>，见 §5 方案切换。</li>
+      <li><b>网页版支持语音采集吗？</b>技术上支持，但<strong>当前项目会被卡住</strong>：浏览器只允许 HTTPS 或 localhost 调麦克风，而项目是 <code>http://&lt;局域网IP&gt;:8000</code>；并且 Chrome 内置的 <code>webkitSpeechRecognition</code> 要连 Google 云，国内网络基本用不了。正确做法是「网页录音 → 上传后端 → 后端 ASR」，且要先解决 HTTPS。</li>
+      <li><b>APP 支持吗？</b>支持，走鸿蒙原生 <code>@kit.CoreSpeechKit</code> 的 <code>speechRecognizer</code>（端侧识别、数据不上云）；但 <code>module.json5</code> 现在<strong>只声明了 INTERNET</strong>，要补麦克风权限和运行时申请。而且端侧语音识别<strong>不支持 DevEco 手机模拟器，需要真机</strong>。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>生活比喻：餐厅点菜</h2><span class="tag">为什么必须分成几个人</span></div>
+  <div class="card">
+    <p>你说"来一份不太辣的牛肉面，快点"——这句话要变成厨房能执行的单子，中间是<strong>四个人接力</strong>：</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:16%">角色</th><th>干什么</th><th style="width:30%">项目里对应</th></tr></thead>
+      <tbody>
+        <tr><td><b>耳朵</b></td><td>把声波收下来，变成一段音频，还没理解任何意思</td><td>浏览器 <code>getUserMedia</code> / APP <code>MICROPHONE</code> 权限</td></tr>
+        <tr><td><b>速记员</b></td><td>只管逐字记："来一份不太辣的牛肉面，快点"。<strong>不需要懂菜</strong></td><td>ASR：Qwen3-ASR / Paraformer / SenseVoice / Core Speech Kit</td></tr>
+        <tr><td><b>点单顾问</b></td><td>看懂意思，翻成菜单编号：<code>#27 牛肉面 / 微辣 / 加急</code>。<strong>不需要会听</strong></td><td>LLM：Qwen + Function Calling / JSON Schema</td></tr>
+        <tr><td><b>收银台</b></td><td>核对菜单上<strong>真的有 #27</strong>、辣度只能是固定档位、金额不超限；没有就打回</td><td><code>CMD_WHITELIST</code>、<code>build_move_paras()</code>、<code>devices.json</code>、冻结判断</td></tr>
+        <tr><td><b>后厨</b></td><td>只认标准化单子，按单做菜，做完回一句"已出餐"</td><td><code>POST /command</code> → IoTDA → 小车</td></tr>
+      </tbody>
+    </table></div>
+    <div class="bar warn"><strong>最容易犯的错：</strong>让"点单顾问"直接冲进后厨开火（让 LLM 直接生成 <code>vx/vy</code> 或直接调华为云），或者把"速记员和顾问"合成一个人（指望一个通用文本大模型同时听音频、理解意图、输出指令）。前者会出安全事故，后者在国内网络/延迟/可调试性上都很难受。</div>
+    <p class="note">还有一个细节：<strong>播报</strong>（路线图⑦验收里的"播报执行结果"）是反方向的另一条线——文字 → 语音（TTS）。网页用 <code>speechSynthesis</code>、APP 用 Core Speech Kit 的 <code>textToSpeech</code>、或后端调 qwen3-tts/CosyVoice 生成音频。它是锦上添花，不属于控车主链路。</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>项目位置：现在有什么、还缺什么</h2><span class="tag">对照路线图 ⑦</span></div>
+  <div class="card">
+    <h3>路线图原文（<span class="file">docs/V3-开发路线图.md:133~145</span>）</h3>
+    <pre>## ⑦ AI 增强
+目标：给车队加 AI 大脑，形成演示爆点。
+1. 自然语言控车：后端加 POST /ai/command，LLM 把"去 3 号楼看看"解析为目标点 + 命令序列，
+   经既有 /command 链路执行并返回步骤反馈
+2. 巡检报告生成：按车汇总当日轨迹 + 命令历史，LLM 生成文字版"巡检日报"
+3. （可选进阶）多车任务调度：任务点分配给最近的车
+4. LLM 接入走可配置 API（中转站 base_url + key 存配置文件，不入库不入仓）
+产出物：/ai/command 接口、APP/网页的对话入口、巡检报告页
+验收标准：一句自然语言能驱动指定车完成一组动作并播报执行结果；一键生成当日巡检报告</pre>
+    <p class="note">注意路线图里已经写死了三条架构约束：<b>入口在后端</b>、<b>复用既有 /command</b>、<b>密钥放配置文件不入库不入仓</b>。这跟前面几份教材讲的"后端是唯一持密钥的人"完全一致。</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3><span class="pill ok">已有</span>能直接复用的东西</h3>
+      <ul>
+        <li><span class="file">server/app.py:449</span> <code>CMD_WHITELIST</code>：6 个合法命令</li>
+        <li><span class="file">server/app.py:453</span> <code>build_move_paras()</code>：参数范围校验 + 转 <code>vx/vy</code></li>
+        <li><span class="file">server/app.py:608</span> <code>POST /command</code>：唯一执行出口，含设备注册校验、冻结拒绝、审计日志</li>
+        <li><span class="file">server/devices.json</span>：车号 ↔ device_id 映射（给 LLM 当"可选车清单"）</li>
+        <li><span class="file">server/cloud_config.json</span>：密钥放独立配置文件的现成模式</li>
+        <li><span class="file">server/track_store.py</span> / <code>fleet.db</code> + <code>commands.log</code>：巡检日报的数据源</li>
+        <li><span class="file">web/monitor.html</span> 的 WebSocket <code>/ws</code>：AI 执行结果可以实时显示</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="pill hot">没有</span>⑦ 要新建的东西</h3>
+      <ul>
+        <li>全工程 <strong>没有任何 AI / 语音代码</strong>（只有路线图文字提到），所以这不是"改 bug"，是"从零加一条链路"</li>
+        <li><span class="file">POST /ai/command</span>：对话/语音入口</li>
+        <li><span class="file">server/ai_config.json</span>：base_url / api_key / 模型名（照 cloud_config.json 模式）</li>
+        <li>ASR 客户端 + LLM 解析 + 校验/排程（可放 <span class="file">server/ai_agent.py</span>）</li>
+        <li>网页对话入口（新页或挂在 <span class="file">web/monitor.html</span>）</li>
+        <li>APP：<span class="file">net/FleetClient.ets</span> 增一个 POST、<span class="file">pages/Index.ets</span> 增对话视图、<span class="file">module.json5</span> 补麦克风权限</li>
+        <li><b>地图点位表</b>：路线图说"去 3 号楼"，但项目里没有"3 号楼 → (x,y)"的映射，得补一份 <span class="file">points.json</span></li>
+        <li><b>持续时间概念</b>：现有 <code>/command</code> 一次只发一条、没有时长，"开三秒"必须后端排程补发 <code>STOP</code></li>
+      </ul>
+    </div>
+  </div>
+  <div class="bar"><strong>学习定位：</strong>⑦ 是「线」层的最后一环——它没有新协议，只是把已有的 <code>/command</code> 前面接了一段"翻译器"。所以<strong>先去看 <a href="V3-学-模块连接与协议全景.html">模块连接与协议全景</a></strong>，把 9 步链路走一遍，这页就只剩"翻译器怎么写"这一件事。</div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>文件与接口：规范指令长什么样</h2><span class="tag">AI 输出的唯一合法形状</span></div>
+  <div class="card">
+    <h3>项目里"规范指令"其实是两层</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:20%">层</th><th>长什么样</th><th style="width:34%">谁产生 / 谁消费</th></tr></thead>
+      <tbody>
+        <tr><td><b>L1 业务命令</b></td><td><code>{"device_id":"car_003","cmd":"MOVE","angle":90,"speed":35}</code><br>白名单 <code>FORWARD / BACK / LEFT / RIGHT / MOVE / STOP</code>；<code>speed</code> 0~100 整数；<code>MOVE</code> 的 <code>angle</code> 0=正北、顺时针 0~360</td><td>网页摇杆 / APP 产生 → <code>POST /command</code> 消费 → <code>build_move_paras()</code> 转成 <code>vx/vy</code></td></tr>
+        <tr><td><b>L2 任务计划</b><span class="pill hot">⑦ 新增</span></td><td><code>{"device_id":"car_003","plan":[{"cmd":"MOVE",...,"duration_ms":3000},{"cmd":"STOP"}]}</code></td><td>LLM 产生 → <code>/ai/command</code> 校验+排程 → 逐条调 <code>/command</code></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note"><code>duration_ms</code> 是<strong>编排层字段</strong>，不是 <code>/command</code> 的参数：后端定时器到点再发下一条，绝不能把它塞进现有接口假装支持。设备短名 <code>car_003</code> 由 <code>resolve_device_id()</code> 补全成云端完整 ID。</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>建议的 <code>POST /ai/command</code> 契约<button class="btn copy" data-copy="c1">复制</button></h3>
+      <pre id="c1">// 请求（文字模式，先做这个）
+POST http://127.0.0.1:8000/ai/command
+Content-Type: application/json
+
+{ "text": "让3号车慢慢往东开三秒然后停",
+  "device_id": "car_003" }
+
+// 请求（语音模式，后端自己调 ASR；也可直接传 text 跳过 ASR）
+{ "audio_b64": "&lt;wav 16k 16bit 单声道&gt;", "mime": "audio/wav",
+  "device_id": "car_003", "confirm": true }
+
+// 响应：steps 必须来自 /command 的真实返回值
+{ "ok": true,
+  "transcript": "让3号车慢慢往东开三秒然后停",
+  "plan": [ {"cmd":"MOVE","angle":90,"speed":35,"duration_ms":3000},
+            {"cmd":"STOP"} ],
+  "steps": [ {"ok":true,"command_id":"..."}, {"ok":true,"command_id":"..."} ],
+  "reply": "已让 3 号车以 35% 速度向东行驶 3 秒并停车" }</pre>
+    </div>
+    <div class="card">
+      <h3>LLM 的 System Prompt 要点<button class="btn copy" data-copy="c2">复制</button></h3>
+      <pre id="c2">你是车队指令解析器，只输出 JSON，不输出解释文字。
+可选车辆（来自 devices.json）：car_001..car_005
+允许 cmd：FORWARD/BACK/LEFT/RIGHT/MOVE/STOP
+speed：0~100 整数；angle：0~360（0=正北，顺时针）
+"慢慢"=35，"快点"=70，"全速"=100
+"往东"=90，"往北"=0，"往南"=180，"往西"=270
+输出形状：
+{"device_id":"car_003",
+ "plan":[{"cmd":"MOVE","angle":90,"speed":35,
+          "duration_ms":3000},{"cmd":"STOP"}],
+ "say":"已让3号车向东慢速行驶3秒"}
+信息不足（没说车号/没说动作）时输出
+{"need_clarify":"请问要控制哪台车？"}
+禁止：输出代码、URL、自由文本、编造车号、生成白名单外的 cmd。</pre>
+      <p class="note">工程上更稳的做法是别靠提示词"求"它守格式，而是用 <b>Function Calling</b> 或 <code>response_format: {"type":"json_object"}</code> / JSON Schema 把输出形状锁死（Qwen 百炼的 OpenAI 兼容端点支持），解析后<strong>仍然要在服务端再校验一遍</strong>。</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>配置文件与安全边界</h3>
+    <pre>server/ai_config.json   （新建，照 cloud_config.json 的模式；字段名示意，不写任何真实密钥）
+{
+  "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  "api_key":  "YOUR_CREDENTIAL",
+  "llm_model": "qwen-plus",
+  "asr_model": "qwen3-asr-flash"
+}</pre>
+    <p class="note">路线图⑦第 4 条明确要求「key 存配置文件，不入库不入仓」。当前工程<strong>还没有 .gitignore</strong>，而 <span class="file">server/cloud_config.json</span> 里已有明文 AK/SK——新增 AI 配置时顺手补一份 <span class="file">.gitignore</span>（至少忽略 <code>server/*config.json</code>、<code>*.p12</code>），或干脆用环境变量 <code>DASHSCOPE_API_KEY</code>。<b>本页没有写入任何账号密钥。</b></p>
+  </div>
+  <div class="bar warn"><strong>为什么密钥只能在后端：</strong>网页里的 JS、APP 里的 ArkTS 都运行在用户设备上，任何写死在里面的 key 都能被直接翻出来。现有架构里后端 <code>:8000</code> 是唯一同时持有华为云 AK/SK 和所有业务规则的地方，AI 的 key 也放这里，前端只把"文字或音频"交给它。</div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>逐步拆解：一句"让 3 号车慢慢往东开三秒然后停"怎么走完</h2><span class="tag">点步骤 / 点方块 / 自动播放</span></div>
+  <div class="player">
+    <div class="hd">
+      <button class="btn" id="btnPrev">← 上一步</button>
+      <button class="btn" id="btnNext">下一步 →</button>
+      <button class="btn pri" id="btnPlay">▶ 自动播放</button>
+      <span class="note" id="stepCount" style="margin-left:auto"></span>
+    </div>
+    <div class="stepbtns" id="stepBtns"></div>
+    <div class="svgwrap">
+      <svg viewBox="0 0 1000 190" id="flow" role="img" aria-label="自然语言控车七步链路">
+        <text x="20" y="24" fill="#5b6b7c" font-size="12">音频 / 文字</text>
+        <text x="820" y="24" fill="#5b6b7c" font-size="12" text-anchor="end">真实执行结果回传</text>
+        <path class="pedge" data-edge="0" d="M144 102 L158 102"></path>
+        <path class="pedge" data-edge="1" d="M284 102 L298 102"></path>
+        <path class="pedge" data-edge="2" d="M424 102 L438 102"></path>
+        <path class="pedge" data-edge="3" d="M564 102 L578 102"></path>
+        <path class="pedge" data-edge="4" d="M704 102 L718 102"></path>
+        <path class="pedge" data-edge="5" d="M844 102 L858 102"></path>
+        <g class="pnode" data-step="0"><rect x="20" y="60" width="124" height="84" rx="10"></rect>
+          <text x="82" y="94">① 语音采集</text><text class="t2" x="82" y="116">麦克风 → 音频</text></g>
+        <g class="pnode" data-step="1"><rect x="160" y="60" width="124" height="84" rx="10"></rect>
+          <text x="222" y="94">② ASR 转写</text><text class="t2" x="222" y="116">音频 → 文字</text></g>
+        <g class="pnode" data-step="2"><rect x="300" y="60" width="124" height="84" rx="10"></rect>
+          <text x="362" y="94">③ LLM 解析</text><text class="t2" x="362" y="116">文字 → JSON</text></g>
+        <g class="pnode" data-step="3"><rect x="440" y="60" width="124" height="84" rx="10"></rect>
+          <text x="502" y="94">④ 白名单校验</text><text class="t2" x="502" y="116">车号/命令/范围</text></g>
+        <g class="pnode" data-step="4"><rect x="580" y="60" width="124" height="84" rx="10"></rect>
+          <text x="642" y="94">⑤ 任务排程</text><text class="t2" x="642" y="116">到点补发 STOP</text></g>
+        <g class="pnode" data-step="5"><rect x="720" y="60" width="124" height="84" rx="10"></rect>
+          <text x="782" y="94">⑥ /command</text><text class="t2" x="782" y="116">云 → MQTT → 车</text></g>
+        <g class="pnode" data-step="6"><rect x="860" y="60" width="124" height="84" rx="10"></rect>
+          <text x="922" y="94">⑦ 反馈播报</text><text class="t2" x="922" y="116">文字 / TTS</text></g>
+        <text x="20" y="172" fill="#8090a2" font-size="11">端侧：网页浏览器 / APP 真机　·　后端：PC :8000（持所有密钥）　·　既有链路：/command → IoTDA → 模拟器</text>
+      </svg>
+    </div>
+    <div class="detail" id="detail"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>三端语音采集 / ASR 方案切换</h3>
+    <p class="lead">点标签看每条路线具体要写什么、要改哪个文件、有什么硬限制。</p>
+    <div class="tabs" id="tabs">
+      <button class="on" data-pane="p-web">网页版（PC 浏览器）</button>
+      <button data-pane="p-app">APP（鸿蒙真机）</button>
+      <button data-pane="p-local">后端本地 ASR</button>
+      <button data-pane="p-quick">最快演示路线</button>
+    </div>
+    <div class="pane on" id="p-web">
+      <h4 style="margin:0 0 6px">网页：能采集，但项目现在的访问方式会直接被浏览器拦住</h4>
+      <div class="tblwrap"><table>
+        <thead><tr><th style="width:22%">路线</th><th>做法</th><th style="width:30%">结论</th></tr></thead>
+        <tbody>
+          <tr><td>A. 浏览器内置识别<br><code>webkitSpeechRecognition</code></td><td>几行 JS 直接出文字，零后端</td><td><span class="pill hot">不推荐</span> Chrome/Edge 的识别要把音频送到 Google 云，国内普通网络直接 <code>network</code> 错误或静默结束；Firefox 不支持</td></tr>
+          <tr><td>B. 录音上传后端 ASR<br><code>getUserMedia + MediaRecorder</code></td><td>网页录一段 → <code>POST /ai/command</code> 带音频 → 后端调 ASR → LLM</td><td><span class="pill ok">推荐</span> 和现有架构一致，密钥只在后端，网页/APP 可共用同一个 ASR 接口</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>硬闸门：安全上下文。</b>只有 <code>https://…</code>、<code>http://localhost</code>、<code>http://127.0.0.1</code> 才允许调麦克风。你现在用 <code>http://192.168.1.x:8000</code> 从别的设备访问大屏，浏览器里 <code>navigator.mediaDevices</code> 会是 <code>undefined</code>，按钮点了毫无反应——<strong>不是代码写错</strong>。所以：</p>
+      <ul>
+        <li>PC 本机自测：用 <code>http://127.0.0.1:8000</code> 打开，可以采。</li>
+        <li>手机 / 别的电脑访问：先按 <a href="V3-学-HTTP与HTTPS.html">HTTP 与 HTTPS</a> 那份教材把局域网链路升成 HTTPS（自签证书内网可用）。</li>
+        <li>必须由<strong>用户点击</strong>触发录音请求，不能在页面加载时自动调；权限被拒过一次会被浏览器记住，要去站点设置手动重置。</li>
+        <li><code>MediaRecorder</code> 默认常输出 <code>webm/opus</code>，而多数云 ASR 要 <code>wav / pcm 16k 16bit 单声道</code>——前端用 <code>AudioContext</code> 重采样，或后端用 ffmpeg/soundfile 转码。</li>
+      </ul>
+      <p class="note">涉及文件：<span class="file">web/monitor.html</span> 或新建 <span class="file">web/ai_chat.html</span>；后端 <span class="file">server/app.py</span> 新增 <code>/ai/command</code>。APP 里内嵌的那些 Web 页面（admin/monitor）跑在鸿蒙 <b>Web 组件</b>里，不等于完整浏览器，别指望网页的 SpeechRecognition 在 APP 内嵌页也照样能用。</p>
+    </div>
+    <div class="pane" id="p-app">
+      <h4 style="margin:0 0 6px">APP：支持，走鸿蒙原生 Core Speech Kit，不要走网页那套</h4>
+      <pre>// 1) entry/src/main/module.json5 —— 当前只有 INTERNET，要补：
+"requestPermissions": [
+  { "name": "ohos.permission.INTERNET" },
+  { "name": "ohos.permission.MICROPHONE",
+    "reason": "$string:microphone_reason",
+    "usedScene": { "abilities": ["EntryAbility"], "when": "inuse" } }
+]
+// resources/base/element/string.json 里补 microphone_reason 文案
+
+// 2) 运行时动态申请（abilityAccessCtrl），用户授权后才能开识别
+
+// 3) 端侧识别（@kit.CoreSpeechKit）
+import { speechRecognizer } from '@kit.CoreSpeechKit';
+//   createEngine({language:'zh-CN', extraParams:{locate:'CN', recognizerMode:'short'}})
+//   → setListener() → startListening() → on('result') 拿到文字
+//   → finish() / shutdown() 释放引擎
+
+// 4) 把文字交给后端，其余全在 PC 完成
+FleetClient.postAiCommand(text, this.boundDeviceId)
+//   → POST http://&lt;PC局域网IP&gt;:8000/ai/command</pre>
+      <ul>
+        <li>Core Speech Kit 的 ASR/TTS 是<strong>端侧运行、数据不上云、可离线</strong>，短语音模式适合"一句话指令"（≤60s），还能配热词提高"car_00X / 3 号楼"这类专有名词的识别率。</li>
+        <li><span class="pill hot">大坑</span> 有资料明确指出<strong>端侧语音识别不支持模拟器，必须用真机</strong>；DevEco 虚拟手机也没有真实麦克风。所以先在模拟器里用<strong>打字输入</strong>把 <code>/ai/command</code> 后半段跑通，真机再补语音采集。</li>
+        <li>另一种统一起见的做法：APP 用 <code>AudioCapturer</code> 只采 PCM，上传后端 ASR——网页和 APP 就共用一条识别链路，代价是多一次上传、多一趟网络。</li>
+        <li>具体 API 名称、<code>online</code> 等参数取值以<strong>你本机 DevEco / SDK 版本的官方文档</strong>为准，不同版本示例略有差异。</li>
+      </ul>
+    </div>
+    <div class="pane" id="p-local">
+      <h4 style="margin:0 0 6px">"还是本地解析？" —— 也可以在 PC 上完全离线转写</h4>
+      <div class="tblwrap"><table>
+        <thead><tr><th>方案</th><th>大概体量</th><th>适合</th></tr></thead>
+        <tbody>
+          <tr><td><b>SenseVoice-Small</b>（ONNX / sherpa-onnx）</td><td>约 200~250MB，CPU 上接近实时</td><td>短指令、 fastest 演示、无公网环境；纯转写、不带标点润色</td></tr>
+          <tr><td><b>FunASR / Paraformer</b>（本地服务化）</td><td>数百 MB，中文准确率好</td><td>想要 VAD/标点/热词一整套，愿意多装依赖</td></tr>
+          <tr><td><b>Whisper</b>（tiny/small）</td><td>75MB 起，CPU 慢一些</td><td>多语种、生态成熟、原型最快</td></tr>
+          <tr><td><b>Qwen3-ASR 0.6B</b> 本地权重</td><td>约 0.8~1.5GB</td><td>中文转写质量优先，但纯 CPU 上不快</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">"本地解析"这个词要拆开看：<b>ASR 模型可以本地跑</b>（上面这些），<b>LLM 也可以本地跑</b>（Ollama / llama.cpp 起个 Qwen 小模型），但两者都不必要。教学项目里最省事的是<strong>云端 ASR + 云端 LLM</strong>，因为路线图已经允许"中转站 base_url + key"，且你的后端本来就联网。只有「断网演示 / 隐私 / 不想花钱」时才值得上本地模型。</p>
+    </div>
+    <div class="pane" id="p-quick">
+      <h4 style="margin:0 0 6px">给初学者的最小可行顺序（别一上来就调麦克风）</h4>
+      <ol>
+        <li><b>阶段 0：纯文字。</b>只做 <code>POST /ai/command</code> 收 <code>text</code> → Qwen 出 JSON → 白名单校验 → 调 <code>/command</code> → 返回真实 steps。用 <code>curl</code> 在 PC 上验收，<strong>不碰任何语音</strong>。这一步能把 80% 的坑提前暴露。</li>
+        <li><b>阶段 1：网页录音。</b>PC 用 <code>127.0.0.1</code> 打开，MediaRecorder 录一段上传，后端接云 ASR（Qwen3-ASR-Flash / Paraformer）。</li>
+        <li><b>阶段 2：HTTPS。</b>要真机浏览器 / APP 内嵌页也能录音，再按教材升级 HTTPS。</li>
+        <li><b>阶段 3：APP 原生语音。</b>真机 + Core Speech Kit + 麦克风权限，把文字丢给同一个 <code>/ai/command</code>。</li>
+        <li><b>阶段 4：播报与日报。</b>TTS 念结果；用 <code>/track</code> + <code>commands.log</code> 让 LLM 写巡检日报。</li>
+      </ol>
+      <div class="okbox">关键心法：<strong>ASR 和 LLM 是可以随时替换的两个"插件"，中间契约就是那串文字和那个 JSON。</strong>先 fixed 契约，后面网页换 APP、云 ASR 换本地模型，都不用改执行链路。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>示例：一句话在每一跳变成什么</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:15%">跳</th><th style="width:48%">数据</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>① 音频</td><td><code>[PCM 16k 16bit 单声道, 约 2.5s]</code></td><td>网页 MediaRecorder / APP Core Speech Kit / AudioCapturer</td></tr>
+        <tr><td>② 文字</td><td><code>"让3号车慢慢往东开三秒然后停"</code></td><td>ASR 输出，<b>建议原样存进审计日志</b>，便于回溯误识别</td></tr>
+        <tr><td>③ JSON</td><td><code>{"device_id":"car_003","plan":[{"cmd":"MOVE","angle":90,"speed":35,"duration_ms":3000},{"cmd":"STOP"}],"say":"…"}</code></td><td>Qwen Function Calling / JSON Schema 锁形状</td></tr>
+        <tr><td>④ 校验后</td><td><code>device_id ∈ devices.json ✓ / cmd ∈ 白名单 ✓ / speed 35 ✓ / angle 90 ✓ / 未冻结 ✓</code></td><td>任何一项不过 → 返回 <code>need_clarify</code> 或拒绝，<b>不下发</b></td></tr>
+        <tr><td>⑤ 排程</td><td><code>t=0 POST /command {MOVE,90,35}</code>；<code>t=3.0s POST /command {STOP}</code></td><td>后端定时器；异常/用户急停要能取消后续步骤</td></tr>
+        <tr><td>⑥ 既有链路</td><td><code>build_move_paras() → vx=0.35, vy=0 → CreateCommand → MQTT 8883 → 车</code></td><td>和摇杆走的是<strong>同一条</strong>路，不新开协议</td></tr>
+        <tr><td>⑦ 反馈</td><td><code>"已让 3 号车向东慢速行驶 3 秒并停车"</code> → 文字 / TTS</td><td><b>必须基于 /command 真实返回值</b>；某步 502/403 就如实说失败</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>常见坑</h2><span class="tag">按踩到的概率排序</span></div>
+  <div class="grid2">
+    <div class="card"><h3><span class="pill hot">安全</span>把大模型当成"司机"</h3>
+      <p>让 LLM 直接输出 <code>vx/vy</code>、直接调 IoTDA，或让它自由生成 <code>cmd</code>，等于把白名单拆了。幻觉、单位错、车号编造都会变成真车乱跑。<b>模型只能填槽，校验和执行权永远在后端。</b></p></div>
+    <div class="card"><h3><span class="pill hot">安全</span>API Key 写进前端</h3>
+      <p>网页 JS 里的 <code>api_key</code>、ArkTS 里写死的 key，任何人都能翻出来。放 <span class="file">server/ai_config.json</span> 或环境变量；工程现在还没有 <code>.gitignore</code>，顺便补一份。</p></div>
+    <div class="card"><h3><span class="pill hot">网页</span>HTTP + 局域网 IP 调不了麦克风</h3>
+      <p><code>http://192.168.1.23:8000</code> 不是安全上下文，<code>navigator.mediaDevices</code> 直接是 <code>undefined</code>，静默失败无报错。PC 改 <code>127.0.0.1</code>，跨设备访问要 HTTPS。</p></div>
+    <div class="card"><h3><span class="pill hot">网页</span>Chrome 内置识别连不上 Google</h3>
+      <p><code>webkitSpeechRecognition</code> 的识别在云端完成，国内常表现为 <code>onstart</code> 触发后 <code>onerror: network</code> 或直接静默 <code>onend</code>。别拿它当正式方案；TTS（speechSynthesis）反而本地可用，两者别搞混。</p></div>
+    <div class="card"><h3><span class="pill hot">网页</span>权限被拒后"刷新也没用"</h3>
+      <p>浏览器按域名记住麦克风授权，拒绝过就不再弹窗；且必须由用户点击触发，页面加载时自动请求会被拦。调试时去地址栏站点设置手动重置。</p></div>
+    <div class="card"><h3><span class="pill hot">APP</span>只声明了 INTERNET</h3>
+      <p><span class="file">CarFleet/entry/src/main/module.json5:13~17</span> 目前只有网络权限。要补 <code>ohos.permission.MICROPHONE</code>、<code>reason</code> 文案、<code>usedScene</code>，还要在运行时用 <code>abilityAccessCtrl</code> 动态申请。</p></div>
+    <div class="card"><h3><span class="pill hot">APP</span>模拟器上语音功能"怎么都不动"</h3>
+      <p>端侧语音识别需要真机，DevEco 虚拟手机没有真实麦克风。先在模拟器里用<strong>打字输入</strong>验收 <code>/ai/command</code>，真机再接 Core Speech Kit。另外 APP 内嵌的 Web 组件不是完整浏览器。</p></div>
+    <div class="card"><h3><span class="pill d">协议</span>"开三秒"车不会自己停</h3>
+      <p>现有 <code>/command</code> 一次一条、没有时长字段。必须后端排程到点补 <code>STOP</code>，并支持中途取消；否则 LLM 说完"三秒"，车会一直按上一速度跑下去（这正是之前大屏上遇到过的"一直执行上一个命令"）。</p></div>
+    <div class="card"><h3><span class="pill d">数据</span>"去 3 号楼"没有坐标</h3>
+      <p>项目里没有地图点位表。LLM 不知道"3 号楼"在哪，只能编一个坐标。要补 <span class="file">points.json</span> 做名称→(x,y) 映射，并在系统提示词里把可选点位列表喂给它。</p></div>
+    <div class="card"><h3><span class="pill d">数据</span>车号靠模型猜</h3>
+      <p>"3 号车 / 第三台 / 那辆红的"要映射成 <code>devices.json</code> 里真实存在的 ID；把车型清单连同名称/颜色一起放进提示词，解析后用 <code>resolve_device_id()</code> 复核，别让模型凭空造 <code>car_009</code>。</p></div>
+    <div class="card"><h3><span class="pill d">音频</span>录音格式对不上</h3>
+      <p>浏览器常给 <code>webm/opus</code>，云 ASR 常要 <code>wav/pcm 16k 16bit 单声道</code>。前端 <code>AudioContext</code> 重采样或后端转码；长音频还要注意云服务的大小/时长限制与异步转写模式。</p></div>
+    <div class="card"><h3><span class="pill d">反馈</span>"已执行"是模型想象出来的</h3>
+      <p>播报内容必须由 <code>/command</code> 的真实返回值拼出来。设备离线（502）或冻结（403）时要如实说失败，别把 LLM 的 <code>say</code> 字段当执行结果；注意别和项目里的"乐观回显"混为一谈。</p></div>
+    <div class="card"><h3><span class="pill l">架构</span>把 AI 塞进实时闭环</h3>
+      <p>ASR 0.5~2s + LLM 1~3s 是一次性"任务编排"的延迟，不是控制周期。别让 AI 每 200ms 参与一次决策，也别把 AI 推测写进 <code>STATE_CACHE</code> 或影子轨迹——轨迹只记真实位置变化，否则回放数据会被污染。</p></div>
+    <div class="card"><h3><span class="pill l">工程</span>密钥入仓 / 模型名没开通</h3>
+      <p>百炼按业务空间逐个开通模型，直接调没开通的模型名会报"模型不存在/无权限"。配置文件不要提交；<code>base_url</code> 用可配置的兼容端点，方便在中转站和官方端点之间切换。</p></div>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>自测</h2><span class="tag">5 题判分 + 动手验证</span></div>
+  <div class="card">
+    <div id="quizBox"></div>
+    <div class="okbox" id="quizScore">答对 0 / 5</div>
+  </div>
+  <div class="card">
+    <h3>动手验证（不需要任何 AI 密钥，先把地基敲实）</h3>
+    <pre># 1) 后端活着
+curl http://127.0.0.1:8000/health
+
+# 2) 白名单真的拦得住「AI 幻觉命令」——应返回 400
+curl -X POST http://127.0.0.1:8000/command -H "Content-Type: application/json" ^
+  -d "{\"device_id\":\"car_001\",\"cmd\":\"FLY\",\"speed\":50}"
+
+# 3) 参数越界也被拦——应返回 400
+curl -X POST http://127.0.0.1:8000/command -H "Content-Type: application/json" ^
+  -d "{\"device_id\":\"car_001\",\"cmd\":\"MOVE\",\"angle\":999,\"speed\":50}"
+
+# 4) 合法指令（车在线时才发得出去）——对照 /fleet/status 看坐标变化
+curl -X POST http://127.0.0.1:8000/command -H "Content-Type: application/json" ^
+  -d "{\"device_id\":\"car_001\",\"cmd\":\"MOVE\",\"angle\":90,\"speed\":35}"
+
+# 5) 浏览器控制台里检查「麦克风到底能不能用」
+#    把地址换成 127.0.0.1 再试一次，对比结果
+console.log(window.isSecureContext, !!navigator.mediaDevices,
+            !!(window.SpeechRecognition || window.webkitSpeechRecognition));
+
+# 6) 检查 APP 权限声明
+#    CarFleet/entry/src/main/module.json5 里搜 MICROPHONE</pre>
+    <p class="note">第 2、3 条是⑦的地基：如果白名单本身拦不住乱七八糟的 <code>cmd</code>，就绝不能接大模型。第 5 条在同一台 PC 上分别用 <code>http://127.0.0.1:8000</code> 和 <code>http://&lt;局域网IP&gt;:8000</code> 打开，你会看到安全上下文的差别。</p>
+  </div>
+  <div class="card">
+    <h3>资料与口径</h3>
+    <p class="note">本页关于浏览器安全上下文、Chrome 语音识别走云端、鸿蒙 Core Speech Kit（<code>@kit.CoreSpeechKit</code> / <code>speechRecognizer</code> / <code>ohos.permission.MICROPHONE</code>）、以及百炼 Qwen-ASR / Paraformer / Fun-ASR / Function Calling 与本地 SenseVoice / FunASR / Whisper 的描述，按 2026-11-08 可查到的官方文档与开发者资料整理；模型名、SDK 参数、是否支持模拟器会随版本变化，<strong>落地前请以你本机 DevEco 版本和所开通的百炼业务空间为准</strong>。项目内行号与文件路径按讲解生成时的源码核对。本页作为讲解文档<strong>不含任何账号密钥</strong>；随后第 ⑦ 步已按用户要求落地实现，改动清单见《AI 控车落地与验收》。</p>
+  </div>
+</section>
+
+<footer>
+  V3 智能巡检车队 · 第 ⑦ 步 AI 增强预习教材 ｜ 生成于 2026-11-08 ｜ <a href="V3-学习导航.html">返回学习导航</a><br>
+  配套：<a href="V3-学-模块连接与协议全景.html">模块连接与协议全景</a> · <a href="V3-学-HTTP与HTTPS.html">HTTP 与 HTTPS</a> · <a href="V3-学-HAP构建签名与真机安装.html">HAP 签名与真机安装</a>
+</footer>
+</div>
+
+<script>
+(function(){
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ---------- 七步播放器 ---------- */
+  var STEPS = [
+    {name:'① 语音采集', who:'网页浏览器 / APP 真机（端侧）',
+     proto:'getUserMedia + MediaRecorder（网页） / Core Speech Kit、AudioCapturer（APP）',
+     desc:'这一步只负责把声音变成一段音频数据，<b>没有任何"理解"</b>。网页必须运行在安全上下文（HTTPS 或 localhost）且由用户点击触发；APP 必须声明并动态申请麦克风权限。DevEco 手机模拟器没有真实麦克风，端侧 ASR 也需要真机。',
+     wire:'// 网页：拿到音频流后录成 Blob\nconst stream = await navigator.mediaDevices.getUserMedia({audio:true});\nconst rec = new MediaRecorder(stream);\nrec.start();  // 用户说完 → rec.stop() → Blob → 上传后端\n\n// APP：声明权限后由系统引擎采集\n// ohos.permission.MICROPHONE（module.json5 + 运行时申请）',
+     files:'web/monitor.html（或新 ai_chat.html）；CarFleet/.../module.json5:13-17', delay:'录音 1~3s（取决于说话长度）'},
+    {name:'② ASR 转写', who:'后端 :8000 调云 ASR，或 APP 端侧引擎',
+     proto:'HTTPS + JSON/Base64 音频（云）；端侧推理（Core Speech Kit / SenseVoice）',
+     desc:'<b>这是"语音解析模块"的真正名字：ASR（自动语音识别）。</b>它可以是云端语音大模型/服务（Qwen3-ASR-Flash、Fun-ASR、Paraformer），也可以是本地小模型（SenseVoice-Small ONNX、FunASR、Whisper），或鸿蒙系统自带的端侧识别。它<b>只输出逐字文本</b>，不懂车队业务。',
+     wire:'// 云 ASR（示意，OpenAI 兼容端点，密钥只在后端）\nPOST {base_url}/chat/completions\n{ "model":"qwen3-asr-flash",\n  "messages":[{ "role":"user","content":[\n    {"type":"input_audio","input_audio":{"data":"<base64 wav>"}} ]}] }\n\n→ "让3号车慢慢往东开三秒然后停"',
+     files:'待新增：server/ai_agent.py；配置：server/ai_config.json', delay:'云端 0.5~2s / 端侧近乎实时'},
+    {name:'③ LLM 解析', who:'后端 :8000（唯一持 API Key 的地方）',
+     proto:'HTTPS + OpenAI 兼容协议（chat.completions + tools / response_format）',
+     desc:'<b>Qwen 就在这里上场。</b>把上一步的文字 + 车号清单 + 命令白名单 + 词表（"慢慢"=35、"往东"=90）一起喂给它，用 Function Calling / JSON Schema 锁死输出形状，让它只做"填槽"：选哪台车、几条命令、速度、角度、时长、回复话术。信息不足就返回 need_clarify。',
+     wire:'// System：只输出 JSON，cmd ∈ 白名单，speed 0~100，angle 0~360\n// User：让3号车慢慢往东开三秒然后停\n→ {"device_id":"car_003",\n   "plan":[{"cmd":"MOVE","angle":90,"speed":35,"duration_ms":3000},\n           {"cmd":"STOP"}],\n   "say":"已让3号车向东慢速行驶3秒"}',
+     files:'待新增：POST /ai/command；server/ai_config.json（base_url/key/model）', delay:'1~3s'},
+    {name:'④ 白名单校验', who:'后端 :8000（不信任模型输出）',
+     proto:'进程内函数调用，没有网络',
+     desc:'<b>最容易被跳过、但最不能省的一步。</b>逐条核对：device_id 在 devices.json 里、设备未冻结、cmd 在 CMD_WHITELIST 内、speed 0~100、angle 0~360、步骤数上限、危险动作需二次确认。任何一项不过就整单拒绝，不执行任何一条。这一步决定"AI 说错话"会不会变成"车乱跑"。',
+     wire:'CMD_WHITELIST = ("FORWARD","BACK","LEFT","RIGHT","MOVE","STOP")\n\nparas, perr = build_move_paras(cmd, speed, angle=angle)\nif perr: return err(400, perr)          # 越界/缺参直接拒绝\nif DEVICES[did].get("frozen"): return err(403, ...)   # 冻结设备',
+     files:'server/app.py:449、453、620（既有，直接复用）', delay:'< 1ms'},
+    {name:'⑤ 任务排程', who:'后端 :8000（定时器 / 后台线程）',
+     proto:'进程内定时器，逐条调本地函数或内部 HTTP',
+     desc:'现有 /command 一次只发一条，没有"持续时间"。所以"开三秒"要由后端拆成两条：t=0 发 MOVE，t=3.0s 发 STOP；同时保留取消能力（用户点急停、设备掉线、任一步失败就中止后续）。"去 3 号楼"还要先把名称经点位表换算成目标坐标/角度。',
+     wire:'t=0.0s  → POST /command {"device_id":"car_003","cmd":"MOVE","angle":90,"speed":35}\nt=3.0s  → POST /command {"device_id":"car_003","cmd":"STOP"}\n\n# 任一步 !ok → 中止剩余步骤，reply 标记失败',
+     files:'待新增：server/ai_agent.py；待新增 points.json（名称→坐标）', delay:'按用户语句，秒级'},
+    {name:'⑥ 既有 /command', who:'后端 → IoTDA → MQTT → 小车',
+     proto:'HTTPS（应用侧 SDK）+ MQTT over TLS 8883（设备侧）',
+     desc:'<b>和摇杆走的是完全同一条路，不新增协议。</b>后端把命令转成物模型 move(vx,vy)/stop，经 CreateCommand 下发到华为云，平台推给订阅了命令 topic 的车；车改速度矢量并按 5s/60s 节奏上报属性写进影子，后端再轮询回来。详细 9 步见《模块连接与协议全景》。',
+     wire:'POST /command {"device_id":"car_003","cmd":"MOVE","angle":90,"speed":35}\n→ build_move_paras(): {"vx":0.35,"vy":0.0}\n→ CreateCommand(service_id="car_control")\n→ MQTT $oc/devices/{did}/sys/commands/# → 车\n→ 属性上报 car_status → 设备影子',
+     files:'server/app.py:608；device/car_mqtt_client.py；server/devices.json', delay:'毫秒级受理，秒级可见'},
+    {name:'⑦ 反馈 / 播报', who:'后端 → 网页 / APP（文字，可选 TTS）',
+     proto:'HTTP 响应 + WebSocket /ws 推帧；TTS 为可选反向链路',
+     desc:'把每一条 /command 的<b>真实返回值</b>拼成结果，返回给对话入口，并可经 /ws 推到大屏。要"播报"就再加 TTS：网页 speechSynthesis（本地可用）、APP Core Speech Kit textToSpeech、或后端调 qwen3-tts/CosyVoice 返回音频。切记不要用 LLM 自己生成的 say 冒充执行成功。',
+     wire:'{ "ok":true,\n  "transcript":"让3号车慢慢往东开三秒然后停",\n  "steps":[{"ok":true,"command_id":"..."},{"ok":true,"command_id":"..."}],\n  "reply":"已让 3 号车以 35% 速度向东行驶 3 秒并停车" }\n\n// 某步 502/403 → reply 改为「第2步下发失败：设备离线」',
+     files:'server/app.py:643（audit 审计日志）；/ws（app.py:668）', delay:'即时'}
+  ];
+
+  var cur = 0, timer = null;
+  var btns = document.getElementById('stepBtns');
+  STEPS.forEach(function(s,i){
+    var b = document.createElement('button');
+    b.textContent = (i+1) + '. ' + s.name.replace(/^[①②③④⑤⑥⑦]\s*/,'');
+    b.dataset.i = i;
+    b.addEventListener('click', function(){ setStep(i, true); });
+    btns.appendChild(b);
+  });
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('.pnode'));
+  var edges = Array.prototype.slice.call(document.querySelectorAll('.pedge'));
+  nodes.forEach(function(n){ n.addEventListener('click', function(){ setStep(+n.dataset.step, true); }); });
+
+  function setStep(i, stopPlay){
+    if (stopPlay && timer){ clearInterval(timer); timer = null; document.getElementById('btnPlay').textContent = '▶ 自动播放'; }
+    cur = (i + STEPS.length) % STEPS.length;
+    var s = STEPS[cur];
+    Array.prototype.forEach.call(btns.children, function(b,k){ b.className = (k===cur ? 'on' : ''); });
+    nodes.forEach(function(n,k){ n.className.baseVal = 'pnode' + (k===cur ? ' on' : ''); });
+    edges.forEach(function(e,k){ e.className.baseVal = 'pedge' + (k===cur-1 || k===cur ? ' on' : ''); });
+    document.getElementById('stepCount').textContent = '第 ' + (cur+1) + ' / ' + STEPS.length + ' 跳　（← → 键也可切换）';
+    document.getElementById('detail').innerHTML =
+      '<h3>' + esc(s.name) + '　<span class="pill l">' + esc(s.who) + '</span></h3>' +
+      '<div class="meta"><b>协议/方式</b><span>' + esc(s.proto) + '</span><b>耗时</b><span>' + esc(s.delay) + '</span></div>' +
+      '<p>' + s.desc + '</p>' +
+      '<div class="meta"><b>真实数据 / 代码</b><span class="file">' + esc(s.files) + '</span></div>' +
+      '<pre>' + esc(s.wire) + '</pre>';
+  }
+  document.getElementById('btnPrev').addEventListener('click', function(){ setStep(cur-1, true); });
+  document.getElementById('btnNext').addEventListener('click', function(){ setStep(cur+1, true); });
+  document.getElementById('btnPlay').addEventListener('click', function(){
+    if (timer){ clearInterval(timer); timer = null; this.textContent = '▶ 自动播放'; return; }
+    this.textContent = '❚❚ 暂停';
+    var self = this;
+    timer = setInterval(function(){
+      if (cur === STEPS.length-1){ clearInterval(timer); timer = null; self.textContent = '▶ 自动播放'; return; }
+      setStep(cur+1, false);
+    }, 2600);
+    setStep(0, false);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight') setStep(cur+1, true);
+    else if (e.key === 'ArrowLeft') setStep(cur-1, true);
+  });
+  setStep(0, false);
+
+  /* ---------- 方案标签 ---------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('#tabs button'));
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.className = ''; });
+      t.className = 'on';
+      Array.prototype.forEach.call(document.querySelectorAll('.pane'), function(p){
+        p.className = 'pane' + (p.id === t.dataset.pane ? ' on' : '');
+      });
+    });
+  });
+
+  /* ---------- 复制按钮 ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll('button[data-copy]'), function(b){
+    b.addEventListener('click', function(){
+      var t = document.getElementById(b.dataset.copy).textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ b.textContent='已复制'; setTimeout(function(){b.textContent='复制';},1400); });
+      } else { b.textContent = '请手动选中'; }
+    });
+  });
+
+  /* ---------- 自测 ---------- */
+  var QUIZ = [
+    {q:'「语音转文字」这一步，最适合由谁来做？', a:['Qwen 文本大模型直接读音频文件','ASR 语音识别模型/服务（如 Qwen3-ASR、Paraformer、SenseVoice、Core Speech Kit）','SQLite 数据库','WebSocket /ws'], r:1,
+     why:'ASR 是专门的音频→文本模型或服务。Qwen 这类文本 LLM 负责的是之后那一步"理解文字、填槽成 JSON"。'},
+    {q:'用 http://192.168.1.23:8000 打开网页，点"按住说话"没任何反应，最可能的原因是？', a:['后端没启动','浏览器非安全上下文，navigator.mediaDevices 被禁用','小车没上线','Qwen 的 key 填错了'], r:1,
+     why:'麦克风 API 只在 HTTPS / localhost / 127.0.0.1 下可用。局域网 IP + HTTP 会被静默禁用；PC 本机改用 127.0.0.1 即可，跨设备要升 HTTPS。'},
+    {q:'关于 Qwen 在链路里的职责，哪种做法是安全的？', a:['让它直接输出 vx/vy 并发给华为云','让它自己决定 cmd，后端不做检查','用 Function Calling 输出固定 JSON，后端过白名单和参数范围后再调 /command','把 API Key 写在网页 JS 里方便调试'], r:2,
+     why:'模型只负责"翻译意图"，校验和执行权必须在后端；密钥也只能放后端。'},
+    {q:'APP 端要接语音，下面哪一项是当前工程里确实缺的？', a:['HTTP 客户端 FleetClient.ets','module.json5 里的 ohos.permission.MICROPHONE 权限','后端 8000 端口','devices.json 注册表'], r:1,
+     why:'module.json5 目前只声明了 INTERNET。要补麦克风权限、reason 文案与运行时动态申请；且端侧识别需真机，模拟器跑不了。'},
+    {q:'用户说「往前开三秒」，现有 /command 接口会发生什么？', a:['车三秒后自动停','接口没有时长参数，需要后端排程在 3 秒后补发 STOP','MQTT 会自动超时停车','影子会自动把速度清零'], r:1,
+     why:'现有接口一次只发一条命令、无 duration 字段。不补发 STOP，车会一直按上一条速度跑——这正是之前大屏"一直执行上一个命令"的同款现象。'}
+  ];
+  var box = document.getElementById('quizBox'), answers = {};
+  QUIZ.forEach(function(item, qi){
+    var d = document.createElement('div'); d.className = 'qitem';
+    var html = '<p>' + (qi+1) + '. ' + esc(item.q) + '</p>';
+    item.a.forEach(function(t, ai){
+      html += '<label><input type="radio" name="q'+qi+'" value="'+ai+'"> ' + esc(t) + '</label>';
+    });
+    html += '<div class="fb" id="fb'+qi+'"></div>';
+    d.innerHTML = html;
+    d.addEventListener('change', function(e){
+      if (!e.target.name) return;
+      answers[qi] = +e.target.value;
+      var ok = answers[qi] === item.r;
+      var fb = document.getElementById('fb'+qi);
+      fb.className = 'fb show ' + (ok ? 'good' : 'bad');
+      fb.innerHTML = (ok ? '✓ 正确。' : '✗ 不对。') + esc(item.why);
+      var right = 0;
+      QUIZ.forEach(function(q, k){ if (answers[k] === q.r) right++; });
+      document.getElementById('quizScore').textContent = '答对 ' + right + ' / ' + QUIZ.length +
+        (right === QUIZ.length ? '　全对，可以去动手验证了' : '　（改答案会实时重新计分）');
+    });
+    box.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>

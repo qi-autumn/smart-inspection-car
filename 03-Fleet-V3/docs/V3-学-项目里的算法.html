@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · 数据结构与算法在项目里的落点</title>
+<style>
+  :root{--bg:#f5f8fc;--card:#fff;--ink:#1f2933;--dim:#5b6b7c;--line:#dde5ee;
+        --c:#0f8a8a;--c2:#d97706;--shadow:0 2px 10px rgba(31,41,51,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.75;
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+  a{color:#1d6fa5;text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;
+       font-family:Consolas,"Courier New",monospace;color:#234}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a,#1c5c6e);color:#fff;padding:30px 20px 26px}
+  .hero .inner{max-width:1100px;margin:0 auto}
+  .hero h1{margin:0 0 6px;font-size:26px}.hero .sub{margin:0 0 12px;color:#c7dbe6;font-size:14px}
+  .hero p{margin:0;color:#e6f0f5;font-size:14px;max-width:900px}
+  .back{display:inline-block;margin-top:13px;font-size:13px;color:#a8f0dc;
+        border:1px solid rgba(168,240,220,.5);padding:5px 12px;border-radius:16px}
+  .topnav{position:sticky;top:0;z-index:9;background:#fff;border-bottom:1px solid var(--line)}
+  .topnav .inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px;padding:8px 20px}
+  .topnav a{font-size:13px;color:var(--dim);padding:6px 12px;border-radius:20px}
+  .topnav a:hover{background:#eef3f9;color:var(--ink);text-decoration:none}
+  section{margin-top:30px;scroll-margin-top:56px}
+  .sec-head{display:flex;align-items:center;gap:11px;margin:0 0 11px}
+  .sec-no{width:31px;height:31px;flex:none;border-radius:8px;background:#475569;color:#fff;
+          font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .sec-head h2{margin:0;font-size:20px}
+  .tag{font-size:12px;color:var(--dim);background:#eaf0f6;padding:3px 10px;border-radius:12px}
+  .lead{color:var(--dim);margin:0 0 13px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:14px 17px;box-shadow:var(--shadow);margin-bottom:11px}
+  .card h3{margin:0 0 7px;font-size:16px}.card p{margin:0 0 8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  @media(max-width:800px){.grid2{grid-template-columns:1fr}}
+  .concl{border-left:4px solid var(--c);background:#f0f9f8;padding:12px 16px;
+         border-radius:0 8px 8px 0;margin-bottom:13px}
+  .concl b{color:#0b6f6f}
+  .file{font-family:Consolas,monospace;font-size:.87em;color:#7a4b00;background:#fff5e3;
+        padding:1px 5px;border-radius:4px}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+        background:#e6f4f4;color:#0b6f6f;margin:0 4px 3px 0}
+  .pill.o{background:#fff0dc;color:#a8600a}
+  pre{background:#0f1a2c;color:#d7e3f0;border-radius:8px;padding:12px 15px;overflow-x:auto;
+      font-size:12.5px;line-height:1.65;font-family:Consolas,"Courier New",monospace;margin:8px 0}
+  .cm{color:#7f9bb5}.kw{color:#f0c674}.num{color:#a8e6a3}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#eef3f9;font-weight:700}tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);margin-bottom:12px}
+  .tblwrap table{min-width:700px}
+  .algo{background:#fff;border:1px solid var(--line);border-left:4px solid var(--c2);
+        border-radius:8px;padding:13px 16px;margin-bottom:12px}
+  .algo .t{font-weight:700;font-size:16px;margin-bottom:3px}
+  .algo .meta{font-size:12.5px;color:var(--dim);margin-bottom:8px}
+  .algo .why{background:#fff7ec;border-radius:5px;padding:6px 10px;font-size:13.5px;
+             color:#8a4a12;margin-top:8px}
+  .algo .cls{background:#eef3f9;border-radius:5px;padding:6px 10px;font-size:13px;margin-top:7px}
+  ul{margin:6px 0 8px;padding-left:22px}li{margin:4px 0}
+  details{background:#fff;border:1px solid var(--line);border-radius:9px;margin-bottom:9px}
+  details summary{cursor:pointer;padding:10px 15px;font-weight:600;font-size:14.5px;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+";display:inline-flex;width:19px;height:19px;margin-right:8px;
+      align-items:center;justify-content:center;background:#eef3f9;border-radius:5px;color:#1d6fa5}
+  details[open] summary::before{content:"-"}
+  details .body{padding:0 15px 13px 42px;font-size:14px}
+  .note{font-size:13px;color:var(--dim)}
+  .warn{background:#fff4f2;border-left:4px solid #d9534f;padding:10px 14px;
+        border-radius:0 8px 8px 0;font-size:13.5px;margin-bottom:10px}
+  footer{margin-top:40px;padding-top:15px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="hero"><div class="inner">
+  <h1>V3 学 · 数据结构与算法在项目里的落点</h1>
+  <p class="sub">课程里学的那些东西，到底在这个项目的哪一行代码上？</p>
+  <p>这份属于「<strong>点</strong>」，但串起了好几条「线」。所有代码片段均从当前工程源码原样摘出，标注了文件与行号，你可以打开源码对照着看。</p>
+  <a class="back" href="V3-学习导航.html">← 返回学习导航</a>
+</div></div>
+
+<div class="topnav"><div class="inner">
+  <a href="#s0">结论</a><a href="#s1">全景速查表</a><a href="#s2">逐项拆解</a>
+  <a href="#s3">课程对照</a><a href="#s4">工程权衡</a><a href="#s5">坑与自测</a>
+</div></div>
+
+<div class="wrap">
+
+<section id="s0">
+  <div class="sec-head"><div class="sec-no">0</div><h2>先给结论</h2></div>
+  <div class="concl">
+    <p><b>一句话</b>：这门课在项目里几乎全用上了，但<strong>不是排序、动态规划、图论那类"竞赛型算法"</strong>，而是<strong>数值积分、哈希查找、增量检测、平滑滤波、环形数据处理、倍增退避</strong>这些"工程型算法"；数据结构主要是<strong>哈希表（字典）+ 数组/队列 + B 树索引</strong>。</p>
+    <p style="margin:0"><b>生活比喻</b>：数据结构决定"东西怎么摆"——项目把每台车按车牌号放进一个字典，找车不用挨个翻；算法决定"怎么算"——车下一秒在哪，靠的是拿上一帧位置加一小段位移，反复算。整部项目其实就在做两件事：<strong>快速找到状态</strong>、<strong>把稀疏的状态算成连续的画面</strong>。</p>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>为什么看不到"经典算法"</h3>
+      <p style="font-size:13.5px">因为业务规模太小（4 台车、每车几百个轨迹点），<code>O(n)</code> 和 <code>O(log n)</code> 的差别是微秒级。工程里优先选<strong>好读、好改、不容易出 bug</strong> 的写法，而不是理论最优。第 4 节会诚实指出三处"本可以更快但没必要"的地方。</p></div>
+    <div class="card"><h3>怎么读这份文档</h3>
+      <p style="font-size:13.5px">每一节固定四块：<strong>真实代码 → 逐行解释 → 对应课程知识点 → 解决了什么问题（不用会怎样）</strong>。建议开着源码对照，看到 <span class="file">文件:行号</span> 就跳过去看上下文。</p></div>
+  </div>
+</section>
+
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>全景速查表</h2><span class="tag">先有地图再钻细节</span></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:20%">算法 / 数据结构</th><th style="width:27%">所在文件</th><th style="width:31%">解决了什么问题</th><th>复杂度</th></tr></thead>
+    <tbody>
+      <tr><td><strong>哈希表（字典）</strong></td><td><span class="file">app.py</span> STATE_CACHE / DEV_META；<span class="file">monitor.html</span> fleet / obs / disp / trails</td><td>按 device_id 一秒定位某台车的状态，不必遍历数组</td><td>查找 O(1) 平均</td></tr>
+      <tr><td><strong>B 树索引</strong></td><td><span class="file">track_store.py</span> <code>idx_track_dev_ts</code></td><td>轨迹按"设备 + 时间窗"范围查询，避免全表扫描</td><td>O(log n + k)</td></tr>
+      <tr><td><strong>数值积分（欧拉法）</strong></td><td><span class="file">car_mqtt_client.py</span> CarSim.tick；<span class="file">monitor.html</span> estPos</td><td>把"速度"变成"连续变化的位置"</td><td>每帧 O(1)</td></tr>
+      <tr><td><strong>极坐标 ↔ 直角坐标</strong></td><td><span class="file">app.py</span> build_move_paras；<span class="file">car_mqtt_client.py</span> tick</td><td>摇杆角度换算成车体速度矢量，两端朝向约定一致</td><td>O(1)</td></tr>
+      <tr><td><strong>一阶低通滤波（指数平滑）</strong></td><td><span class="file">monitor.html</span> draw() 的 disp 更新</td><td>新观测到达时车不"闪现"，视觉连续</td><td>每帧 O(1)</td></tr>
+      <tr><td><strong>环形角度归一化</strong></td><td><span class="file">monitor.html</span> 最短弧插值</td><td>350°→10° 要转 +20°，不能转 -340°</td><td>O(1)（while 最多几圈）</td></tr>
+      <tr><td><strong>线性扫描求极值（包围盒）</strong></td><td><span class="file">monitor.html</span> 自适应视野</td><td>自动缩放地图，保证所有车都在画面内</td><td>O(n)，n=车数</td></tr>
+      <tr><td><strong>滑动窗口 / 队列</strong></td><td><span class="file">monitor.html</span> TRAIL_MAX + shift；<span class="file">track_store.py</span> LIMIT/OFFSET 清理</td><td>轨迹只留最近 N 个点，内存与数据库不无限膨胀</td><td>shift O(n)，理论可 O(1)</td></tr>
+      <tr><td><strong>增量检测（去重）</strong></td><td><span class="file">app.py</span> _track_changed；<span class="file">monitor.html</span> lastSeen</td><td>静止时不重复入库、不堆积重复轨迹点</td><td>O(1) 比较</td></tr>
+      <tr><td><strong>指数退避（倍增策略）</strong></td><td><span class="file">monitor.html</span> wsConnect；<span class="file">car_mqtt_client.py</span> reconnect_delay_set</td><td>断线后避免疯狂重连把服务打爆</td><td>O(1)</td></tr>
+      <tr><td><strong>线性累计与过滤</strong></td><td><span class="file">Index.ets</span> mileageOf / shownTracks</td><td>算里程、按时间窗筛点</td><td>O(n)，可优化为 O(log n)</td></tr>
+      <tr><td><strong>HMAC-SHA256</strong>（密码学，选修）</td><td><span class="file">car_mqtt_client.py</span> iotda_credentials</td><td>由密钥派生 MQTT 登录密码，不明文传输密钥</td><td>O(1)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>逐项拆解（含真实代码）</h2><span class="tag">重点</span></div>
+
+  <div class="algo"><div class="t">① 哈希表：全项目出现最多的结构</div>
+    <div class="meta"><span class="file">web/monitor.html : 139~143</span>　<span class="file">server/app.py : 652</span></div>
+<pre><span class="cm">// monitor.html：收到广播帧后，按 device_id 存进字典</span>
+fleet = {};
+<span class="kw">for</span> (<span class="kw">const</span> c <span class="kw">of</span> msg.cars) {
+  fleet[c.device_id] = c;
+  applyObs(c.device_id, c.x, c.y, c.heading ?? <span class="num">0</span>, c.speed ?? <span class="num">0</span>, c.online);
+}
+<span class="cm">// app.py：注册表也预先做成字典，组装广播帧时直接查名字和颜色</span>
+DEV_META = {d[<span class="kw">"device_id"</span>]: d <span class="kw">for</span> d <span class="kw">in</span> REGISTRY.get(<span class="kw">"devices"</span>, [])}</pre>
+    <p><strong>逐行解释</strong>：键是设备完整 ID（字符串），值是整台车的状态对象。之后任何地方要找某台车，都是 <code>fleet[id]</code> / <code>DEV_META[id]</code>，不需要 <code>for</code> 循环挨个比。</p>
+    <div class="cls"><strong>对应课程</strong>：哈希表 / 散列表，键-值映射，平均 O(1) 查找；冲突处理、负载因子由语言运行时负责。</div>
+    <div class="why"><strong>解决什么问题</strong>：车数从 2 台扩到 4 台、将来几十台时，查找代价不随规模增长。若改成数组线性查找，每帧 60fps × N 台 × 多处访问，代码会既慢又乱。<strong>顺带一提</strong>：SQLite 的 <code>CREATE INDEX idx_track_dev_ts ON track_points(device_id, ts)</code> 用的是 B+ 树，是同一种"用空间换查找速度"思想在磁盘上的版本。</div>
+  </div>
+
+  <div class="algo"><div class="t">② 数值积分（欧拉法）：让车真的"走起来"</div>
+    <div class="meta"><span class="file">device/car_mqtt_client.py : 79~89</span>　常量 <code>TICK_HZ = 20</code>、<code>MAX_SPEED = 1.5</code></div>
+<pre><span class="kw">def</span> tick(self, dt: float) -&gt; None:
+    <span class="kw">with</span> self.lock:
+        speed = math.hypot(self.vx, self.vy) * MAX_SPEED
+        <span class="kw">if</span> speed &gt; <span class="num">0.01</span> <span class="kw">and</span> self.battery &gt; <span class="num">0</span>:
+            self.x += self.vx * MAX_SPEED * dt
+            self.y += self.vy * MAX_SPEED * dt
+            self.theta = math.degrees(math.atan2(self.vx, self.vy)) % <span class="num">360</span>
+            self.battery = max(<span class="num">0.0</span>, self.battery - BATTERY_DRAIN_PER_SEC * dt)
+        <span class="kw">else</span>:
+            self.vx, self.vy = <span class="num">0.0</span>, <span class="num">0.0</span></pre>
+    <p><strong>逐行解释</strong>：这就是最朴素的<strong>显式欧拉积分</strong>——"新位置 = 旧位置 + 速度 × 时间步长"。20Hz 意味着 <code>dt = 0.05s</code>。举例：摇杆向东满速的一半，<code>vx=0.5</code>，则每 tick <code>x += 0.5 × 1.5 × 0.05 = 0.0375</code> 米，一秒走 0.75 米。</p>
+    <p>前端的 <code>estPos()</code>（<span class="file">monitor.html : 311~326</span>）用的是同一个公式的"一次性版本"：<code>dist = ev * dt</code>，只是不逐帧累加，而是从观测点直接推算到当前时刻。</p>
+    <div class="cls"><strong>对应课程</strong>：递归/迭代思想、数值计算入门。这里没有闭式解，靠"重复执行小步骤"逼近连续运动——和课堂上写 <code>for</code> 循环求和是同一类思维。</div>
+    <div class="why"><strong>解决什么问题</strong>：把"速度"这个抽象的指令，变成屏幕上会动的位置。<strong>不用会怎样</strong>：车只会在收到上报时瞬移一格，也就是项目早期"一顿一顿"的观感。</div>
+  </div>
+
+  <div class="algo"><div class="t">③ 坐标变换与 atan2：摇杆角度怎么变成车头方向</div>
+    <div class="meta"><span class="file">server/app.py : 453~480</span>　<span class="file">device/car_mqtt_client.py : 84</span></div>
+<pre><span class="cm"># app.py：MOVE(angle 0=正北顺时针, speed 0~100) → 物模型 move(vx, vy)</span>
+ratio = s / <span class="num">100.0</span>
+rad = math.radians(a)
+<span class="kw">return</span> {<span class="kw">"vx"</span>: round(math.sin(rad) * ratio, <span class="num">4</span>),
+        <span class="kw">"vy"</span>: round(math.cos(rad) * ratio, <span class="num">4</span>)}, None
+
+<span class="cm"># car_mqtt_client.py：设备端再反推车头朝向（度）</span>
+self.theta = math.degrees(math.atan2(self.vx, self.vy)) % <span class="num">360</span></pre>
+    <p><strong>逐行解释</strong>：几何约定是"0° 朝正北（y 轴正向），顺时针增大"。所以 <code>sin</code> 给东西方向的 vx、<code>cos</code> 给南北方向的 vy。验算：<code>angle=90°</code>（正东）、<code>speed=80</code> → <code>vx = sin90 × 0.8 = 0.8</code>、<code>vy = cos90 × 0.8 ≈ 0</code>；设备端 <code>atan2(0.8, 0) = 90°</code>，与命令完全一致。</p>
+    <p>注意 <code>on_move</code> 里还有一步<strong>向量归一化</strong>（<span class="file">car_mqtt_client.py : 70~74</span>）：</p>
+<pre>mag = math.hypot(vx, vy)
+<span class="kw">if</span> mag &gt; <span class="num">1.0</span>:
+    vx, vy = vx / mag, vy / mag   <span class="cm"># 限制合速度不超过满速</span></pre>
+    <div class="cls"><strong>对应课程</strong>：数学（三角函数、极坐标与直角坐标互换）；"单位向量 / 模长"属于线性代数入门。代码里的 <code>hypot</code> 就是勾股定理。</div>
+    <div class="why"><strong>解决什么问题</strong>：让 APP 摇杆、网页摇杆、后端协议、设备固件四端对"方向"有唯一定义。<strong>这也是第⑧步换真车必须原样保留的契约</strong>——约定错了，车会朝反方向跑（项目早期就修过一次 APP 与网页朝向不一致）。</div>
+  </div>
+
+  <div class="algo"><div class="t">④ 一阶低通滤波（指数平滑）：消除画面跳变</div>
+    <div class="meta"><span class="file">web/monitor.html : 342~357</span></div>
+<pre><span class="kw">const</span> fdt = Math.min((now - lastFrame) / <span class="num">1000</span>, <span class="num">0.1</span>);
+<span class="kw">for</span> (<span class="kw">const</span> c <span class="kw">of</span> list) {
+  <span class="kw">const</span> t = estPos(c.device_id);
+  <span class="kw">const</span> s = disp[c.device_id] || (disp[c.device_id] = { x: t.x, y: t.y, heading: t.heading });
+  <span class="kw">const</span> k = Math.min(<span class="num">1</span>, fdt * <span class="num">8</span>);
+  s.x += (t.x - s.x) * k;
+  s.y += (t.y - s.y) * k;
+  <span class="kw">let</span> dh = t.heading - s.heading;              <span class="cm">// 航向角按最短弧平滑</span>
+  <span class="kw">while</span> (dh &gt; <span class="num">180</span>) dh -= <span class="num">360</span>;
+  <span class="kw">while</span> (dh &lt; -<span class="num">180</span>) dh += <span class="num">360</span>;
+  s.heading += dh * k;
+}</pre>
+    <p><strong>逐行解释</strong>：<code>s += (目标 - s) × k</code> 是标准的一阶低通滤波。60fps 时 <code>fdt≈0.0167</code>，<code>k≈0.133</code>，即每帧只消掉 13% 的误差，于是位置变化被"摊"到若干帧里，眼睛看到的是滑过去而不是跳过去。</p>
+    <div class="cls"><strong>对应课程</strong>：递推式 / 迭代逼近；也可理解为"加权平均"，新值权重 k、旧值权重 (1-k)。（信号处理课里叫 EMA / 一阶 IIR。）</div>
+    <div class="why"><strong>解决什么问题</strong>：真实观测每 5 秒才到一次，且带修正；直接把坐标设为观测值会看到闪现。<strong>不用会怎样</strong>：车每隔几秒"瞬移"一下，正是用户反复反馈的不流畅。</div>
+  </div>
+
+  <div class="algo"><div class="t">⑤ 环形数据归一化：角度不是普通数字</div>
+    <div class="meta"><span class="file">web/monitor.html : 353~355</span>（上面代码里那两个 while）</div>
+<pre><span class="kw">let</span> dh = t.heading - s.heading;
+<span class="kw">while</span> (dh &gt; <span class="num">180</span>) dh -= <span class="num">360</span>;
+<span class="kw">while</span> (dh &lt; -<span class="num">180</span>) dh += <span class="num">360</span>;</pre>
+    <p><strong>逐行解释</strong>：角度是模 360 的环形量。从 350° 转到 10°，数值差是 -340°，但物理上只转了 +20°。这两行把差值折回 [-180, 180] 区间，即"最短弧"。同理 <code>% 360</code>（Python）和 <code>round(float(angle)) % 360</code>（<span class="file">app.py : 190</span>）都在做归一化。</p>
+    <div class="cls"><strong>对应课程</strong>：模运算、环形数组 / 循环队列里"下标回绕"的同款思想；也常出现在时钟、星期、罗盘的计算题里。</div>
+    <div class="why"><strong>解决什么问题</strong>：转向时车头平滑转过最短路径。<strong>不用会怎样</strong>：从 350° 调到 10° 会让车在空中倒转一大圈，视觉上像甩尾。</div>
+  </div>
+
+  <div class="algo"><div class="t">⑥ 线性扫描求极值：地图自动缩放（包围盒）</div>
+    <div class="meta"><span class="file">web/monitor.html : 375~386</span></div>
+<pre><span class="kw">let</span> minX = <span class="num">0</span>, maxX = <span class="num">0</span>, minY = <span class="num">0</span>, maxY = <span class="num">0</span>;  <span class="cm">// 含原点</span>
+<span class="kw">for</span> (<span class="kw">const</span> c <span class="kw">of</span> pts) {
+  <span class="kw">const</span> s = disp[c.device_id];
+  minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+  minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+}
+minX -= pad; maxX += pad; minY -= pad; maxY += pad;
+<span class="kw">const</span> zoom = Math.min(W / (maxX - minX), H / (maxY - minY));</pre>
+    <p><strong>逐行解释</strong>：一次线性扫描同时求出四个极值（包围盒），再用"画布宽/世界宽、画布高/世界高取较小者"得到缩放系数，保证队伍跑散了也能全部装进画面。</p>
+    <div class="cls"><strong>对应课程</strong>：数组遍历求最值，O(n)，空间 O(1)；课堂最基础的题，这里是它在真实项目里最直接的一次应用。</div>
+    <div class="why"><strong>解决什么问题</strong>：车会越跑越远，固定比例尺迟早跑出屏幕。<strong>不用会怎样</strong>：要么车消失，要么得人工缩放。</div>
+  </div>
+
+  <div class="algo"><div class="t">⑦ 滑动窗口 + 增量检测：不让数据无限膨胀</div>
+    <div class="meta"><span class="file">web/monitor.html : 361~371</span>　<span class="file">server/app.py : 237~249</span>　<span class="file">server/track_store.py : 60~70</span></div>
+<pre><span class="cm">// 前端：位置变化超过 0.05 米才记一个点，超过 150 个就丢最旧的</span>
+<span class="kw">const</span> ls = lastSeen[c.device_id];
+<span class="kw">if</span> (!ls || Math.hypot(c.x - ls.x, c.y - ls.y) &gt; <span class="num">0.05</span>) {
+  t.push({ x: c.x, y: c.y });
+  <span class="kw">if</span> (t.length &gt; TRAIL_MAX) t.shift();
+  lastSeen[c.device_id] = { x: c.x, y: c.y };
+}
+<span class="cm"># 后端：与上次入库值比较，各字段都设了死区阈值</span>
+<span class="kw">return</span> (abs(key[<span class="num">0</span>] - last[<span class="num">0</span>]) &gt; <span class="num">0.005</span> or ...)</pre>
+    <p><strong>逐行解释</strong>：两个不同层次的"去重"。前端用 <code>lastSeen</code> 字典记住每台车最后一个点（哈希 + 增量比较）；后端用 <code>TRACK_LAST</code> 记住上次入库的元组，任一字段变化超阈值才插行——因为静止时设备每 60 秒还会重复上报，不设阈值就会堆一堆一模一样的点。</p>
+    <p>数据库侧还有一道"保留最近 N 条"的窗口清理（<span class="file">track_store.py : 63~68</span>）：<code>ORDER BY ts DESC LIMIT 1 OFFSET ?</code> 找出第 20000 条的时间，把更早的删掉；再加 7 天过期。</p>
+    <div class="cls"><strong>对应课程</strong>：队列 / 滑动窗口；"只与前一个状态比较"属于增量思想；阈值判断属于浮点误差处理（不能直接用 <code>==</code> 比浮点数）。</div>
+    <div class="why"><strong>解决什么问题</strong>：内存和磁盘都有上限。<strong>诚实点评</strong>：JS 数组的 <code>shift()</code> 是 O(n)（后面元素要整体前移），严格说该用<strong>环形缓冲区</strong>做到 O(1)；但这里 n=150、4 台车、每帧最多一次，代价可忽略——这就是典型的工程取舍。</div>
+  </div>
+
+  <div class="algo"><div class="t">⑧ 指数退避：断线后别把服务打爆</div>
+    <div class="meta"><span class="file">web/monitor.html : 152~157</span>　<span class="file">device/car_mqtt_client.py : 269</span></div>
+<pre>ws.onclose = ws.onerror = () =&gt; {
+  <span class="kw">const</span> delay = Math.min(<span class="num">1000</span> * <span class="num">2</span> ** wsRetry, RETRY_MAX_DELAY);
+  wsRetry++;
+  setBadge(<span class="kw">"reconnect"</span>, `WS 断线，${(delay/<span class="num">1000</span>).toFixed(<span class="num">0</span>)}s 后重连（第${wsRetry}次）`);
+  setTimeout(wsConnect, delay);
+};
+<span class="cm"># 设备侧：paho 自带同样的倍增策略</span>
+mqttc.reconnect_delay_set(min_delay=<span class="num">1</span>, max_delay=<span class="num">30</span>)</pre>
+    <p><strong>逐行解释</strong>：第 1 次等 1s、第 2 次 2s、第 3 次 4s……上限 30s；连上后 <code>wsRetry = 0</code> 归零。这就是 <code>2^n</code> 的倍增（指数退避）。</p>
+    <div class="cls"><strong>对应课程</strong>：倍增思想（二分/快速幂里也用）、贪心策略的一个极简例子；复杂度上"重连次数"随故障时长变成 O(log T)。</div>
+    <div class="why"><strong>解决什么问题</strong>：后端重启或网络抖动时，几十个页面同时每秒重连会形成"重连风暴"。<strong>不用会怎样</strong>：固定 1 秒重试也能用，但服务端一恢复就被瞬时压满。</div>
+  </div>
+
+  <div class="algo"><div class="t">⑨ 线性累计与范围过滤：里程与时间窗</div>
+    <div class="meta"><span class="file">CarFleet/.../pages/Index.ets : 348~372</span>　<span class="file">server/track_store.py : 97~103</span></div>
+<pre><span class="cm">// APP：里程 = 相邻点距离求和</span>
+<span class="kw">private</span> mileageOf(points: TrackPoint[]): number {
+  <span class="kw">let</span> d = <span class="num">0</span>;
+  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">1</span>; i &lt; points.length; i++) {
+    <span class="kw">const</span> dx = points[i].x - points[i - <span class="num">1</span>].x;
+    <span class="kw">const</span> dy = points[i].y - points[i - <span class="num">1</span>].y;
+    d += Math.sqrt(dx * dx + dy * dy);
+  }
+  ...
+}
+<span class="cm">// 时间窗过滤：线性扫描</span>
+filt.points = td.points.filter((p: TrackPoint) =&gt; p.ts &gt;= cutoff);
+
+<span class="cm"># 后端：范围查询交给索引，结果天然有序</span>
+<span class="kw">SELECT</span> x, y, heading, speed, ts <span class="kw">FROM</span> track_points
+ <span class="kw">WHERE</span> device_id = ? <span class="kw">AND</span> ts &gt;= ? <span class="kw">AND</span> ts &lt;= ? <span class="kw">ORDER BY</span> ts <span class="kw">ASC</span></pre>
+    <p><strong>逐行解释</strong>：里程是折线长度的累加（又是勾股定理）；时间窗是遍历一遍筛出 <code>ts >= cutoff</code>。因为 <code>points</code> 已按时间升序，理论上<strong>可以二分找到第一个满足条件的下标</strong>，把 O(n) 降到 O(log n) 再切片——但几百个点时省不到 1 毫秒，写 filter 更不容易错。</p>
+    <div class="cls"><strong>对应课程</strong>：数组遍历、前缀式累加、二分查找（这里是"本可以用而没用"的反例，很适合拿来理解"什么时候该优化"）。SQL 的 <code>ORDER BY</code> 配合 <code>(device_id, ts)</code> 索引，本质是 B+ 树的有序遍历，不需要额外排序。</div>
+    <div class="why"><strong>解决什么问题</strong>：把原始坐标变成人能看懂的"跑了多少米 / 最近 10 分钟的路径"。</div>
+  </div>
+
+  <div class="algo"><div class="t">⑩ 分段航位推算：项目里最完整的"自研算法"</div>
+    <div class="meta"><span class="file">web/monitor.html : 285~326</span>（applyObs + estPos）</div>
+<pre><span class="kw">const</span> posChanged = o.fx !== x || o.fy !== y;
+<span class="kw">const</span> motionChanged = o.eh !== heading || o.ev !== speed / <span class="num">100</span> * MAX_SPEED_MS;
+<span class="kw">if</span> (!posChanged &amp;&amp; !motionChanged) <span class="kw">return</span>;   <span class="cm">// 同一份缓存广播，不动外推时钟</span>
+<span class="kw">const</span> dt = Math.min((now - o.t0) / <span class="num">1000</span>, STALE_S);
+<span class="kw">if</span> (posChanged) {
+  o.fx = x; o.fy = y; o.ex = x; o.ey = y;      <span class="cm">// 真实修复：起点对齐观测</span>
+} <span class="kw">else</span> {                                       <span class="cm">// 回显：起点沿旧方向推进 dt 再换向</span>
+  o.ex += Math.sin(o.eh * Math.PI / <span class="num">180</span>) * o.ev * dt;
+  o.ey += Math.cos(o.eh * Math.PI / <span class="num">180</span>) * o.ev * dt;
+}
+o.eh = heading; o.ev = speed / <span class="num">100</span> * MAX_SPEED_MS; o.t0 = now;</pre>
+    <p><strong>逐行解释</strong>：它把前面 ①~⑤ 全用上了——字典存状态（①）、欧拉积分推进（②）、三角函数分解（③）、外推（④）、角度处理（⑤）——核心是一条<strong>分类讨论</strong>：x/y 变了 = 真实观测，重置起点；只有朝向/速度变了 = 命令回显，起点沿旧方向走到"此刻"再换向。</p>
+    <div class="cls"><strong>对应课程</strong>：状态机（每个车维护自己的状态对象）、分类讨论、时间差计算。<strong>这是全项目最值得精读的一段</strong>，因为它体现了算法服务于业务语义，而不是套模板。</div>
+    <div class="why"><strong>解决什么问题</strong>：把"5 秒一个真实点"和"0.25 秒一条命令回显"缝成连续折线。<strong>写错会怎样</strong>：把回显也当成新观测去重置位置，车会每 250ms 被拉回旧位置——这正是之前"越改越抖"的那个 bug。</div>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>课程知识 → 项目落点对照</h2><span class="tag">含"没用到"的诚实说明</span></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:24%">课程章节</th><th style="width:14%">项目里用到了吗</th><th>具体落点</th></tr></thead>
+    <tbody>
+      <tr><td>线性表 / 数组</td><td><strong>大量</strong></td><td>轨迹点数组、车队列表、时间窗 WIN_MINUTES、颜色池 CAR_COLORS</td></tr>
+      <tr><td>栈 / 队列</td><td>轻用</td><td>轨迹尾线是"先进先出"的滑动窗口；没有显式栈结构</td></tr>
+      <tr><td>哈希表</td><td><strong>核心</strong></td><td>STATE_CACHE、fleet、obs、disp、trails、DEV_META、TRACK_LAST、ECHO_PENDING、TOKENS 全是字典</td></tr>
+      <tr><td>树 / B+ 树</td><td>间接</td><td>SQLite 索引 <code>idx_track_dev_ts</code>，代码里没有自己实现树</td></tr>
+      <tr><td>查找 / 排序</td><td>轻用</td><td>字典查找 O(1)；SQL <code>ORDER BY ts ASC</code> 走索引；无手写快排/归并</td></tr>
+      <tr><td>贪心 / 倍增</td><td>有</td><td>指数退避 <code>2 ** wsRetry</code>；自适应缩放取 min(W/w, H/h)</td></tr>
+      <tr><td>递归 / 分治</td><td>没有</td><td>业务都是扁平循环，刻意避免递归以降低初学门槛</td></tr>
+      <tr><td>图论</td><td>没有</td><td>网络拓扑"看起来像图"，但代码里没有任何图算法（没有路径规划、没有最短路径）——<strong>第⑦步 AI 导航若加入寻路，这里就会用上</strong></td></tr>
+      <tr><td>动态规划</td><td>没有</td><td>状态简单，无最优子结构问题</td></tr>
+      <tr><td>数值计算 / 几何</td><td><strong>核心</strong></td><td>欧拉积分、三角函数、atan2、勾股距离、向量归一化、模运算</td></tr>
+      <tr><td>并发数据结构</td><td>有</td><td><code>threading.Lock</code> 保护共享字典；<code>threading.Event</code>（CMD_DIRTY / WS_DIRTY）做生产者-消费者通知</td></tr>
+    </tbody>
+  </table></div>
+  <div class="card"><h3>给你一个延伸思考</h3>
+    <p style="margin:0">项目里唯一"像算法题"的空白是<strong>路径规划</strong>：现在的车只会"朝一个方向直走"，没有目标点、没有避障、没有地图。如果第⑦步要加"自动巡检到指定点"，就会用到 BFS / A* / Dijkstra —— 那时你的数据结构与算法课会真正派上大用场。这也是为什么现在看项目"算法不多"：<strong>它目前只解决了通信与展示，还没解决智能决策</strong>。</p></div>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>工程权衡：三处"本可以更快，但没必要"</h2></div>
+  <div class="grid2">
+    <div class="card"><h3>Array.shift() 是 O(n)</h3><p style="font-size:13.5px">轨迹超长时删最旧点，理论上环形缓冲 O(1) 更优。但 n≤150、最多 4 台、每帧一次，实测毫无影响。<strong>可读性赢了</strong>。</p></div>
+    <div class="card"><h3>时间窗 filter 是 O(n)</h3><p style="font-size:13.5px">点已按 ts 升序，二分找起点可到 O(log n)。但几百个点省不下 1ms，还多出边界 bug 风险。</p></div>
+    <div class="card"><h3>每帧求 min/max 是 O(n)</h3><p style="font-size:13.5px">车数 n 极小，60fps × 4 次比较完全免费。若将来上千台车，才需要考虑增量维护包围盒。</p></div>
+    <div class="card"><h3>但有两处"必须"优化</h3><p style="font-size:13.5px">① 按 ID 查状态用字典而不是遍历 —— 因为访问频率是每帧每车多次；② 轨迹查询建索引 —— 因为数据在磁盘上，全表扫描差的是数量级。<strong>判断标准：数据在哪、被调用多频繁。</strong></p></div>
+  </div>
+  <div class="warn"><strong>初学者最容易误学的一点</strong>：不要因为"学过二分"就到处改 O(n)。工程里优化的前提是<strong>先测出瓶颈</strong>。这个项目真正的瓶颈从来不在算法，而在网络（5 秒上报、2 秒轮询）——所以前面所有改造都花在了"链路"上，而不是把 filter 改成二分。</div>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>常见坑 + 自测</h2></div>
+  <div class="grid2">
+    <div class="card"><h3>与这些代码相关的坑</h3><ul style="font-size:13.5px">
+      <li>浮点数不能用 <code>==</code> 比较：所以 <code>_track_changed</code> 全用 <code>&gt; 0.005</code> 阈值。</li>
+      <li>角度必须归一化：350°→10° 的差值要走最短弧，且 <code>atan2</code> 的参数顺序是 (vx, vy) 才能符合"0=正北"。</li>
+      <li>外推时钟不能被重复广播重置：同一份缓存每秒推多次，必须先用"状态是否变化"判断（分段推算第 297 行）。</li>
+      <li>字典键要用<strong>完整 device_id</strong>：<code>did.split("_", 1)[1]</code> 按第一个下划线切，用错会切出产品 ID。</li>
+      <li>共享字典在多线程里必须加锁：<code>CACHE_LOCK</code> / <code>CarSim.lock</code> 不是装饰。</li>
+    </ul></div>
+    <div class="card"><h3>与前后知识点的连接</h3><ul style="font-size:13.5px">
+      <li><strong>往前</strong>：接《技术栈与文件地图》——那里说"用什么"，这里说"代码里怎么算"。</li>
+      <li><strong>往后（线）</strong>：想看这些算法在一条流程里怎么接力 → 问「控车时序图」。</li>
+      <li><strong>往后（点）</strong>：「逐行讲分段航位推算」「SQLite 索引为什么这样建」。</li>
+      <li><strong>横向</strong>：长/短连接、HTTP/HTTPS 两份教材是同一层"连接与协议"的补充。</li>
+    </ul></div>
+  </div>
+  <h3 style="font-size:16px;margin:14px 0 8px">自测小问题</h3>
+  <details><summary>1. 为什么项目里到处是字典，却几乎看不到数组查找？</summary><div class="body"><p>因为所有检索都按 <code>device_id</code> 这个唯一键进行，哈希表平均 O(1)；数组需要遍历比较 O(n)，且每帧要查多次。字典同时也让"每台车独立维护外推状态"这件事写起来最自然。</p></div></details>
+  <details><summary>2. <code>tick()</code> 里的 <code>dt</code> 是谁给的？改成 10Hz 会怎样？</summary><div class="body"><p>由 20Hz 的循环给出 <code>dt≈0.05s</code>。改成 10Hz（dt≈0.1s）位置精度下降一半、轨迹点变粗，但车的<strong>速度不变</strong>（因为位移 = 速度 × dt，步长变大、步数变少）。这正是欧拉积分的特性。</p></div></details>
+  <details><summary>3. 指数平滑里的 k 越大越小分别是什么效果？</summary><div class="body"><p>k 大 → 跟得紧、几乎不平滑（k=1 时直接跳到目标）；k 小 → 更顺滑但落后更多。项目取 <code>fdt*8</code>，约 0.13/帧，在"跟手"和"不跳"之间折中。</p></div></details>
+  <details><summary>4. 把 <code>trails.shift()</code> 换成环形缓冲值得吗？</summary><div class="body"><p>当前规模不值得：150 点 × 4 台 × 最多每帧一次，成本可忽略，还更好读。只有车数或点数量级上升（比如上千点做全轨迹回放）才值得改。这就是复杂度分析的<strong>实际用法：先估算规模，再决定要不要优化</strong>。</p></div></details>
+  <details><summary>5. 项目里哪个知识点最接近"状态机"？</summary><div class="body"><p><code>applyObs</code>：每台车有自己的状态对象（外推起点、朝向、速度、观测时刻），输入分"真实修复 / 命令回显 / 无变化"三类，分别做不同迁移。另外 <code>CarSim</code> 本身也是一台状态机（vx/vy 决定行驶或静止）。</p></div></details>
+</section>
+
+<footer>
+  V3 学 · 数据结构与算法落点 ｜ 2026-11-08 ｜ 所有代码片段摘自当前工程（app.py / car_mqtt_client.py / monitor.html / track_store.py / Index.ets），行号以当前版本为准 ｜ 同系列 <span class="file">V3-学习导航.html</span>
+</footer>
+</div>
+</body>
+</html>

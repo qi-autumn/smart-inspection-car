@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 车队 · AI 自然语言 / 语音控车（第⑦步验收页）</title>
+<style>
+  :root{--bg:#f5f8fc;--card:#fff;--ink:#1f2933;--dim:#5b6b7c;--line:#dde5ee;
+        --c1:#0f8a8a;--c3:#7c3aed;--hot:#b23b2e;--ok:#237a3a;
+        --shadow:0 2px 10px rgba(31,41,51,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.7;font-size:15px;
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,-apple-system,sans-serif}
+  a{color:#1d6fa5;text-decoration:none} a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;font-family:Consolas,monospace}
+  .hero{background:linear-gradient(135deg,#2a2350,#1c5c6e);color:#fff;padding:22px 20px}
+  .hero .in{max-width:1180px;margin:0 auto}
+  .hero h1{margin:0 0 6px;font-size:23px}
+  .hero p{margin:0;color:#d6e2ef;font-size:13.5px}
+  .hero a{color:#a8f0dc;font-size:13px;margin-right:14px}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 20px 60px}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);
+       border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;box-shadow:var(--shadow)}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;background:#bbb}
+  .dot.on{background:#2f9e56}.dot.off{background:var(--hot)}
+  .grid{display:grid;grid-template-columns:minmax(320px,0.9fr) minmax(360px,1.1fr);gap:14px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;
+        box-shadow:var(--shadow);margin-bottom:14px}
+  .card h2{margin:0 0 10px;font-size:16px}
+  .card h3{margin:14px 0 6px;font-size:13.5px;color:var(--dim);font-weight:700}
+  label{font-size:13px;color:var(--dim);display:block;margin:8px 0 4px}
+  select,input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:7px;
+       padding:9px 11px;font-size:14px;font-family:inherit;color:var(--ink);background:#fff}
+  textarea{resize:vertical;min-height:78px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:8px 14px;
+         font-size:13.5px;cursor:pointer;font-family:inherit;color:var(--ink)}
+  button:hover{background:#eef3f9}
+  button.primary{background:var(--c1);border-color:var(--c1);color:#fff;font-weight:600}
+  button.primary:hover{background:#0a7373}
+  button.mic{background:var(--c3);border-color:var(--c3);color:#fff}
+  button.mic.rec{background:var(--hot);border-color:var(--hot)}
+  button.danger{background:#fff;border-color:#e3b4ae;color:var(--hot)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{font-size:12px;background:#eef3f9;border:1px solid var(--line);border-radius:16px;
+        padding:4px 10px;cursor:pointer;color:var(--dim)}
+  .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);margin:10px 0}
+  .chk input{width:auto}
+  .note{font-size:12.5px;color:var(--dim)}
+  .warn{background:#fff6f5;border-left:4px solid var(--hot);padding:9px 12px;border-radius:6px;
+        font-size:13px;margin:10px 0}
+  .okbox{background:#eef9f2;border-left:4px solid var(--ok);padding:9px 12px;border-radius:6px;
+         font-size:13px;margin:10px 0}
+  pre{background:#1e2a38;color:#e9f2f8;border-radius:8px;padding:11px 13px;font-size:12.5px;
+      font-family:Consolas,monospace;line-height:1.6;overflow-x:auto;white-space:pre-wrap;
+      word-break:break-all;min-height:36px;margin:0}
+  .stage{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .stage span{font-size:12px;padding:4px 10px;border-radius:14px;background:#eef3f9;color:var(--dim)}
+  .stage span.on{background:#e2f4f1;color:#0b6d68;font-weight:700}
+  .stepitem{border:1px solid var(--line);border-radius:7px;padding:8px 11px;margin:6px 0;font-size:13px}
+  .stepitem.ok{border-left:4px solid var(--ok)}.stepitem.bad{border-left:4px solid var(--hot)}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--dim);margin-top:8px}
+  .flow b{background:#f0e9fb;color:#6632ad;padding:3px 9px;border-radius:12px;font-weight:600}
+  footer{margin-top:26px;text-align:center;font-size:12.5px;color:var(--dim);line-height:2}
+</style>
+</head>
+<body>
+<div class="hero"><div class="in">
+  <h1>AI 自然语言 / 语音控车 · 第⑦步验收页</h1>
+  <p>语音采集 → 语音转文字（ASR）→ 大模型判定含义 → 规范指令 → 白名单校验 → 复用 /command 下发。所有密钥只在后端。</p>
+  <div style="margin-top:10px">
+    <a href="/monitor/view">实时监控大屏</a><a href="/track/view">轨迹回放</a>
+    <a href="/admin/view">管理后台</a><a href="/health">健康检查</a>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <div class="bar">
+    <span><span class="dot" id="dBackend"></span>后端 :8000</span>
+    <span><span class="dot" id="dAI"></span>AI 配置</span>
+    <span><span class="dot" id="dMic"></span>麦克风可用</span>
+    <span id="ctxInfo" class="note"></span>
+    <span style="margin-left:auto" class="note">访问地址建议 <code>http://127.0.0.1:8000/ai/view</code></span>
+  </div>
+
+  <div class="grid">
+    <!-- 左：输入 -->
+    <div>
+      <div class="card">
+        <h2>① 说一句 / 打一句</h2>
+        <label>默认控制哪台车（语音里说了别的车号，以语音为准）</label>
+        <select id="carSel"><option value="">载入中…</option></select>
+
+        <label>文字指令</label>
+        <textarea id="txt" placeholder="例如：让 1 号车慢慢往东开三秒然后停"></textarea>
+        <div class="chips" id="chips"></div>
+
+        <div class="row">
+          <button class="primary" id="btnRun">解析并下发</button>
+          <button id="btnDry">只解析（dry_run）</button>
+          <button class="danger" id="btnStop">紧急停止</button>
+        </div>
+
+        <h3>语音输入</h3>
+        <div class="row">
+          <button class="mic" id="btnMic">点一下开始录音</button>
+          <span class="note" id="micTip"></span>
+        </div>
+        <div id="micWarn"></div>
+
+        <div class="stage" id="stage" style="margin-top:14px">
+          <span data-s="0">① 采集</span><span data-s="1">② ASR 转写</span>
+          <span data-s="2">③ AI 解析</span><span data-s="3">④ 校验</span>
+          <span data-s="4">⑤ 排程下发</span><span data-s="5">⑥ 反馈</span>
+        </div>
+        <p class="note" id="status">就绪。AI 解析 + 云端下发通常需要几秒，请耐心等。</p>
+      </div>
+
+      <div class="card">
+        <h2>链路说明</h2>
+        <div class="flow">
+          <b>麦克风 / 文字</b> → <b>后端 :8000</b> → <b>ASR 逐字稿</b> →
+          <b>Qwen 全模态模型</b> → <b>plan JSON</b> → <b>白名单校验</b> →
+          <b>/command</b> → <b>华为云 MQTT 8883</b> → <b>小车</b>
+        </div>
+        <div class="warn" id="safeHint" style="display:none"></div>
+        <p class="note" style="margin-top:10px">
+          「只解析」不会下发任何命令，适合先看 AI 到底听懂了什么；取消勾选后点「解析并下发」会真的控制车。
+          带时长的话（例如三秒）后端会等 3 秒再补发 <code>STOP</code>，所以按钮会转圈几秒是正常的。
+        </p>
+      </div>
+    </div>
+
+    <!-- 右：结果 -->
+    <div>
+      <div class="card">
+        <h2>② 实际结果</h2>
+        <div class="okbox" id="replyBox" style="display:none"></div>
+        <div class="warn" id="errBox" style="display:none"></div>
+
+        <h3>① 逐字稿（ASR / 文字输入）</h3>
+        <pre id="outTranscript">—</pre>
+
+        <h3>② 大模型解析出的规范指令 plan</h3>
+        <pre id="outPlan">—</pre>
+
+        <h3>③ 每一步的真实执行回执</h3>
+        <div id="outSteps"><span class="note">—</span></div>
+
+        <h3>④ 原始响应（调试用）</h3>
+        <pre id="outRaw">—</pre>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    V3 智能巡检车队 · 第⑦步 AI 增强 ｜ 后端 <code>POST /ai/command</code> ｜ 本页由 <code>/ai/view</code> 提供<br>
+    配套教材：<span class="file">docs/V3-学-自然语言控车与语音链路.html</span>、<span class="file">docs/V3-学-AI控车落地与验收.html</span>（在 docs 目录用浏览器打开）
+  </footer>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var els = {
+    car:$('carSel'), txt:$('txt'), chips:$('chips'), status:$('status'),
+    stage:$('stage'), reply:$('replyBox'), err:$('errBox'),
+    transcript:$('outTranscript'), plan:$('outPlan'), steps:$('outSteps'), raw:$('outRaw'),
+    mic:$('btnMic'), micTip:$('micTip'), micWarn:$('micWarn'), safeHint:$('safeHint')
+  };
+  var EXAMPLES = [
+    '让 1 号车慢慢往东开三秒然后停',
+    '让 2 号车往前开两秒再停下来',
+    '3 号车全速向左，然后停',
+    '让 1 号车停下来'
+  ];
+
+  function setStage(n){
+    Array.prototype.forEach.call(els.stage.children, function(s){
+      s.className = (+s.dataset.s <= n ? 'on' : '');
+    });
+  }
+  function status(t, kind){
+    els.status.textContent = t;
+    els.status.style.color = kind === 'bad' ? '#b23b2e' : (kind === 'ok' ? '#237a3a' : '');
+  }
+  function showError(msg){
+    els.err.style.display = 'block'; els.err.textContent = '✗ ' + msg;
+    els.reply.style.display = 'none';
+  }
+  function post(path, body){
+    return fetch(path, {method:'POST', headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify(body)}).then(function(r){
+      return r.json().then(function(j){ return {status:r.status, data:j}; });
+    });
+  }
+  function render(data){
+    els.raw.textContent = JSON.stringify(data, null, 2);
+    if (!data.ok){ showError(data.error || ('HTTP ' + data.status)); setStage(-1); return; }
+    els.err.style.display = 'none';
+    els.reply.style.display = 'block';
+    els.reply.textContent = '✓ ' + (data.reply || '解析完成') +
+      (data.elapsed !== undefined ? '　耗时 ' + data.elapsed + 's' : '');
+    els.transcript.textContent = data.transcript || '—';
+    els.plan.textContent = JSON.stringify(data.plan || [], null, 2);
+    els.steps.innerHTML = '';
+    if (!data.steps || !data.steps.length){
+      els.steps.innerHTML = '<span class="note">未下发（dry_run 或计划为空）</span>';
+    } else {
+      data.steps.forEach(function(s){
+        var d = document.createElement('div');
+        d.className = 'stepitem ' + (s.ok ? 'ok' : 'bad');
+        d.textContent = '第 ' + s.step + ' 步 · ' + s.cmd +
+          (s.speed !== undefined ? ' speed=' + s.speed : '') +
+          (s.angle !== undefined ? ' angle=' + s.angle : '') +
+          (s.duration_ms ? ' 持续 ' + s.duration_ms + 'ms' : '') +
+          (s.ok ? '　✓ 已受理 command_id=' + s.command_id +
+                 '　paras=' + JSON.stringify(s.paras)
+                : '　✗ ' + (s.error || '失败'));
+        els.steps.appendChild(d);
+      });
+    }
+    setStage(5);
+  }
+
+  function send(text, audioB64, dryRun){
+    var body = {device_id: els.car.value, dry_run: !!dryRun};
+    if (audioB64){ body.audio_b64 = audioB64; body.mime = 'audio/wav'; }
+    else { body.text = text; }
+    setStage(audioB64 ? 1 : 2);
+    status(audioB64 ? '录音已上传，正在转写 + 解析…' : '正在让 AI 解析这句话…');
+    els.reply.style.display = 'none'; els.err.style.display = 'none';
+    $('btnRun').disabled = true; $('btnDry').disabled = true;
+    post('/ai/command', body).then(function(r){
+      render(r.data);
+      status(r.data.ok ? '完成' : '失败', r.data.ok ? 'ok' : 'bad');
+    }).catch(function(e){
+      showError('请求失败：' + e); setStage(-1); status('请求失败', 'bad');
+    }).then(function(){
+      $('btnRun').disabled = false; $('btnDry').disabled = false;
+    });
+  }
+
+  /* ---------- 设备列表 ---------- */
+  fetch('/devices').then(function(r){ return r.json(); }).then(function(j){
+    if (!j.ok) return;
+    els.car.innerHTML = '';
+    j.devices.forEach(function(d, i){
+      var o = document.createElement('option');
+      o.value = d.device_id;
+      var short = d.device_id.split('_').slice(-2).join('_');
+      o.textContent = short + ' · ' + d.name + (d.online ? '（在线）' : '（离线）');
+      if (i === 0) o.selected = true;
+      els.car.appendChild(o);
+    });
+  }).catch(function(){});
+
+  /* ---------- 示例语句 ---------- */
+  EXAMPLES.forEach(function(t){
+    var b = document.createElement('span'); b.className = 'chip'; b.textContent = t;
+    b.addEventListener('click', function(){ els.txt.value = t; });
+    els.chips.appendChild(b);
+  });
+
+  /* ---------- 按钮 ---------- */
+  $('btnRun').addEventListener('click', function(){
+    var t = els.txt.value.trim();
+    if (!t){ showError('先输入一句话，或点下面的示例'); return; }
+    send(t, null, false);
+  });
+  $('btnDry').addEventListener('click', function(){
+    var t = els.txt.value.trim();
+    if (!t){ showError('先输入一句话，或点下面的示例'); return; }
+    send(t, null, true);
+  });
+  $('btnStop').addEventListener('click', function(){
+    if (!els.car.value){ showError('还没选车'); return; }
+    post('/command', {device_id: els.car.value, cmd:'STOP'}).then(function(r){
+      status(r.data.ok ? '急停命令已受理' : ('急停失败：' + (r.data.error || '')),
+             r.data.ok ? 'ok' : 'bad');
+      if (!r.data.ok) showError(r.data.error || '急停失败');
+    });
+  });
+
+  /* ---------- 健康检查 / 安全上下文 ---------- */
+  fetch('/health').then(function(r){ return r.json(); }).then(function(j){
+    $('dBackend').className = 'dot ' + (j.ok ? 'on' : 'off');
+    $('dAI').className = 'dot ' + (j.ai_configured ? 'on' : 'off');
+    if (!j.ai_configured) showError('后端没有找到 server/ai_config.json，/ai/command 会返回 503');
+  }).catch(function(){ $('dBackend').className = 'dot off'; });
+
+  var secure = !!window.isSecureContext;
+  var canMic = secure && !!navigator.mediaDevices && !!window.MediaRecorder;
+  $('dMic').className = 'dot ' + (canMic ? 'on' : 'off');
+  $('ctxInfo').textContent = secure ? '安全上下文 ✓' : '非安全上下文 ✗';
+  if (!canMic){
+    els.mic.disabled = true;
+    els.micTip.textContent = '当前环境不能用麦克风';
+    els.micWarn.innerHTML = '<div class="warn"><b>麦克风被浏览器禁用。</b>只有 HTTPS 或 ' +
+      '<code>http://localhost</code> / <code>http://127.0.0.1</code> 才允许采集。' +
+      'PC 本机请改用 <code>http://127.0.0.1:8000/ai/view</code> 打开；手机/别的电脑访问要先把局域网链路升成 HTTPS。' +
+      '文字输入不受影响，照样可以验收 AI 解析。</div>';
+  } else {
+    els.micTip.textContent = '点一下开始，再点一下结束并识别';
+  }
+
+  /* ---------- 录音：MediaRecorder → 16k 单声道 WAV → base64 ---------- */
+  var rec = null, chunks = [], stream = null;
+  function encodeWav(floats, rate){
+    var buf = new ArrayBuffer(44 + floats.length * 2), v = new DataView(buf);
+    function ws(off, s){ for (var i=0;i<s.length;i++) v.setUint8(off+i, s.charCodeAt(i)); }
+    ws(0,'RIFF'); v.setUint32(4, 36 + floats.length*2, true); ws(8,'WAVE');
+    ws(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,rate,true); v.setUint32(28,rate*2,true);
+    v.setUint16(32,2,true); v.setUint16(34,16,true);
+    ws(36,'data'); v.setUint32(40, floats.length*2, true);
+    var off = 44;
+    for (var i=0;i<floats.length;i++){
+      var s = Math.max(-1, Math.min(1, floats[i]));
+      v.setInt16(off, s < 0 ? s*0x8000 : s*0x7FFF, true); off += 2;
+    }
+    var bytes = new Uint8Array(buf), bin = '', CH = 0x8000;
+    for (var j=0;j<bytes.length;j+=CH)
+      bin += String.fromCharCode.apply(null, bytes.subarray(j, j+CH));
+    return btoa(bin);
+  }
+  async function toWavBase64(blob){
+    var ab = await blob.arrayBuffer();
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var ctx = new AC({sampleRate:16000});
+    var audio = await ctx.decodeAudioData(ab);
+    var src = audio.getChannelData(0), rate = audio.sampleRate || 16000, floats = src;
+    if (rate !== 16000){
+      var ratio = 16000 / rate, len = Math.floor(src.length * ratio);
+      floats = new Float32Array(len);
+      for (var i=0;i<len;i++){
+        var p = i/ratio, a = Math.floor(p), b = Math.min(a+1, src.length-1), t = p-a;
+        floats[i] = src[a]*(1-t) + src[b]*t;
+      }
+    }
+    var b64 = encodeWav(floats, 16000);
+    try { ctx.close(); } catch(e){}
+    return b64;
+  }
+  els.mic.addEventListener('click', async function(){
+    if (rec && rec.state === 'recording'){ rec.stop(); return; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      chunks = [];
+      var opts = {};
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))
+        opts.mimeType = 'audio/webm;codecs=opus';
+      rec = new MediaRecorder(stream, opts);
+      rec.ondataavailable = function(e){ if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = async function(){
+        els.mic.className = 'mic'; els.mic.textContent = '点一下开始录音';
+        try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+        if (!chunks.length){ showError('没录到声音，再试一次'); return; }
+        try {
+          var blob = new Blob(chunks, {type: chunks[0].type || 'audio/webm'});
+          var b64 = await toWavBase64(blob);
+          els.txt.value = '';
+          status('录音 ' + (blob.size/1024).toFixed(0) + 'KB，已转成 16k WAV，正在识别…');
+          send('', b64, false);
+        } catch(e){ showError('音频转码失败：' + e + '（可以改用文字输入）'); }
+      };
+      rec.start();
+      els.mic.className = 'mic rec'; els.mic.textContent = '■ 点一下结束并识别';
+      setStage(0); status('正在录音…说完再点一次按钮');
+    } catch(e){
+      showError('无法打开麦克风：' + e.name + '（权限被拒过要去浏览器站点设置重置）');
+    }
+  });
+})();
+</script>
+</body>
+</html>

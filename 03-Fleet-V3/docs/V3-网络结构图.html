@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 车队版 · 网络结构图</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --ink:#1c2330; --dim:#5f6b7c;
+    --blue:#185fa5; --blue-l:#e6f1fb; --teal:#0f6e56; --teal-l:#e1f5ee;
+    --purple:#534ab7; --purple-l:#eeedfe; --green:#3b6d11; --green-l:#eaf3de;
+    --amber:#854f0b; --amber-l:#faeeda; --line:#c9cfd8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink);
+       font:14px/1.7 "Microsoft YaHei","PingFang SC",sans-serif; padding:24px;}
+  .wrap{max-width:1080px; margin:0 auto;}
+  h1{font-size:20px; font-weight:600; margin-bottom:4px;}
+  .sub{color:var(--dim); font-size:13px; margin-bottom:18px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px;
+        padding:20px 24px; margin-bottom:20px;}
+  h2{font-size:15px; font-weight:600; margin-bottom:12px;}
+  h3{font-size:14px; font-weight:600; margin:14px 0 6px;}
+  p{margin-bottom:8px;}
+  table{width:100%; border-collapse:collapse; font-size:13px; margin:8px 0 4px;}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  th{background:#eef1f5; font-weight:600; white-space:nowrap;}
+  code{font-family:Consolas,monospace; font-size:12.5px; background:#eef1f5;
+       padding:1px 5px; border-radius:4px;}
+  .tag{display:inline-block; font-size:12px; padding:1px 8px; border-radius:10px;
+       margin-right:6px;}
+  .tag.blue{background:var(--blue-l); color:var(--blue);}
+  .tag.teal{background:var(--teal-l); color:var(--teal);}
+  .tag.purple{background:var(--purple-l); color:var(--purple);}
+  .tag.green{background:var(--green-l); color:var(--green);}
+  .answer{border-left:4px solid var(--teal); background:var(--teal-l);
+          padding:10px 14px; border-radius:0 8px 8px 0; margin-top:10px;}
+  .svgbox{overflow-x:auto;}
+  svg{min-width:900px; width:100%; height:auto; display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>V3 车队版 · 网络结构图</h1>
+  <div class="sub">四个网络端点：APP 端 / 业务后端 / 华为云 IoTDA（云端）/ 模拟小车端 · 虚线框 = 物理位置 · 实线箭头 = 网络连接</div>
+
+  <div class="card svgbox">
+  <svg viewBox="0 0 1000 790" xmlns="http://www.w3.org/2000/svg" role="img">
+    <title>V3 网络结构图</title>
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#5f6b7c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+
+    <!-- ============ 华为云（物理位置：公网） ============ -->
+    <rect x="320" y="30" width="440" height="140" rx="16" fill="#f4f2fc"
+          stroke="#534ab7" stroke-width="1" stroke-dasharray="6 4"/>
+    <text x="340" y="56" font-size="14" font-weight="600" fill="#3c3489">华为云 · IoTDA（云端）</text>
+    <text x="340" y="74" font-size="11.5" fill="#7f77dd">cn-north-4 · 实例 fa2da76a-… · 免费单元约 1 万条消息/日</text>
+    <rect x="340" y="88" width="126" height="58" rx="8" fill="#ffffff" stroke="#534ab7" stroke-width="0.8"/>
+    <text x="403" y="110" text-anchor="middle" font-size="12.5" font-weight="600" fill="#3c3489">MQTT 接入</text>
+    <text x="403" y="128" text-anchor="middle" font-size="11" fill="#7f77dd">8883 / TLS</text>
+    <rect x="477" y="88" width="126" height="58" rx="8" fill="#ffffff" stroke="#534ab7" stroke-width="0.8"/>
+    <text x="540" y="110" text-anchor="middle" font-size="12.5" font-weight="600" fill="#3c3489">设备影子</text>
+    <text x="540" y="128" text-anchor="middle" font-size="11" fill="#7f77dd">最后一次上报</text>
+    <rect x="614" y="88" width="126" height="58" rx="8" fill="#ffffff" stroke="#534ab7" stroke-width="0.8"/>
+    <text x="677" y="110" text-anchor="middle" font-size="12.5" font-weight="600" fill="#3c3489">命令队列</text>
+    <text x="677" y="128" text-anchor="middle" font-size="11" fill="#7f77dd">car_control 服务</text>
+
+    <!-- ============ 手机端 ============ -->
+    <rect x="50" y="40" width="200" height="120" rx="16" fill="#e6f1fb"
+          stroke="#185fa5" stroke-width="1" stroke-dasharray="6 4"/>
+    <text x="68" y="66" font-size="14" font-weight="600" fill="#0c447c">手机端（HarmonyOS）</text>
+    <text x="68" y="84" font-size="11" fill="#378add">与 PC 同一 WiFi 局域网</text>
+    <rect x="66" y="94" width="168" height="52" rx="8" fill="#ffffff" stroke="#185fa5" stroke-width="0.8"/>
+    <text x="150" y="113" text-anchor="middle" font-size="12.5" font-weight="600" fill="#0c447c">CarFleet APP</text>
+    <text x="150" y="130" text-anchor="middle" font-size="10.5" fill="#378add">车队 / 操控 / 轨迹 / 内嵌后台</text>
+
+    <!-- ============ PC 本机 ============ -->
+    <rect x="30" y="360" width="940" height="410" rx="16" fill="#fafbfc"
+          stroke="#5f6b7c" stroke-width="1" stroke-dasharray="6 4"/>
+    <text x="48" y="386" font-size="14" font-weight="600" fill="#444441">PC 本机（E:\Harmony\Project\v3-fleet）</text>
+
+    <!-- 浏览器客户端 -->
+    <rect x="50" y="410" width="210" height="330" rx="12" fill="#e6f1fb" stroke="#185fa5" stroke-width="0.8"/>
+    <text x="64" y="434" font-size="13" font-weight="600" fill="#0c447c">浏览器客户端</text>
+    <rect x="64" y="446" width="182" height="40" rx="7" fill="#ffffff" stroke="#185fa5" stroke-width="0.7"/>
+    <text x="155" y="463" text-anchor="middle" font-size="12" font-weight="600" fill="#0c447c">监控大屏 monitor.html</text>
+    <text x="155" y="479" text-anchor="middle" font-size="10.5" fill="#378add">实时观察 + 摇杆控车</text>
+    <rect x="64" y="494" width="182" height="40" rx="7" fill="#ffffff" stroke="#185fa5" stroke-width="0.7"/>
+    <text x="155" y="511" text-anchor="middle" font-size="12" font-weight="600" fill="#0c447c">管理后台 admin.html</text>
+    <text x="155" y="527" text-anchor="middle" font-size="10.5" fill="#378add">注册 / 冻结 / 上下线 / 对账</text>
+    <rect x="64" y="542" width="182" height="40" rx="7" fill="#ffffff" stroke="#185fa5" stroke-width="0.7"/>
+    <text x="155" y="559" text-anchor="middle" font-size="12" font-weight="600" fill="#0c447c">轨迹回放 track_demo.html</text>
+    <text x="155" y="575" text-anchor="middle" font-size="10.5" fill="#378add">历史轨迹视图（见下方说明）</text>
+    <rect x="64" y="590" width="182" height="40" rx="7" fill="#ffffff" stroke="#185fa5" stroke-width="0.7" stroke-dasharray="4 3"/>
+    <text x="155" y="607" text-anchor="middle" font-size="12" fill="#5f6b7c">车队控制台 fleet_console.html</text>
+    <text x="155" y="623" text-anchor="middle" font-size="10.5" fill="#8b96a5">早期演示页（第②步）</text>
+    <text x="64" y="660" font-size="11" fill="#5f6b7c">访问方式：</text>
+    <text x="64" y="677" font-size="11" fill="#5f6b7c">http://127.0.0.1:8000/…/view</text>
+    <text x="64" y="694" font-size="11" fill="#5f6b7c">或 http://&lt;PC内网IP&gt;:8000/…（手机）</text>
+    <text x="64" y="722" font-size="11.5" fill="#0c447c" font-weight="600">不需要独立服务器进程</text>
+    <text x="64" y="739" font-size="10.5" fill="#5f6b7c">页面由后端 Flask 动态提供</text>
+
+    <!-- 业务后端 -->
+    <rect x="295" y="410" width="380" height="330" rx="12" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.9"/>
+    <text x="311" y="434" font-size="13" font-weight="600" fill="#085041">业务后端 app.py（Flask :8000）</text>
+    <text x="311" y="451" font-size="11" fill="#1d9e75">全系统唯一状态源 · 22 个 REST 端点</text>
+    <rect x="311" y="462" width="168" height="40" rx="7" fill="#ffffff" stroke="#0f6e56" stroke-width="0.7"/>
+    <text x="395" y="479" text-anchor="middle" font-size="12" font-weight="600" fill="#085041">REST API</text>
+    <text x="395" y="495" text-anchor="middle" font-size="10.5" fill="#1d9e75">查询 / 控制 / 管理</text>
+    <rect x="491" y="462" width="168" height="40" rx="7" fill="#ffffff" stroke="#0f6e56" stroke-width="0.7"/>
+    <text x="575" y="479" text-anchor="middle" font-size="12" font-weight="600" fill="#085041">WebSocket /ws</text>
+    <text x="575" y="495" text-anchor="middle" font-size="10.5" fill="#1d9e75">事件驱动 + 0.5s 兜底</text>
+    <rect x="311" y="510" width="168" height="40" rx="7" fill="#ffffff" stroke="#0f6e56" stroke-width="0.7"/>
+    <text x="395" y="527" text-anchor="middle" font-size="12" font-weight="600" fill="#085041">STATE_CACHE</text>
+    <text x="395" y="543" text-anchor="middle" font-size="10.5" fill="#1d9e75">内存唯一状态源</text>
+    <rect x="491" y="510" width="168" height="40" rx="7" fill="#ffffff" stroke="#0f6e56" stroke-width="0.7"/>
+    <text x="575" y="527" text-anchor="middle" font-size="12" font-weight="600" fill="#085041">poll_loop 轮询</text>
+    <text x="575" y="543" text-anchor="middle" font-size="10.5" fill="#1d9e75">每 2s 抄云影子</text>
+    <rect x="311" y="558" width="168" height="40" rx="7" fill="#ffffff" stroke="#0f6e56" stroke-width="0.7"/>
+    <text x="395" y="575" text-anchor="middle" font-size="12" font-weight="600" fill="#085041">乐观回显</text>
+    <text x="395" y="591" text-anchor="middle" font-size="10.5" fill="#1d9e75">命令→画面 ≈0.33s</text>
+    <rect x="491" y="558" width="168" height="40" rx="7" fill="#ffffff" stroke="#0f6e56" stroke-width="0.7"/>
+    <text x="575" y="575" text-anchor="middle" font-size="12" font-weight="600" fill="#085041">管理模块 /admin/*</text>
+    <text x="575" y="591" text-anchor="middle" font-size="10.5" fill="#1d9e75">注册·冻结·上下线·对账</text>
+    <rect x="311" y="610" width="348" height="48" rx="7" fill="#ffffff" stroke="#0f6e56" stroke-width="0.7"/>
+    <text x="485" y="630" text-anchor="middle" font-size="12" font-weight="600" fill="#085041">轨迹库 track_store + SQLite（fleet_track.db）</text>
+    <text x="485" y="648" text-anchor="middle" font-size="10.5" fill="#1d9e75">真实观测且变化才插行 · 7 天过期 + 2 万条上限</text>
+    <rect x="311" y="666" width="348" height="48" rx="7" fill="#faeeda" stroke="#854f0b" stroke-width="0.7"/>
+    <text x="485" y="686" text-anchor="middle" font-size="12" font-weight="600" fill="#633806">配置与审计</text>
+    <text x="485" y="704" text-anchor="middle" font-size="10.5" fill="#854f0b">devices.json（花名册）· cloud_config.json（AK/SK）· commands.log</text>
+
+    <!-- 模拟小车端 -->
+    <rect x="710" y="410" width="240" height="330" rx="12" fill="#eaf3de" stroke="#3b6d11" stroke-width="0.9"/>
+    <text x="726" y="434" font-size="13" font-weight="600" fill="#27500a">模拟小车端（每车一进程）</text>
+    <rect x="726" y="446" width="208" height="38" rx="7" fill="#ffffff" stroke="#3b6d11" stroke-width="0.7"/>
+    <text x="830" y="462" text-anchor="middle" font-size="12" font-weight="600" fill="#27500a">car_mqtt_client --device car_001</text>
+    <text x="830" y="478" text-anchor="middle" font-size="10.5" fill="#639922">CarSim 20Hz · 调试口 8081</text>
+    <rect x="726" y="490" width="208" height="38" rx="7" fill="#ffffff" stroke="#3b6d11" stroke-width="0.7"/>
+    <text x="830" y="506" text-anchor="middle" font-size="12" font-weight="600" fill="#27500a">car_mqtt_client --device car_002</text>
+    <text x="830" y="522" text-anchor="middle" font-size="10.5" fill="#639922">CarSim 20Hz · 调试口 8082</text>
+    <rect x="726" y="534" width="208" height="38" rx="7" fill="#ffffff" stroke="#3b6d11" stroke-width="0.7"/>
+    <text x="830" y="550" text-anchor="middle" font-size="12" font-weight="600" fill="#27500a">car_mqtt_client --device car_003</text>
+    <text x="830" y="566" text-anchor="middle" font-size="10.5" fill="#639922">CarSim 20Hz · 调试口 8083</text>
+    <rect x="726" y="578" width="208" height="38" rx="7" fill="#ffffff" stroke="#3b6d11" stroke-width="0.7"/>
+    <text x="830" y="594" text-anchor="middle" font-size="12" font-weight="600" fill="#27500a">car_mqtt_client --device car_004 / 005 …</text>
+    <text x="830" y="610" text-anchor="middle" font-size="10.5" fill="#639922">调试口 8084 / 8085（按注册分配）</text>
+    <rect x="726" y="626" width="208" height="60" rx="7" fill="#ffffff" stroke="#3b6d11" stroke-width="0.7"/>
+    <text x="830" y="646" text-anchor="middle" font-size="11.5" font-weight="600" fill="#27500a">上报节奏（配额硬约束）</text>
+    <text x="830" y="663" text-anchor="middle" font-size="10.5" fill="#639922">行驶 5s · 静止 60s</text>
+    <text x="830" y="679" text-anchor="middle" font-size="10.5" fill="#639922">命令执行后 ≤2s 事件补报</text>
+
+    <!-- ============ 连线 ============ -->
+    <!-- APP -> 后端 -->
+    <path d="M150 160 L150 250 L340 250 L340 410" fill="none" stroke="#185fa5"
+          stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="165" y="240" font-size="11.5" fill="#0c447c" font-weight="600">WiFi 局域网</text>
+    <text x="165" y="256" font-size="11" fill="#378add">HTTP REST :8000（800ms 轮询）+ WS</text>
+    <text x="165" y="272" font-size="11" fill="#378add">目标 = PC 内网 IP</text>
+
+    <!-- 后端 -> 云 (SDK) -->
+    <path d="M480 410 L480 300 L480 170" fill="none" stroke="#0f6e56"
+          stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M520 170 L520 300 L520 410" fill="none" stroke="#534ab7"
+          stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="540" y="200" font-size="11.5" fill="#085041" font-weight="600">HTTPS 应用侧 API（AK/SK）</text>
+    <text x="540" y="216" font-size="11" fill="#1d9e75">ShowDevice · ShowDeviceShadow</text>
+    <text x="540" y="232" font-size="11" fill="#1d9e75">CreateCommand · Add/DeleteDevice · ListDevices</text>
+    <text x="540" y="252" font-size="11" fill="#3c3489">◀ 返回：在线状态 / 影子属性 / command_id</text>
+
+    <!-- 模拟器 -> 云 (MQTT) -->
+    <path d="M830 410 L830 300 L830 170" fill="none" stroke="#3b6d11"
+          stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M870 170 L870 300 L870 410" fill="none" stroke="#534ab7"
+          stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="886" y="205" font-size="11.5" fill="#27500a" font-weight="600">MQTT :8883 TLS</text>
+    <text x="886" y="221" font-size="11" fill="#3b6d11">上报 car_status</text>
+    <text x="886" y="237" font-size="11" fill="#3b6d11">x/y/theta/speed/battery</text>
+    <text x="886" y="257" font-size="11" fill="#3c3489">◀ 下发 car_control</text>
+    <text x="886" y="273" font-size="11" fill="#3c3489">move(vx,vy) / stop</text>
+
+    <!-- 后端 -> 模拟器 (subprocess) -->
+    <path d="M675 560 L710 560" fill="none" stroke="#854f0b" stroke-width="1.4"
+          stroke-dasharray="5 4" marker-end="url(#ar)"/>
+    <text x="668" y="548" font-size="10.5" fill="#854f0b" text-anchor="end">subprocess 启停</text>
+    <text x="668" y="576" font-size="10.5" fill="#854f0b" text-anchor="end">（上线/下线按钮）</text>
+
+    <!-- 浏览器 -> 后端 -->
+    <path d="M260 470 L295 470" fill="none" stroke="#185fa5" stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="252" y="458" font-size="10.5" fill="#0c447c" text-anchor="end">localhost</text>
+    <text x="252" y="488" font-size="10.5" fill="#378add" text-anchor="end">HTTP + WS</text>
+
+    <!-- 图例 -->
+    <rect x="50" y="100" width="240" height="0" fill="none"/>
+  </svg>
+  </div>
+
+  <div class="card">
+    <h2>轨迹回放要不要算一个独立的"端"？—— 不要</h2>
+    <div class="answer">
+      <p><b>结论：不单独算一端，网络结构图里它已经是客户端层的一个视图</b>（图中已画出）。理由：</p>
+      <p>1. <b>它没有自己的进程、端口和网络连接</b>。所谓"端"在网络层面 = 一个独立的网络节点（有自己的 IP/端口/连接）。轨迹回放只是浏览器里的一个网页 <code>track_demo.html</code>（或 APP 里的一个页面），和监控大屏连的是<b>同一个后端的同一个 8000 端口</b>，只是调用的接口不同（它调 <code>GET /track</code>，大屏调 <code>GET /fleet/status</code> 和 WebSocket）。</p>
+      <p>2. <b>数据来源也不是独立的</b>。轨迹数据是后端 poll_loop 在抄状态时顺手写进 SQLite 的支线，不存在"轨迹服务器"这种东西。谁想看轨迹，谁就是又一个普通客户端。</p>
+      <p>3. <b>类比</b>：轨迹回放之于本系统，就像"查账单页面"之于银行 App——是同一个银行服务器上的另一个查询界面，不是一个新机构。</p>
+      <p>所以网络结构图里正确的画法：把它画在"客户端层"内部作为第四个视图（APP 内是第三个页面视图），而不是画成第五个节点。本图已按此处理。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>连接清单（图中每条线）</h2>
+    <table>
+      <tr><th>#</th><th>从 → 到</th><th>协议 / 端口</th><th>传输内容</th><th>节奏 / 触发</th></tr>
+      <tr><td>1</td><td>手机 APP → 后端</td><td>HTTP / WebSocket :8000（WiFi 局域网）</td><td>/fleet/status 轮询、/command、/track、内嵌 /admin/view</td><td>800ms 轮询 + 用户操作</td></tr>
+      <tr><td>2</td><td>PC 浏览器 → 后端</td><td>HTTP / WebSocket :8000（localhost）</td><td>展示页 /monitor/view 等 + 全部 REST/WS</td><td>页面加载 + 摇杆操作</td></tr>
+      <tr><td>3</td><td>后端 → 云端</td><td>HTTPS 应用侧 API（AK/SK 鉴权）</td><td>ShowDevice / ShowDeviceShadow / CreateCommand / AddDevice / DeleteDevice / ListDevices</td><td>poll_loop 每 2s + 命令时 + 管理操作时</td></tr>
+      <tr><td>4</td><td>云端 → 后端</td><td>HTTPS 响应</td><td>在线状态 / 影子属性 / command_id</td><td>即时返回</td></tr>
+      <tr><td>5</td><td>模拟小车 → 云端</td><td>MQTT :8883 TLS</td><td>car_status 属性上报（x/y/theta/speed/battery）</td><td>行驶 5s · 静止 60s · 命令后 ≤2s</td></tr>
+      <tr><td>6</td><td>云端 → 模拟小车</td><td>MQTT :8883 TLS</td><td>car_control 命令 move(vx,vy) / stop</td><td>有命令即转</td></tr>
+      <tr><td>7</td><td>后端 → 模拟小车（虚线）</td><td>本机 subprocess（非网络）</td><td>启动 / 终止模拟器进程（上线/下线按钮）</td><td>点击按钮</td></tr>
+      <tr><td>—</td><td>模拟小车 ↔ 后端（调试）</td><td>HTTP :8081~8085（仅本机）</td><td>/state 实时状态（20Hz），仅调试用</td><td>手动 curl，正式链路不走</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>

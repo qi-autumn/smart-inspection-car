@@ -1,0 +1,84 @@
+{
+  "services": [
+    {
+      "service_id": "car_status",
+      "service_type": "car_status",
+      "properties": [
+        {
+          "property_name": "x",
+          "data_type": "decimal",
+          "required": true,
+          "enum_list": null,
+          "min": "-1000",
+          "max": "1000",
+          "max_length": 0,
+          "step": 0.01,
+          "unit": "m",
+          "method": "R",
+          "description": "inspection car x",
+          "default_value": null
+        },
+        {
+          "property_name": "y",
+          "data_type": "decimal",
+          "required": true,
+          "enum_list": null,
+          "min": "-1000",
+          "max": "1000",
+          "max_length": 0,
+          "step": 0.01,
+          "unit": "m",
+          "method": "R",
+          "description": "inspection car y",
+          "default_value": null
+        },
+        {
+          "property_name": "theta",
+          "data_type": "decimal",
+          "required": true,
+          "enum_list": null,
+          "min": "0",
+          "max": "360",
+          "max_length": 0,
+          "step": 0.01,
+          "unit": "deg",
+          "method": "R",
+          "description": "inspection car theta",
+          "default_value": null
+        },
+        {
+          "property_name": "speed",
+          "data_type": "decimal",
+          "required": true,
+          "enum_list": null,
+          "min": "0",
+          "max": "10",
+          "max_length": 0,
+          "step": 0.01,
+          "unit": "m/s",
+          "method": "R",
+          "description": "inspection car speed",
+          "default_value": null
+        },
+        {
+          "property_name": "battery",
+          "data_type": "decimal",
+          "required": true,
+          "enum_list": null,
+          "min": "0",
+          "max": "100",
+          "max_length": 0,
+          "step": 0.01,
+          "unit": "%",
+          "method": "R",
+          "description": "inspection car battery",
+          "default_value": null
+        }
+      ],
+      "commands": [],
+      "events": null,
+      "description": "car realtime status reported by the device",
+      "option": "Mandatory"
+    }
+  ]
+}

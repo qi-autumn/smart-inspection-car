@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · 把 DevEco 里的 APP 装进真机/模拟器（构建 → 签名 → 安装）</title>
+<style>
+  :root{
+    --bg:#f5f8fc; --card:#ffffff; --ink:#1f2933; --dim:#5b6b7c; --line:#dde5ee;
+    --c0:#3f51b5; --c1:#0f8a8a; --c2:#d97706; --c3:#7c3aed;
+    --shadow:0 2px 10px rgba(31,41,51,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:"Microsoft YaHei","PingFang SC","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+       line-height:1.75; font-size:15px;}
+  a{color:#1d6fa5; text-decoration:none} a:hover{text-decoration:underline}
+  code{background:#eef3f9; padding:1px 5px; border-radius:4px; font-size:.9em;
+       font-family:Consolas,"Courier New",monospace; color:#234;}
+  pre{background:#1e2a38; color:#e9f2f8; border-radius:8px; padding:12px 14px;
+      font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.65;
+      overflow-x:auto; margin:8px 0 0; white-space:pre-wrap; word-break:break-all}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a 0%,#1c5c6e 100%); color:#fff; padding:34px 20px 30px}
+  .hero .inner{max-width:1080px; margin:0 auto}
+  .hero h1{margin:0 0 8px; font-size:26px; letter-spacing:.5px}
+  .hero .sub{font-size:14.5px; color:#c7dbe6; margin:0 0 12px}
+  .hero p{max-width:920px; margin:0 0 8px; color:#e6f0f5; font-size:14px}
+  .hero .back{display:inline-block; margin-top:12px; color:#a8f0dc; font-size:13px}
+  .topnav{position:sticky; top:0; z-index:9; background:#fff; border-bottom:1px solid var(--line);
+          box-shadow:0 1px 6px rgba(31,41,51,.05)}
+  .topnav .inner{max-width:1080px; margin:0 auto; display:flex; flex-wrap:wrap; gap:2px; padding:8px 20px}
+  .topnav a{font-size:13px; color:var(--dim); padding:6px 11px; border-radius:20px}
+  .topnav a:hover{background:#eef3f9; color:var(--ink); text-decoration:none}
+  section{margin-top:34px; scroll-margin-top:58px}
+  .sec-head{display:flex; align-items:center; gap:12px; margin:0 0 14px}
+  .sec-no{width:34px;height:34px;flex:none;border-radius:9px;color:#fff;font-weight:700;
+          display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--c1)}
+  .sec-head h2{margin:0; font-size:21px}
+  .sec-head .tag{font-size:12px; color:var(--dim); background:#eaf0f6; padding:3px 10px; border-radius:12px}
+  .lead{color:var(--dim); margin:0 0 14px; font-size:14px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px;
+        padding:16px 18px; box-shadow:var(--shadow); margin-bottom:12px}
+  .card h3{margin:0 0 8px; font-size:16px}
+  .card p{margin:0 0 8px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  .concl{background:linear-gradient(100deg,#eef7f6,#f2f5ff); border-left:5px solid var(--c1);
+         border-radius:10px; padding:18px 20px; font-size:17px; font-weight:600; line-height:1.85}
+  .concl small{display:block; font-weight:400; font-size:14px; color:var(--dim); margin-top:8px}
+  .warn{background:#fff6e9; border-left:4px solid var(--c2); border-radius:7px; padding:11px 14px; margin:10px 0; font-size:14px}
+  .okbox{background:#eaf7f2; border-left:4px solid var(--c1); border-radius:7px; padding:11px 14px; margin:10px 0; font-size:14px}
+  .alert{background:#fdecea; border-left:4px solid #b23b2e; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:14px}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; background:#fff}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top}
+  th{background:#eef3f9; font-weight:700}
+  tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto; border-radius:10px; border:1px solid var(--line)}
+  .file{font-family:Consolas,"Courier New",monospace; font-size:.88em; color:#7a4b00;
+        background:#fff5e3; padding:1px 5px; border-radius:4px}
+  ul{margin:6px 0 8px; padding-left:22px} li{margin:4px 0}
+  .note{font-size:13px; color:var(--dim)}
+  .pill{display:inline-block; font-size:11px; padding:2px 9px; border-radius:10px;
+        background:#eaf0f6; color:var(--dim); margin:0 5px 3px 0; white-space:nowrap}
+  .pill.hot{background:#fdecea; color:#b23b2e}
+
+  .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0}
+  .tabs button{cursor:pointer; border:1px solid var(--line); background:#fff; color:var(--dim);
+       border-radius:8px; padding:8px 14px; font-size:13.5px; font-family:inherit}
+  .tabs button.on{background:#20304a; color:#fff; border-color:#20304a; font-weight:700}
+  .devbox{background:#f7fafc; border:1px dashed #b9cede; border-radius:9px; padding:14px 16px; margin-bottom:12px}
+  .step{background:#fff; border:1px solid var(--line); border-radius:10px; margin-bottom:10px;
+        box-shadow:var(--shadow); overflow:hidden}
+  .step .sh{display:flex; align-items:flex-start; gap:10px; padding:12px 14px; cursor:pointer}
+  .step .sh input{margin-top:5px; width:17px; height:17px; flex:none; accent-color:#0f8a8a}
+  .step .sh .n{width:26px;height:26px;flex:none;border-radius:7px;background:#eaf0f6;color:#1d6fa5;
+      display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .step .sh .tt{font-weight:700; font-size:15px}
+  .step .sh .ss{font-size:12.5px; color:var(--dim); font-weight:400; margin-left:6px}
+  .step .sb{padding:0 16px 14px 50px; font-size:14px}
+  .step.done .sh{background:#f1faf7}
+  .step .verify{background:#eaf7f2; border-radius:7px; padding:9px 12px; margin-top:9px; font-size:13.5px}
+  .step .verify b{color:#0b6d68}
+  .copy{float:right; cursor:pointer; border:1px solid #49627a; background:transparent; color:#e9f2f8;
+        border-radius:5px; padding:3px 9px; font-size:11px; font-family:inherit}
+  .copy:hover{background:#33475c}
+  .prog{height:9px; background:#e5ecf4; border-radius:6px; overflow:hidden; margin:10px 0 4px}
+  .prog i{display:block; height:100%; width:0; background:linear-gradient(90deg,#0f8a8a,#3f51b5); transition:width .3s}
+  svg#pipe{width:100%; height:auto; display:block; background:#fcfdff; border:1px solid var(--line); border-radius:10px}
+  .quiz{border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin-bottom:10px; background:#fff}
+  .quiz p{margin:0 0 8px; font-weight:600; font-size:14.5px}
+  .quiz label{display:block; font-size:13.5px; padding:3px 0; cursor:pointer}
+  .quiz input{accent-color:#0f8a8a; margin-right:7px}
+  .quiz .fb{font-size:13px; margin-top:7px; display:none; padding:7px 10px; border-radius:6px}
+  .quiz .fb.good{display:block; background:#e6f6ef; color:#146b47}
+  .quiz .fb.bad{display:block; background:#fdecea; color:#a3342a}
+  details{background:#fff; border:1px solid var(--line); border-radius:9px; margin-bottom:9px}
+  details summary{cursor:pointer; padding:11px 15px; font-weight:600; font-size:14.5px}
+  details .body{padding:0 15px 14px; font-size:14px}
+  footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--line); font-size:13px; color:var(--dim)}
+  @media print{.topnav{display:none} .hero{background:#20304a}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <h1>把 DevEco 里的代码装进设备：构建 → 签名 → 安装（不是"烧录"）</h1>
+    <p class="sub">V3 智能巡检车队 · 专题教材 ⑦ ｜ 面向初学者 ｜ 含真机与模拟器两条路线、可勾选清单</p>
+    <p>先把词说准：APP 开发里没有"烧录"这一步，正确说法是<strong>把 ArkTS 源码编译成 HAP 安装包 → 用调试证书签名 → 通过 DevEco 的 Run 或 hdc 安装到设备</strong>。"烧录／刷机"是给开发板写整套系统镜像（比如课程第二阶段给 DAYU200 烧 OpenHarmony），那是另一回事。</p>
+    <a class="back" href="V3-学习导航.html">← 回到学习导航</a>　
+    <a class="back" href="V3-学-用DevEco模拟器跑APP连后端.html">← 上一份：DevEco 模拟器跑 APP</a>
+  </div>
+</div>
+
+<div class="topnav"><div class="inner">
+  <a href="#s1">① 一句话结论</a><a href="#s2">② 生活比喻</a><a href="#s3">③ 项目位置</a>
+  <a href="#s4">④ 文件与接口</a><a href="#s5">⑤ 逐步拆解配图</a><a href="#s6">⑥ 常见坑</a><a href="#s7">⑦ 自测</a>
+</div></div>
+
+<div class="wrap">
+
+<!-- ① -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>一句话结论</h2><span class="tag">先背这一句</span></div>
+  <div class="concl">
+    代码不是"烧"进手机的，是<strong>打包成 HAP → 签名 → 安装</strong>。装到 DevEco 的虚拟手机模拟器，点一下 <strong>Run ▶</strong> 就已经全自动做完了；装到<strong>实体真机</strong>，则必须先做一次 <strong>DevEco 自动签名</strong>（登录华为账号、把真机 UDID 登记进调试 Profile），再选真机设备点 Run。
+    <small>而且 APP 装进哪个设备，和它连哪台后端是两件事：虚拟手机填 <code>10.0.2.2:8000</code>，实体真机要填 <code>PC 局域网 IP:8000</code>。</small>
+  </div>
+  <div class="alert"><b>刚核对到的实际状态（很重要）：</b>你现在的 <span class="file">CarFleet/build-profile.json5</span> 里 <code>signingConfigs: []</code> 是<strong>空的</strong>，构建目录里只有 <span class="file">entry-default-unsigned.hap</span>（未签名包，11-08 09:21 生成）和一份 11-07 的旧产物。<b>所以现在直接把 HAP 拿到真机安装一定失败</b>——先做第 5 节的"自动签名"，让 DevEco 生成带设备绑定的签名包。</div>
+  <div class="grid3" style="margin-top:12px">
+    <div class="card"><h3 style="color:var(--c1)">虚拟手机模拟器</h3><p style="font-size:13.5px;margin:0">DevEco 内部的虚拟设备。Run 会自动构建+安装，无需 UDID、无需数据线；地址用 <code>10.0.2.2</code>。</p></div>
+    <div class="card"><h3 style="color:var(--c2)">实体真机</h3><p style="font-size:13.5px;margin:0">USB 连电脑、开开发者选项、自动签名登记 UDID、Run 选真机；地址用 PC 局域网 IP。</p></div>
+    <div class="card"><h3 style="color:var(--c0)">预览器 Previewer</h3><p style="font-size:13.5px;margin:0">只在 IDE 里画 UI，<b>不是设备</b>，不能装 HAP、不能联网，别和前两者混。</p></div>
+  </div>
+</section>
+
+<!-- ② -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>生活比喻：装 APP 是"搬一户人家"，烧录是"重盖整栋楼"</h2><span class="tag">不用记术语</span></div>
+  <div class="card">
+    <p><b>烧录镜像</b>＝把整栋楼的墙体、水电、电梯全部换掉（给开发板写操作系统）。课程里给 DAYU200 刷 OpenHarmony 就是这种活，用烧录工具把 .img 写进存储。</p>
+    <p><b>装 HAP</b>＝楼已经盖好、系统已经跑着，只是往某个房间搬进一户新住户。DevEco 把你的 ArkTS 代码、图片、配置压缩成一个 <code>.hap</code> 包（相当于打包好的行李），<code>hdc install</code> 或点 Run 就是"搬进去"。</p>
+    <p><b>签名</b>＝物业开的入住许可证：证明这个包是谁做的、允许住进哪几栋楼。调试签名会写死一串 <b>UDID（设备身份证号）</b>，所以"这台手机签出来的包"换个手机就装不上——这是真机调试最常踩的坑。</p>
+    <div class="okbox" style="margin-bottom:0"><b>一句话记住差别：</b>烧录改的是"系统"，装 HAP 改的是"系统里的一个应用"。CarFleet 是应用，所以只需要后者。</div>
+  </div>
+</section>
+
+<!-- ③ -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>它在项目里的位置：产物在哪、配置在哪</h2><span class="tag">按路径找得到</span></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:39%">路径 / 入口</th><th style="width:15%">状态</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><span class="file">CarFleet/entry/src/main/ets/</span></td><td>源码</td><td>Index.ets、FleetClient.ets、module.json5 —— 你写的 ArkTS 代码。</td></tr>
+      <tr><td><span class="file">CarFleet/build-profile.json5:3</span></td><td><b style="color:#b23b2e">当前为空</b></td><td><code>signingConfigs: []</code>。自动签名完成后这里会被 DevEco 填入 p12/cer/p7b 的路径与别名；<b>当前没有签名配置</b>。</td></tr>
+      <tr><td><span class="file">CarFleet/AppScope/app.json5:3</span></td><td>已配好</td><td><code>bundleName = com.example.carfleet</code>，签名 Profile 里的包名必须和它一致，报"包名不匹配"时别手改这里，让自动签名重来。</td></tr>
+      <tr><td><span class="file">CarFleet/entry/src/main/module.json5</span></td><td>已配好</td><td><code>ohos.permission.INTERNET</code>、<code>deviceTypes: ["phone"]</code> —— 目标设备必须是 phone 类。</td></tr>
+      <tr><td><span class="file">entry/build/default/outputs/default/entry-default-unsigned.hap</span></td><td>存在（未签名）</td><td>今天 09:21 的产物，约 329 KB。<b>不能直接装</b>，只用来确认"代码编译过了"。</td></tr>
+      <tr><td><span class="file">entry/build/default/outputs/default/app/entry-default.hap</span></td><td>存在（旧，11-07）</td><td>约 170 KB，昨天的产物。别拿旧包当最新版装。</td></tr>
+      <tr><td><span class="file">entry-default-signed.hap</span>（签名后才会出现）</td><td><b style="color:#b23b2e">当前没有</b></td><td>自动签名并重新构建后才生成，这才是可以安装的包。DevEco 各版本输出目录略有差异，以 Run 时控制台打印的路径为准。</td></tr>
+      <tr><td><code>File &gt; Project Structure &gt; Project &gt; Signing Configs</code></td><td>菜单入口</td><td>勾选 <b>Automatically generate signature</b> 的位置；需登录华为开发者账号（实名认证）。</td></tr>
+      <tr><td>用户目录 <code>~/.ohos/config/</code></td><td>自动签名后</td><td>DevEco 存放调试密钥 <code>.p12</code>、证书 <code>.cer</code>、Profile <code>.p7b</code> 的地方；<b>私钥文件别外传、别提交到仓库</b>。</td></tr>
+      <tr><td><code>hdc</code>（DevEco 内置 Terminal / SDK toolchains）</td><td>工具</td><td><code>hdc list targets</code> 看设备、<code>hdc install -r xxx.hap</code> 安装。若命令行找不到，用 DevEco 底部 Terminal，或把 SDK 的 toolchains 目录加进 PATH。</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ④ -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>涉及的文件与接口：HAP 里装了什么、签名要哪三样</h2><span class="tag">查手册用</span></div>
+  <div class="grid2">
+    <div class="card"><h3>HAP 包内部（就是个 zip）</h3>
+      <p style="font-size:13.5px">用压缩软件打开 <code>entry-default-unsigned.hap</code> 能看到：</p>
+      <ul style="font-size:13.5px">
+        <li><code>module.json</code> —— 模块配置、权限、Ability 声明</li>
+        <li><code>ets/modules.abc</code> —— <b>ArkTS 编译后的字节码</b>（不是 .ets 源码）</li>
+        <li><code>resources.index</code> + <code>resources/base/...</code> —— 图片、字符串、页面路由</li>
+        <li><code>pack.info</code> / <code>pkgContextInfo.json</code> —— 打包与签名元信息</li>
+      </ul>
+      <p class="note" style="margin:0">所以"把代码装进手机"装的是编译结果，手机里看不到你的 .ets 源文件。</p>
+    </div>
+    <div class="card"><h3>调试签名三件套</h3>
+      <div class="tblwrap"><table style="font-size:12.5px">
+        <thead><tr><th>文件</th><th>是什么</th></tr></thead>
+        <tbody>
+          <tr><td><code>.p12</code></td><td>密钥库（私钥），用来给包盖章</td></tr>
+          <tr><td><code>.cer</code></td><td>数字证书，证明"谁盖的章"</td></tr>
+          <tr><td><code>.p7b</code></td><td>Provision Profile：<b>允许装到哪些 UDID</b>、允许哪些权限、包名是什么</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="margin:8px 0 0">自动签名只用于调试，<b>不能用于上架应用市场</b>。换一台真机，必须把新 UDID 加进 Profile 再重新签名。</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>常用命令 / 菜单对照</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:36%">动作</th><th style="width:32%">推荐方式</th><th>替代命令</th></tr></thead>
+      <tbody>
+        <tr><td>编译</td><td>DevEco 点 Run（自动编译）</td><td><code>Build &gt; Build Hap(s)/APP(s) &gt; Build Hap(s)</code></td></tr>
+        <tr><td>签名</td><td><code>File &gt; Project Structure &gt; Signing Configs &gt; Automatically generate signature</code></td><td>手动准备 p12/cer/p7b 并写进 <code>signingConfigs</code>（进阶，不推荐新手）</td></tr>
+        <tr><td>看设备</td><td>DevEco 顶部设备下拉框</td><td><code>hdc list targets</code></td></tr>
+        <tr><td>安装</td><td>选好设备点 <b>Run 'entry' ▶</b>（构建+签名+安装一条龙）</td><td><code>hdc install -r &lt;签名后的.hap&gt;</code>（<code>-r</code> 覆盖安装保留数据）</td></tr>
+        <tr><td>抓日志</td><td>DevEco 底部 <code>HiLog</code> 窗口</td><td><code>hdc hilog</code></td></tr>
+        <tr><td>卸载 / 覆盖策略</td><td><code>Run &gt; Edit Configurations</code> 勾 <b>Keep Application Data</b></td><td>默认"先卸载再装"会清掉 APP 记住的 host／绑定车号</td></tr>
+      </tbody>
+    </table></div>
+    <div class="warn" style="margin-bottom:0"><b>强烈建议用 Run，不要手动拿 HAP 去 hdc install。</b>手动导出的包常常缺设备绑定信息，真机会报 <code>INSTALL_FAILED_TEST_ONLY</code>；DevEco 在点 Run 时会额外处理签名与安装参数。</div>
+  </div>
+</section>
+
+<!-- ⑤ -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>逐步拆解配图：从源码到手机，一条流水线、两条分支</h2><span class="tag">选设备 / 可勾选 / 可复制</span></div>
+  <div class="card">
+    <svg id="pipe" viewBox="0 0 900 300" role="img" aria-label="HAP 构建签名安装流水线与真机/模拟器两条分支">
+      <defs><marker id="arG" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#0f8a8a"/></marker>
+      <marker id="arO" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#d97706"/></marker></defs>
+      <g font-size="12" fill="#1f2933">
+        <rect x="14" y="46" width="140" height="66" rx="9" fill="#eef2fb" stroke="#b9c6e4"/>
+        <text x="30" y="72" font-weight="700">ArkTS 源码</text><text x="30" y="92" font-size="10.5" fill="#5b6b7c">Index.ets / FleetClient.ets</text>
+        <rect x="180" y="46" width="140" height="66" rx="9" fill="#eef7f6" stroke="#a9d5c9"/>
+        <text x="196" y="72" font-weight="700">hvigor 编译</text><text x="196" y="92" font-size="10.5" fill="#5b6b7c">.ets → modules.abc</text>
+        <rect x="346" y="46" width="150" height="66" rx="9" fill="#fff5e3" stroke="#e6c78b"/>
+        <text x="360" y="72" font-weight="700">unsigned.hap</text><text x="360" y="92" font-size="10.5" fill="#a35b06">未签名 · 装不上</text>
+        <rect x="522" y="46" width="160" height="66" rx="9" fill="#f0e9fb" stroke="#c4a8ec"/>
+        <text x="536" y="70" font-weight="700">自动签名</text><text x="536" y="88" font-size="10" fill="#6632ad">p12 + cer + p7b</text>
+        <text x="536" y="104" font-size="10" fill="#6632ad">绑定 UDID / bundleName</text>
+        <rect x="708" y="46" width="176" height="66" rx="9" fill="#eaf7f2" stroke="#0f8a8a" stroke-width="2"/>
+        <text x="722" y="72" font-weight="700">signed.hap</text><text x="722" y="92" font-size="10.5" fill="#0b6d68">可安装的调试包</text>
+      </g>
+      <g stroke="#0f8a8a" stroke-width="2.2" fill="none" marker-end="url(#arG)">
+        <path d="M156,79 L176,79"/><path d="M322,79 L342,79"/><path d="M498,79 L518,79"/><path d="M684,79 L704,79"/>
+      </g>
+      <text x="16" y="24" font-size="12" fill="#5b6b7c">① 编译打包　　　　　　　② 签名（真机必需，当前工程缺这一步）　　　　　　　③ 安装</text>
+
+      <!-- 分支 -->
+      <path d="M796,114 C796,160 300,160 246,196" stroke="#0f8a8a" stroke-width="2.2" fill="none" marker-end="url(#arG)" stroke-dasharray="6 4"/>
+      <path d="M796,114 C796,160 640,160 620,196" stroke="#d97706" stroke-width="2.2" fill="none" marker-end="url(#arO)"/>
+      <rect x="96" y="198" width="230" height="76" rx="10" fill="#fff" stroke="#0f8a8a"/>
+      <text x="112" y="222" font-size="12.5" font-weight="700" fill="#0b6d68">A · DevEco 虚拟手机模拟器</text>
+      <text x="112" y="242" font-size="10.5" fill="#5b6b7c">Run ▶ 自动装 · 无需 UDID / 数据线</text>
+      <text x="112" y="260" font-size="10.5" fill="#5b6b7c">APP 填 10.0.2.2:8000</text>
+      <rect x="510" y="198" width="250" height="76" rx="10" fill="#fff" stroke="#d97706"/>
+      <text x="526" y="222" font-size="12.5" font-weight="700" fill="#a35b06">B · 实体真机（USB）</text>
+      <text x="526" y="242" font-size="10.5" fill="#5b6b7c">开发者选项 + UDID 登记 + 自动签名</text>
+      <text x="526" y="260" font-size="10.5" fill="#5b6b7c">APP 填 PC 局域网 IP:8000</text>
+      <text x="336" y="240" font-size="11" fill="#5b6b7c">两者都只连后端 :8000</text>
+      <text x="336" y="258" font-size="11" fill="#5b6b7c">都不直连华为云 / 小车</text>
+    </svg>
+  </div>
+
+  <div class="card">
+    <h3>先选你手里是哪一种设备</h3>
+    <div class="tabs" id="devTabs">
+      <button data-k="emu">A · DevEco 虚拟手机模拟器</button>
+      <button data-k="real" class="on">B · 实体真机（USB 连电脑）</button>
+      <button data-k="board">C · 开发板 / 烧录系统（不是本流程）</button>
+    </div>
+    <div class="devbox" id="devBox"></div>
+  </div>
+
+  <div class="card" style="background:#fbfdff">
+    <b>操作清单进度</b>
+    <div class="prog"><i id="progBar"></i></div>
+    <p class="note" id="progText" style="margin:2px 0 12px">已完成 0 / 7 步（按你选的设备做对应步骤即可）</p>
+
+    <div class="step" data-step="1"><div class="sh"><input type="checkbox"><div class="n">0</div>
+      <div><span class="tt">先把 PC 侧那套跑起来（不管装哪种设备都要做）</span><span class="ss">小车 + 后端 8000</span></div></div>
+      <div class="sb">
+        <pre><button class="copy">复制</button>cd /d E:\Harmony\Project\v3-fleet
+start_all_cars.bat
+python server\app.py
+curl http://127.0.0.1:8000/health</pre>
+        <div class="verify"><b>验收：</b><code>{"ok":true,"total":4,"online":4,...}</code>。后端必须监听 <code>0.0.0.0:8000</code>（<span class="file">app.py:1079</span> 已是）。</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="2"><div class="sh"><input type="checkbox"><div class="n">1</div>
+      <div><span class="tt">确认目标设备能被 DevEco 看见</span><span class="ss">两条路线从这里分叉</span></div></div>
+      <div class="sb"><b>A 虚拟模拟器：</b><code>Tools &gt; Device Manager</code> 启动 Phone 模拟器，等开机到桌面。<br><b>B 真机：</b>手机 <code>设置 &gt; 关于手机</code> 连点版本号 7 次打开开发者选项 → 打开 <b>USB 调试</b> 和 <b>USB 安装</b>（通过 USB 允许安装应用）→ 数据线连接 → 手机上点"允许 USB 调试"授权。
+        <pre><button class="copy">复制</button>REM 在 DevEco 底部 Terminal 里执行（hdc 不在系统 PATH 时就用这里）
+hdc list targets</pre>
+        <div class="verify"><b>验收：</b>命令列出一个设备 ID；DevEco 顶部设备下拉框里也能选到它。<b>列表为空 = 线/驱动/授权没通，别往下走。</b></div>
+      </div>
+    </div>
+
+    <div class="step" data-step="3"><div class="sh"><input type="checkbox"><div class="n">2</div>
+      <div><span class="tt">做一次 DevEco 自动签名（真机必需；当前工程正好缺这步）</span><span class="ss">最关键的一步</span></div></div>
+      <div class="sb"><code>File &gt; Project Structure &gt; Project &gt; Signing Configs</code> → 勾选 <b>Automatically generate signature</b> → 登录华为开发者账号（需实名认证）→ 工具自动申请调试证书，并把当前连接真机的 <b>UDID</b> 登记进 Profile → <code>OK</code> 保存 → <b>Sync / Clean Project</b>。
+        <div class="verify"><b>验收：</b><span class="file">build-profile.json5</span> 里 <code>signingConfigs</code> 不再是空数组，出现 <code>storeFile / profile / certpath</code> 等字段；用户目录 <code>~/.ohos/config/</code> 下生成 <code>.p12/.cer/.p7b</code>。<b>包名必须与 <code>com.example.carfleet</code> 一致</b>，不一致就让工具重新自动签名，别手改 bundleName。</div>
+        <p class="note" style="margin:8px 0 0">虚拟模拟器通常也走同一套签名配置，做完一次两条路线都能用；如果只跑模拟器仍报签名错误，同样勾一次自动签名即可。</p>
+      </div>
+    </div>
+
+    <div class="step" data-step="4"><div class="sh"><input type="checkbox"><div class="n">3</div>
+      <div><span class="tt">选设备，点 Run 'entry' ▶</span><span class="ss">构建 + 签名 + 安装一次完成</span></div></div>
+      <div class="sb">在 DevEco 顶部设备下拉框选择 <b>Phone 模拟器</b> 或 <b>你的真机</b>，点绿色 ▶。DevEco 会依次：编译 ArkTS → 生成 HAP → 用刚才的签名材料盖章 → <code>hdc install</code> → 自动拉起 APP。
+        <div class="verify"><b>验收：</b>Build 窗口出现 <code>Build successful</code> / <code>Install successful</code>；设备屏幕出现 <code>CarFleet · 智能巡检车队</code> 选车页。构建产物里出现签名包（<code>entry-default-signed.hap</code> 或 Run 控制台打印的路径）。</div>
+        <div class="warn" style="margin-bottom:0">若想手动装：<code>hdc install -r &lt;签名后的.hap&gt;</code>。<b>一定要用 IDE 自动签名输出的调试包</b>；拿 <code>entry-default-unsigned.hap</code> 或未绑定 UDID 的包去装，会报 <code>INSTALL_FAILED_TEST_ONLY</code> / 签名校验失败。</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="5"><div class="sh"><input type="checkbox"><div class="n">4</div>
+      <div><span class="tt">按设备类型改 APP 里的后端地址</span><span class="ss">这一步最容易漏</span></div></div>
+      <div class="sb"><b>A 虚拟模拟器：</b>填 <code>10.0.2.2</code> : <code>8000</code>（工程默认值，通常不用改）。<br><b>B 实体真机：</b>用 <code>ipconfig</code> 查 PC 的 IPv4（如 <code>192.168.1.23</code>）填进去，端口 8000；手机和 PC 必须同一个 WiFi。
+        <pre><button class="copy">复制</button>ipconfig | findstr /i "IPv4"
+REM 真机还要放行 PC 的 8000 入站（管理员 PowerShell）
+netsh advfirewall firewall add rule name="V3 Flask 8000" dir=in action=allow protocol=TCP localport=8000</pre>
+        <div class="verify"><b>验收：</b>点「连接」后 APP 日志出现 <code>已连接后端，车队共 4 台车（在线 4）</code>。<b>真机里绝对不能填 10.0.2.2</b>，那是模拟器专用别名。</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="6"><div class="sh"><input type="checkbox"><div class="n">5</div>
+      <div><span class="tt">验证控制闭环，确认装进去的是"活"的 APP</span><span class="ss">三处同时看</span></div></div>
+      <div class="sb">点一台车 → 推摇杆。APP 发 <code>POST /command</code>，后端下发到云，云 MQTT 推给小车。
+        <div class="verify"><b>验收：</b>① 小车黑窗打印 <code>[命令] move vx=... vy=...</code>；② PC 浏览器 <a href="http://127.0.0.1:8000/monitor/view">127.0.0.1:8000/monitor/view</a> 里同一台车在动；③ 手机上坐标每 800ms 刷新。三处对上 = 源码真的跑在设备里了。</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="7"><div class="sh"><input type="checkbox"><div class="n">6</div>
+      <div><span class="tt">改代码之后的正确姿势</span><span class="ss">不用"重新烧录"</span></div></div>
+      <div class="sb">改了 .ets 就再点一次 <b>Run ▶</b>，DevEco 会增量编译并覆盖安装。想保留 APP 记住的 host／绑定车号，在 <code>Run &gt; Edit Configurations</code> 勾 <b>Keep Application Data</b>（等价 <code>hdc install -r</code>）；默认"先卸载再装"会清掉这些记忆。
+        <div class="verify"><b>验收：</b>设备上的界面换成新版本；日志里出现新的行为。换一台真机时，要把它自己的 UDID 加进调试 Profile 再重新签名，否则装不上。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑥ -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>常见坑：按现象查</h2><span class="tag">排错顺序</span></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:27%">现象</th><th style="width:36%">原因</th><th>怎么处理</th></tr></thead>
+    <tbody>
+      <tr><td>装包报 <code>INSTALL_FAILED_TEST_ONLY</code> / 签名校验失败</td><td>拿的是 <code>unsigned.hap</code>，或手动导出的包没有设备绑定信息</td><td>用 DevEco 自动签名后直接 <b>Run</b>；手动装只能用 IDE 输出的签名调试包，加 <code>-r</code>。</td></tr>
+      <tr><td>自动签名按钮灰着 / 一直失败</td><td>没登录华为开发者账号、未实名认证，或包名与 Profile 不一致</td><td>在 Signing Configs 里点 Sign In 登录；让工具重新生成，不要手改 <span class="file">app.json5</span> 的 bundleName。</td></tr>
+      <tr><td>这台手机装得上，换台手机就装不上</td><td>调试 Profile 的 <code>.p7b</code> 绑定了 UDID 白名单</td><td>把新手机的 UDID 加到调试设备列表，重新自动签名再装。调试签名本来就不是给多人分发的。</td></tr>
+      <tr><td><code>hdc list targets</code> 为空</td><td>USB 调试没开／没点授权弹窗／只开了 USB 调试没开"USB 安装"／数据线只充电</td><td>逐项检查开发者选项，拔插一次重新授权；换一根能传数据的线。</td></tr>
+      <tr><td>DevEco 报 SDK / API 版本不匹配</td><td>工程 <code>targetSdkVersion 6.0.2(22)</code>，真机系统 API 更高</td><td>升级 DevEco 与 SDK，保证 SDK API ≥ 真机系统 API 版本。</td></tr>
+      <tr><td>真机上 APP 连不上后端</td><td>填了 <code>10.0.2.2</code>；或 PC 防火墙拦 8000；或手机不在同一 WiFi</td><td>真机填 PC 局域网 IP；放行 8000 入站；PC 侧先 <code>curl</code> 自检。</td></tr>
+      <tr><td>点 Run 之后 SignHap 失败</td><td>签名配置缺失／bundleName 与证书不匹配（本项目踩过）</td><td>回到第 2 步做自动签名并 Sync；不要直接改配置文件里的签名段。</td></tr>
+      <tr><td>命令行敲 hdc 提示找不到</td><td>hdc 在 DevEco 自带的 SDK toolchains 里，没加 PATH</td><td>用 DevEco 底部 Terminal 执行；或把 SDK 的 toolchains 目录加进系统 PATH。</td></tr>
+      <tr><td>APP 记住的旧地址又冒出来</td><td><code>preferences('fleet_bind')</code> 会保存 host/port/绑定车号</td><td>选车页手动改正并点连接覆盖；或勾选 Keep Application Data 控制是否保留。</td></tr>
+      <tr><td>"预览器 Previewer 里能看，装到设备就没了"</td><td>Previewer 只渲染 UI，不是设备、不装 HAP</td><td>必须走 Device Manager 的模拟器或真机 + Run。</td></tr>
+      <tr><td>把 .hap 当成 APK 发给别人 / 想刷进开发板</td><td>HarmonyOS 应用是 HAP；刷系统镜像是另一套工具与流程</td><td>装 APP 用 hdc/Run；给 DAYU200 烧 OpenHarmony 镜像是设备开发，不属于本流程。</td></tr>
+      <tr><td>把 <code>.p12</code> 私钥提交到代码仓库</td><td>调试密钥属于私有凭据</td><td>放到用户目录、加入 .gitignore；发布上架需另外申请正式证书，自动签名仅供调试。</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ⑦ -->
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>自测：做完能答上来，就算真的会了</h2><span class="tag">先做再翻答案</span></div>
+  <div class="card">
+    <h3>A. 五道理解题（点选项马上判分）</h3>
+    <div id="quizBox"></div>
+    <div class="prog"><i id="quizBar"></i></div>
+    <p class="note" id="quizScore">答对 0 / 5</p>
+  </div>
+  <div class="card">
+    <h3>B. 一条命令定位"卡在哪一段"</h3>
+    <pre><button class="copy">复制</button>REM ① 设备被认出来了吗（DevEco Terminal）
+hdc list targets
+
+REM ② 后端活着吗（PC 本机）
+curl http://127.0.0.1:8000/health
+
+REM ③ 有车在线吗
+curl http://127.0.0.1:8000/fleet/status
+
+REM ④ 构建产物是不是签名包（应出现 signed 字样，而不是只有 unsigned）
+dir /s E:\Harmony\Project\CarFleet\entry\build\default\outputs\default\*.hap
+
+REM ⑤ 手动覆盖安装（仅在拿到 IDE 输出的签名调试包时使用）
+hdc install -r E:\Harmony\Project\CarFleet\entry\build\default\outputs\default\entry-default-signed.hap</pre>
+    <p class="note" style="margin:8px 0 0">① 空 → 线/授权/驱动；② 不通 → 后端没起；③ online=0 → 小车没上线；④ 只有 unsigned → 还没做自动签名；⑤ 失败 → 别硬装，回 DevEco 点 Run。</p>
+  </div>
+  <details>
+    <summary>参考答案（做完再展开）</summary>
+    <div class="body">
+      <p><b>1.</b> 编译成 HAP → 调试签名 → 安装（Run 或 hdc install）。"烧录"指写系统镜像，是设备开发，不是 APP 开发。</p>
+      <p><b>2.</b> 因为 <code>build-profile.json5</code> 的 <code>signingConfigs</code> 为空，构建只产出了 <code>unsigned.hap</code>；真机要求签名，且调试 Profile 要绑定该机 UDID。</p>
+      <p><b>3.</b> 虚拟模拟器用 <code>10.0.2.2</code>（宿主机别名）；真机用 PC 的局域网 IP，并且要同一 WiFi + 防火墙放行 8000。</p>
+      <p><b>4.</b> 优先用 DevEco 的 Run，它一条龙完成构建、签名、安装并处理调试参数；手动拿包容易因缺设备绑定报 <code>INSTALL_FAILED_TEST_ONLY</code>。</p>
+      <p><b>5.</b> 不能。调试签名的 <code>.p7b</code> 绑定 UDID 白名单，必须把新设备登记进去重新签名；而且调试签名不能用于上架发布。</p>
+    </div>
+  </details>
+  <div class="card">
+    <h3>接着看</h3>
+    <ul style="font-size:13.5px">
+      <li><a href="V3-学-用DevEco模拟器跑APP连后端.html">用 DevEco 模拟器跑 APP 连后端</a> —— 装好之后怎么填地址、怎么验收</li>
+      <li><a href="V3-学-模块连接与协议全景.html">模块连接与协议全景</a> —— 装进设备后，APP 到底跟谁说话</li>
+      <li><a href="V3-学-HTTP与HTTPS.html">HTTP 与 HTTPS</a> —— 真机走局域网明文 HTTP 时该注意什么</li>
+      <li>官方入口：<a href="https://developer.huawei.com/consumer/cn/doc/harmonyos-guides-V3/ohos-running-app-0000001218760598-V3">应用/服务运行（签名与安装）</a></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  V3 智能巡检车队 · 专题教材 ⑦《HAP 构建、签名与真机安装》｜与 <a href="V3-学习导航.html">V3-学习导航.html</a> 配套<br>
+  工程状态按当前磁盘核对（<span class="file">build-profile.json5</span>、<span class="file">AppScope/app.json5</span>、<span class="file">module.json5</span>、<span class="file">entry/build/default/outputs/default/</span> 产物时间戳与大小）；签名与真机流程参考华为开发者联盟官方文档。本文件未修改任何工程代码，也未生成或改动任何签名密钥。
+</footer>
+</div>
+
+<script>
+/* ---- 设备路线切换 ---- */
+var DEV = {
+  emu: {t:'A · DevEco 虚拟手机模拟器',
+        d:'设备是 DevEco 内部跑出来的虚拟手机，<b>不需要数据线、不需要登记 UDID</b>。只要 Device Manager 里 Phone 模拟器已开机，选它点 Run ▶，DevEco 就自动完成构建+签名+安装。<b>APP 地址填 10.0.2.2:8000</b>（工程默认值）。清单里第 1 步看模拟器、第 3 步签名通常一次配置后通用、第 5 步不用改地址。'},
+  real:{t:'B · 实体真机（USB 连电脑，本次重点）',
+        d:'设备是你手上的鸿蒙手机。必须：开发者选项打开 <b>USB 调试 + USB 安装</b> → 数据线连接并授权 → <b>DevEco 自动签名并登记这台手机的 UDID</b> → 顶部设备下拉框选真机点 Run ▶。<b>APP 地址填 PC 的局域网 IP:8000</b>，不要填 10.0.2.2；手机与 PC 同 WiFi，PC 防火墙放行 8000。当前工程 signingConfigs 为空，第 3 步是必做的。'},
+  board:{t:'C · 开发板 / 刷系统镜像（不是本流程）',
+        d:'"烧录"这个词真正对应的是这里：给 DAYU200 一类开发板把整套 OpenHarmony 系统镜像写进存储，用厂商烧录工具完成，改的是<b>操作系统本身</b>。CarFleet 是一个 APP，装它只需要 HAP + hdc；如果开发板已经在跑 OpenHarmony 标准系统，把它当成一台"真机"用 hdc 安装 HAP 即可，仍不是烧录。注意 <span class="file">module.json5</span> 的 deviceTypes 只有 phone。'}
+};
+var devBox = document.getElementById('devBox');
+function showDev(k){
+  var a = DEV[k];
+  devBox.innerHTML = '<b>' + a.t + '</b><p style="margin:6px 0 0">' + a.d + '</p>';
+  Array.prototype.forEach.call(document.querySelectorAll('#devTabs button'), function(b){
+    b.className = (b.getAttribute('data-k') === k) ? 'on' : '';
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('#devTabs button'), function(b){
+  b.onclick = function(){ showDev(b.getAttribute('data-k')); };
+});
+showDev('real');
+
+/* ---- 步骤勾选 ---- */
+var steps = document.querySelectorAll('.step');
+Array.prototype.forEach.call(steps, function(st){
+  var cb = st.querySelector('input');
+  cb.onchange = function(){
+    st.classList.toggle('done', cb.checked);
+    var n = document.querySelectorAll('.step input:checked').length;
+    document.getElementById('progBar').style.width = (n / steps.length * 100) + '%';
+    document.getElementById('progText').textContent = '已完成 ' + n + ' / ' + steps.length + ' 步' +
+      (n === steps.length ? '　✔ 全部完成：代码已经跑在设备里了' : '（按你选的设备做对应步骤即可）');
+  };
+});
+
+/* ---- 复制命令 ---- */
+Array.prototype.forEach.call(document.querySelectorAll('button.copy'), function(btn){
+  btn.onclick = function(){
+    var txt = btn.parentNode.textContent.replace(/^复制\s*/, '').trim();
+    function done(){ btn.textContent = '已复制 ✔'; setTimeout(function(){ btn.textContent = '复制'; }, 1600); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, function(){ done(); });
+    } else { done(); }
+  };
+});
+
+/* ---- 自测题 ---- */
+var QUIZ = [
+  {q:'1. 把 APP 装进鸿蒙手机，正确的三步是什么？',
+   o:['烧录镜像 → 刷系统 → 重启','编译成 HAP → 调试签名 → 安装（Run / hdc install）','复制 .ets 源码到手机 → 直接运行'],
+   a:1, why:'烧录改的是系统镜像；APP 层只需要构建 HAP、签名、安装。'},
+  {q:'2. 当前 CarFleet 工程为什么不能直接把 HAP 装到真机？',
+   o:['因为没有安卓 APK','因为 signingConfigs 为空、只产出了 unsigned.hap，且调试 Profile 要绑定 UDID','因为 module.json5 缺 INTERNET 权限'],
+   a:1, why:'实际检查：build-profile.json5:3 为空数组，outputs 目录只有未签名包。INTERNET 权限是有的。'},
+  {q:'3. 实体真机上，APP 的后端地址该填什么？',
+   o:['10.0.2.2','127.0.0.1','PC 的局域网 IP，如 192.168.1.23'],
+   a:2, why:'10.0.2.2 只属于 DevEco 虚拟模拟器，127.0.0.1 指手机自己。'},
+  {q:'4. 为什么推荐用 DevEco 的 Run 而不是手动 hdc install？',
+   o:['hdc 不能安装 HAP','Run 一条龙完成构建/签名/安装并处理调试参数，手动导出的包常缺设备绑定会报 INSTALL_FAILED_TEST_ONLY','因为真机不允许命令行安装'],
+   a:1, why:'官方社区与文档都建议调试阶段由 IDE 部署；手动装只能用 IDE 输出的签名调试包。'},
+  {q:'5. 自动签名生成的调试包能直接发给同学装到他的手机上吗？',
+   o:['能，调试签名通用','不能，.p7b 绑定了 UDID 白名单，且调试签名不能用于发布','能，只要改成 .apk 后缀'],
+   a:1, why:'换设备要把新 UDID 登记进 Profile 重新签名；HAP 也不是 APK。'}
+];
+var box = document.getElementById('quizBox'), solved = {}, right = 0;
+QUIZ.forEach(function(item, qi){
+  var d = document.createElement('div'); d.className = 'quiz';
+  var html = '<p>' + item.q + '</p>';
+  item.o.forEach(function(opt, oi){
+    html += '<label><input type="radio" name="hq'+qi+'" value="'+oi+'"> ' + opt + '</label>';
+  });
+  html += '<div class="fb" id="hfb'+qi+'"></div>';
+  d.innerHTML = html;
+  box.appendChild(d);
+  Array.prototype.forEach.call(d.querySelectorAll('input'), function(r){
+    r.onchange = function(){
+      var ok = (parseInt(r.value,10) === item.a);
+      var fb = document.getElementById('hfb'+qi);
+      fb.className = 'fb ' + (ok ? 'good' : 'bad');
+      fb.innerHTML = (ok ? '✔ 答对了。' : '✘ 再想想。') + item.why;
+      if (ok && !solved[qi]) { solved[qi] = true; right++; }
+      document.getElementById('quizBar').style.width = (right/QUIZ.length*100) + '%';
+      document.getElementById('quizScore').textContent = '答对 ' + right + ' / ' + QUIZ.length + '（每题首次答对计 1 分）';
+    };
+  });
+});
+</script>
+</body>
+</html>

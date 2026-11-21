@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 车队版 · 五端网络组织结构图（交互版）</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --ink:#1c2330; --dim:#5f6b7c;
+    --blue:#185fa5; --blue-l:#e6f1fb; --teal:#0f6e56; --teal-l:#e1f5ee;
+    --purple:#534ab7; --purple-l:#eeedfe; --green:#3b6d11; --green-l:#eaf3de;
+    --amber:#854f0b; --amber-l:#faeeda; --line:#c9cfd8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink);
+       font:14px/1.7 "Microsoft YaHei","PingFang SC",sans-serif;}
+  .wrap{max-width:1200px; margin:0 auto; padding:24px;}
+  h1{font-size:20px; font-weight:600; margin-bottom:4px;}
+  .sub{color:var(--dim); font-size:13px; margin-bottom:16px;}
+  .stage{background:var(--card); border:1px solid var(--line); border-radius:12px;
+         padding:12px; position:relative;}
+  .svgbox{overflow-x:auto;}
+  svg{min-width:920px; width:100%; height:auto; display:block;}
+  .hint{font-size:12.5px; color:var(--dim); padding:8px 6px 2px;}
+  .hint b{color:var(--ink);}
+  /* 交互态 */
+  .node{cursor:pointer;}
+  .node rect.body{transition:stroke-width .12s;}
+  .node.sel rect.body{stroke-width:2.5;}
+  .edge{cursor:pointer;}
+  .edge .hit{stroke:transparent; stroke-width:16; fill:none;}
+  .edge .line{transition:stroke-width .12s;}
+  .edge.sel .line{stroke-width:3.2;}
+  .edge:hover .line{stroke-width:3;}
+  .elabel{cursor:pointer;}
+  /* 侧栏 */
+  .panel{position:fixed; top:0; right:-420px; width:400px; max-width:92vw;
+         height:100%; background:var(--card); border-left:1px solid var(--line);
+         box-shadow:-6px 0 24px rgba(28,35,48,.10); transition:right .22s ease;
+         z-index:50; display:flex; flex-direction:column;}
+  .panel.open{right:0;}
+  .panel .bar{padding:14px 18px 12px; border-bottom:1px solid var(--line);
+              display:flex; align-items:flex-start; gap:10px;}
+  .panel .bar .t{flex:1;}
+  .panel .bar .k{font-size:11.5px; padding:1px 8px; border-radius:9px; display:inline-block; margin-bottom:4px;}
+  .panel .bar h3{font-size:15.5px; font-weight:600; line-height:1.4;}
+  .panel .x{cursor:pointer; border:none; background:#eef1f5; color:var(--dim);
+            width:28px; height:28px; border-radius:8px; font-size:15px; line-height:1;}
+  .panel .bd{padding:14px 18px 24px; overflow-y:auto; flex:1; font-size:13.5px;}
+  .panel h4{font-size:13px; font-weight:600; margin:14px 0 6px; color:var(--dim);}
+  .panel h4:first-child{margin-top:0;}
+  .panel table{width:100%; border-collapse:collapse; font-size:12.5px; margin:6px 0;}
+  .panel th,.panel td{border:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top;}
+  .panel th{background:#eef1f5; white-space:nowrap;}
+  .panel code{font-family:Consolas,monospace; font-size:12px; background:#eef1f5;
+              padding:1px 5px; border-radius:4px; word-break:break-all;}
+  .panel pre{background:#101722; color:#d7e2ee; font:12px/1.6 Consolas,monospace;
+             padding:10px 12px; border-radius:8px; overflow-x:auto; margin:6px 0;}
+  .panel pre i{color:#e8b26a; font-style:normal;}
+  .panel pre b{color:#7fd0a8; font-weight:400;}
+  .panel p{margin-bottom:8px;}
+  .panel ul{padding-left:18px; margin-bottom:8px;}
+  .panel li{margin-bottom:4px;}
+  .mask{display:none;}
+  @media (max-width:760px){
+    .mask{display:block; position:fixed; inset:0; background:rgba(28,35,48,.35);
+          z-index:40; opacity:0; pointer-events:none; transition:opacity .2s;}
+    .mask.on{opacity:1; pointer-events:auto;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>V3 车队版 · 五端网络组织结构图</h1>
+  <div class="sub">APP 端 · 后端服务 · 华为云 IoTDA · 模拟小车端 · 轨迹回放视图端 —— 连线即接口调用与数据传输</div>
+
+  <div class="stage">
+    <div class="svgbox">
+    <svg viewBox="0 0 1000 740" xmlns="http://www.w3.org/2000/svg" role="img" id="diagram">
+      <title>五端网络组织结构图</title>
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#5f6b7c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- ================= 连线（下层，先画） ================= -->
+      <!-- E1 APP端 <-> 后端 -->
+      <g class="edge" data-edge="e1">
+        <path class="line" d="M262 390 L378 390" fill="none" stroke="#185fa5" stroke-width="2" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <path class="hit" d="M262 390 L378 390"/>
+        <text x="320" y="374" text-anchor="middle" font-size="11.5" font-weight="600" fill="#0c447c">REST + WS</text>
+        <text x="320" y="410" text-anchor="middle" font-size="10.5" fill="#5f6b7c">:8000 · WiFi 局域网</text>
+      </g>
+      <!-- E2 轨迹回放视图端 <-> 后端 -->
+      <g class="edge" data-edge="e2">
+        <path class="line" d="M262 615 L418 474" fill="none" stroke="#1d9e75" stroke-width="2" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <path class="hit" d="M262 615 L418 474"/>
+        <text x="298" y="568" text-anchor="middle" font-size="11.5" font-weight="600" fill="#0f6e56">GET /track</text>
+        <text x="352" y="584" text-anchor="middle" font-size="10.5" fill="#5f6b7c">轨迹查询</text>
+      </g>
+      <!-- E3 后端 <-> 云端 -->
+      <g class="edge" data-edge="e3">
+        <path class="line" d="M500 328 L500 142" fill="none" stroke="#534ab7" stroke-width="2" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <path class="hit" d="M500 328 L500 142"/>
+        <text x="516" y="200" font-size="11.5" font-weight="600" fill="#3c3489">HTTPS 应用侧 API</text>
+        <text x="516" y="216" font-size="10.5" fill="#7f77dd">IoTDA V5 SDK · AK/SK</text>
+        <text x="516" y="236" font-size="10.5" fill="#7f77dd">ShowDevice · Shadow · CreateCommand</text>
+      </g>
+      <!-- E4 模拟小车 <-> 云端 -->
+      <g class="edge" data-edge="e4">
+        <path class="line" d="M850 328 L850 142" fill="none" stroke="#3b6d11" stroke-width="2" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <path class="hit" d="M850 328 L850 142"/>
+        <text x="866" y="200" font-size="11.5" font-weight="600" fill="#27500a">MQTT :8883 TLS</text>
+        <text x="866" y="216" font-size="10.5" fill="#639922">上报 car_status · 下发 car_control</text>
+      </g>
+      <!-- E5 后端 -> 模拟小车 -->
+      <g class="edge" data-edge="e5">
+        <path class="line" d="M622 400 L738 400" fill="none" stroke="#854f0b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar)"/>
+        <path class="hit" d="M622 400 L738 400"/>
+        <text x="680" y="384" text-anchor="middle" font-size="11.5" font-weight="600" fill="#633806">subprocess 启停</text>
+        <text x="680" y="420" text-anchor="middle" font-size="10.5" fill="#854f0b">上线 / 下线</text>
+      </g>
+
+      <!-- ================= 节点（上层，后画盖住线头） ================= -->
+      <!-- 云端 -->
+      <g class="node" data-node="cloud">
+        <rect class="body" x="370" y="32" width="260" height="110" rx="14"
+              fill="#eeedfe" stroke="#534ab7" stroke-width="1.4"/>
+        <text x="500" y="62" text-anchor="middle" font-size="15" font-weight="600" fill="#26215c">华为云 IoTDA（云端）</text>
+        <text x="500" y="84" text-anchor="middle" font-size="11.5" fill="#534ab7">cn-north-4 · 实例 fa2da76a-…</text>
+        <text x="500" y="102" text-anchor="middle" font-size="11.5" fill="#534ab7">MQTT 接入 · 设备影子 · 命令队列</text>
+        <text x="500" y="126" text-anchor="middle" font-size="10.5" fill="#8f88d6">点击查看详情</text>
+      </g>
+
+      <!-- APP端 -->
+      <g class="node" data-node="app">
+        <rect class="body" x="60" y="330" width="202" height="122" rx="14"
+              fill="#e6f1fb" stroke="#185fa5" stroke-width="1.4"/>
+        <text x="161" y="360" text-anchor="middle" font-size="15" font-weight="600" fill="#042c53">APP 端</text>
+        <text x="161" y="382" text-anchor="middle" font-size="11.5" fill="#185fa5">CarFleet（HarmonyOS ArkTS）</text>
+        <text x="161" y="400" text-anchor="middle" font-size="11.5" fill="#185fa5">车队 · 操控 · 内嵌管理后台</text>
+        <text x="161" y="432" text-anchor="middle" font-size="10.5" fill="#5b93c4">点击查看详情</text>
+      </g>
+
+      <!-- 后端服务 -->
+      <g class="node" data-node="backend">
+        <rect class="body" x="378" y="330" width="244" height="144" rx="14"
+              fill="#e1f5ee" stroke="#0f6e56" stroke-width="1.4"/>
+        <text x="500" y="360" text-anchor="middle" font-size="15" font-weight="600" fill="#04342c">后端服务</text>
+        <text x="500" y="382" text-anchor="middle" font-size="11.5" fill="#0f6e56">app.py（Flask :8000）</text>
+        <text x="500" y="400" text-anchor="middle" font-size="11.5" fill="#0f6e56">REST 22 端点 · WS /ws</text>
+        <text x="500" y="418" text-anchor="middle" font-size="11.5" fill="#0f6e56">STATE_CACHE · 轨迹库 · admin</text>
+        <text x="500" y="452" text-anchor="middle" font-size="10.5" fill="#5dcaa5">点击查看详情</text>
+      </g>
+
+      <!-- 模拟小车端 -->
+      <g class="node" data-node="sim">
+        <rect class="body" x="738" y="330" width="224" height="144" rx="14"
+              fill="#eaf3de" stroke="#3b6d11" stroke-width="1.4"/>
+        <text x="850" y="360" text-anchor="middle" font-size="15" font-weight="600" fill="#173404">模拟小车端</text>
+        <text x="850" y="382" text-anchor="middle" font-size="11.5" fill="#3b6d11">car_mqtt_client.py × N 进程</text>
+        <text x="850" y="400" text-anchor="middle" font-size="11.5" fill="#3b6d11">CarSim 20Hz 运动模型</text>
+        <text x="850" y="418" text-anchor="middle" font-size="11.5" fill="#3b6d11">5s / 60s / 事件 补报</text>
+        <text x="850" y="452" text-anchor="middle" font-size="10.5" fill="#97c459">点击查看详情</text>
+      </g>
+
+      <!-- 轨迹回放视图端 -->
+      <g class="node" data-node="replay">
+        <rect class="body" x="60" y="560" width="202" height="122" rx="14"
+              fill="#faeeda" stroke="#854f0b" stroke-width="1.4"/>
+        <text x="161" y="590" text-anchor="middle" font-size="15" font-weight="600" fill="#412402">轨迹回放视图端</text>
+        <text x="161" y="612" text-anchor="middle" font-size="11.5" fill="#854f0b">track_demo.html / APP 轨迹页</text>
+        <text x="161" y="630" text-anchor="middle" font-size="11.5" fill="#854f0b">Canvas · 4 档时间窗</text>
+        <text x="161" y="662" text-anchor="middle" font-size="10.5" fill="#c39a53">点击查看详情</text>
+      </g>
+    </svg>
+    </div>
+    <div class="hint"><b>使用说明</b>：点击任意节点查看该端的详细介绍；点击任意连线查看两端之间的接口调用与数据传输明细（协议、方向、报文示例、节奏）。</div>
+  </div>
+</div>
+
+<!-- 侧栏 -->
+<div class="mask" id="mask"></div>
+<aside class="panel" id="panel">
+  <div class="bar">
+    <div class="t"><span class="k" id="pKind">节点</span><h3 id="pTitle">标题</h3></div>
+    <button class="x" id="pClose" title="关闭">✕</button>
+  </div>
+  <div class="bd" id="pBody"></div>
+</aside>
+
+<script>
+(function(){
+  var THEME = {
+    app:    {label:"APP 端",           color:"#185fa5", bg:"#e6f1fb"},
+    backend:{label:"后端服务",         color:"#0f6e56", bg:"#e1f5ee"},
+    cloud:  {label:"华为云 IoTDA",     color:"#534ab7", bg:"#eeedfe"},
+    sim:    {label:"模拟小车端",       color:"#3b6d11", bg:"#eaf3de"},
+    replay: {label:"轨迹回放视图端",   color:"#854f0b", bg:"#faeeda"},
+    e1:     {label:"接口连线",         color:"#185fa5", bg:"#e6f1fb"},
+    e2:     {label:"接口连线",         color:"#0f6e56", bg:"#e1f5ee"},
+    e3:     {label:"接口连线",         color:"#534ab7", bg:"#eeedfe"},
+    e4:     {label:"接口连线",         color:"#3b6d11", bg:"#eaf3de"},
+    e5:     {label:"接口连线",         color:"#854f0b", bg:"#faeeda"}
+  };
+
+  var NODES = {
+    app: `
+      <h4>定位</h4>
+      <p><b>操作者</b>。跑在 HarmonyOS 手机/平板上的鸿蒙原生应用，负责看车队、开车、查轨迹、管设备。</p>
+      <h4>工程信息</h4>
+      <table>
+        <tr><th>路径</th><td><code>E:\\Harmony\\Project\\CarFleet</code></td></tr>
+        <tr><th>包名</th><td><code>com.example.carfleet</code></td></tr>
+        <tr><th>技术栈</th><td>ArkTS + Canvas + Web 组件 + Preferences</td></tr>
+        <tr><th>网络层</th><td><code>FleetClient.ets</code></td></tr>
+      </table>
+      <h4>四个视图</h4>
+      <ul>
+        <li><b>车队页</b>：摘要卡 + 车辆卡片列表，点卡片选中车辆；右上角进入管理后台</li>
+        <li><b>操控页</b>：300vp 实时地图（全部车、点选切换）+ 摇杆（松手保持、拖回中心停、双击急停）+ 状态三格</li>
+        <li><b>轨迹回放页</b>：Canvas 画历史轨迹、4 档时间窗、点数/里程统计</li>
+        <li><b>管理后台页</b>：Web 组件内嵌电脑版 <code>/admin/view</code>，功能与 PC 完全一致</li>
+      </ul>
+      <h4>网络行为</h4>
+      <table>
+        <tr><th>动作</th><th>接口</th><th>节奏</th></tr>
+        <tr><td>轮询车队状态</td><td><code>GET /fleet/status</code></td><td>每 800ms</td></tr>
+        <tr><td>控车</td><td><code>POST /command</code></td><td>摇杆拖动时</td></tr>
+        <tr><td>查轨迹</td><td><code>GET /track</code></td><td>进入轨迹页</td></tr>
+        <tr><td>管理后台</td><td>Web 组件加载 <code>/admin/view</code></td><td>进入页面时</td></tr>
+      </table>
+      <h4>注意事项</h4>
+      <ul>
+        <li>手机与 PC 必须同一 WiFi，连接地址填 PC 内网 IP</li>
+        <li>ArkTS 代码改动需要 DevEco 重新构建运行才生效</li>
+        <li>轨迹时间字段解析：<code>Date.parse(t.replace(' ','T'))</code></li>
+        <li>Web 组件不弹原生 confirm/alert（后台页面已改自绘弹窗规避）</li>
+      </ul>`,
+
+    backend: `
+      <h4>定位</h4>
+      <p><b>全系统的唯一数据枢纽</b>。所有客户端只认它，所有云端访问只经它——它的 STATE_CACHE 是全系统唯一状态源。</p>
+      <h4>基本信息</h4>
+      <table>
+        <tr><th>文件</th><td><code>server/app.py</code>（Flask）+ <code>track_store.py</code></td></tr>
+        <tr><th>端口</th><td><code>:8000</code>（HTTP + WebSocket）</td></tr>
+        <tr><th>启动</th><td><code>python server/app.py</code></td></tr>
+        <tr><th>配套文件</th><td><code>devices.json</code> 花名册 · <code>cloud_config.json</code> AK/SK · <code>fleet_track.db</code> 轨迹库 · <code>commands.log</code> 审计</td></tr>
+      </table>
+      <h4>内部模块</h4>
+      <ul>
+        <li><b>poll_loop 轮询线程</b>：每 2s 调云端 SDK 抄"在线状态 + 影子"写入 STATE_CACHE</li>
+        <li><b>乐观回显 + 守卫</b>：命令受理即预填预期朝向/速度并立即推 WS（命令→画面 ≈0.33s）；守卫防止 4s 内旧影子覆盖回显</li>
+        <li><b>REST API</b>：22 个端点（查询/控制/轨迹/管理）</li>
+        <li><b>WebSocket /ws</b>：fleet_state 帧，事件驱动 + 0.5s 兜底</li>
+        <li><b>轨迹库</b>：SQLite WAL，真实观测且变化才插行，7 天过期 + 2 万条上限</li>
+        <li><b>admin 模块</b>：唯一能反向操作基础设施的部分（注册/删除/冻结/上下线/对账）</li>
+      </ul>
+      <h4>设计要点</h4>
+      <ul>
+        <li>客户端永远不直连云端，保证换云厂商只改本层 SDK 封装</li>
+        <li>乐观回显的预测值<b>绝不写入</b>轨迹库（历史数据保真）</li>
+        <li>admin token 是内存态，后端重启需重新登录</li>
+      </ul>`,
+
+    cloud: `
+      <h4>定位</h4>
+      <p><b>哑巴信箱</b>：只做接入、存储、转发，不理解数据含义、不存历史、不做业务判断。所有"智能"都在后端。</p>
+      <h4>基本信息</h4>
+      <table>
+        <tr><th>服务</th><td>华为云 IoTDA（设备接入）</td></tr>
+        <tr><th>区域/实例</th><td>cn-north-4 · fa2da76a-3272-4114-a5dc-91b1e212b957（标准版）</td></tr>
+        <tr><th>配额</th><td>免费单元约 <b>1 万条消息/日</b>（上报节奏 5s/60s 即为此定）</td></tr>
+      </table>
+      <h4>三大能力</h4>
+      <table>
+        <tr><th>能力</th><th>说明</th></tr>
+        <tr><td>MQTT 接入</td><td>:8883 TLS，设备三元组认证，只管"连没连上"</td></tr>
+        <tr><td>设备影子</td><td>每设备存<b>最后一次</b> car_status 上报快照，车离线也可读</td></tr>
+        <tr><td>命令队列</td><td>投递 car_control 命令给在线设备，返回 command_id（受理回执）</td></tr>
+      </table>
+      <h4>SDK 调用（后端使用）</h4>
+      <p><code>ShowDevice</code>（查在线）· <code>ShowDeviceShadow</code>（读影子）· <code>CreateCommand</code>（下发）· <code>AddDevice/DeleteDevice</code>（注册/注销）· <code>ListDevices</code>（对账）</p>
+      <h4>已知坑</h4>
+      <ul>
+        <li>ListDevices 过滤参数不生效 → 查状态必须逐台 ShowDevice；limit 上限 50</li>
+        <li>影子数值是 Decimal；命令体类是 DeviceCommandRequest（与文档不同）</li>
+        <li>注册前云端可能残留同名设备 → 先 DeleteDevice</li>
+      </ul>`,
+
+    sim: `
+      <h4>定位</h4>
+      <p><b>真正"会动的东西"</b>。每台车一个独立 Python 进程，与将来真车遵守完全相同的 MQTT 协议——换真车时本层整体替换，上层零改动。</p>
+      <h4>基本信息</h4>
+      <table>
+        <tr><th>文件</th><td><code>device/car_mqtt_client.py</code></td></tr>
+        <tr><th>启动</th><td><code>python device/car_mqtt_client.py --device car_00N</code></td></tr>
+        <tr><th>身份来源</th><td>从 <code>server/devices.json</code> 读云 ID/密钥/出生点/调试端口</td></tr>
+        <tr><th>调试口</th><td>8081~8085 各车独占，<code>GET /state</code> 吐 20Hz 内存实时状态（仅调试）</td></tr>
+      </table>
+      <h4>内部结构</h4>
+      <ul>
+        <li><b>CarSim 运动模型</b>：20Hz 积分（x += v·sinθ·dt），命令只改它的输入（方向/速度）</li>
+        <li><b>上报循环</b>：行驶 5s / 静止 60s / 命令执行后 ≤2s 事件补报（限流）</li>
+        <li><b>命令监听</b>：订阅 commands topic，收到 move(vx,vy)/stop 立即生效</li>
+      </ul>
+      <h4>注意事项</h4>
+      <ul>
+        <li><b>黑色控制台窗口 = 模拟器本体，只能最小化不能关</b>（关窗 = 车下线）</li>
+        <li>启动前检查调试端口占用（防多实例互踢）</li>
+        <li>可由后端"上线/下线"按钮代为启停，也可用 start_car_00N.bat 手动启动</li>
+      </ul>`,
+
+    replay: `
+      <h4>定位</h4>
+      <p><b>客户端层的查询视图</b>。注意：它不是独立的服务进程——没有自己的端口和网络服务，与监控大屏连同一个后端，只是消费的接口不同（查历史而非实时）。</p>
+      <h4>两种形态</h4>
+      <table>
+        <tr><th>形态</th><th>入口</th><th>说明</th></tr>
+        <tr><td>网页版</td><td><code>http://…:8000/track/view</code>（track_demo.html）</td><td>车辆筛选 + 4 档时间窗 + Canvas 渲染 + 点数/里程统计</td></tr>
+        <tr><td>APP 版</td><td>CarFleet 第三个页面视图</td><td>同样调 /track，Canvas 回放</td></tr>
+      </table>
+      <h4>数据来源</h4>
+      <ul>
+        <li><code>GET /track?device_id=&amp;from=&amp;to=</code>：SQLite 轨迹库，<b>只含真实影子观测</b>（乐观回显预测值不入库，历史保真）</li>
+        <li>轨迹产生机制：后端 poll_loop 每 2s 抄影子时，位置/状态有变化才插一行</li>
+        <li>时间字段 t 为本地时间字符串，APP 解析需 <code>Date.parse(t.replace(' ','T'))</code></li>
+      </ul>
+      <h4>为什么画成独立节点</h4>
+      <p>严格说它是后端的又一个客户端。这里按需求单列成第五"端"，以便清晰展示"历史查询"这条独立的数据支线；网络层面它与 APP 端一样，只是一个普通 HTTP 客户端。</p>`
+  };
+
+  var EDGES = {
+    e1: {
+      title: "APP 端 ↔ 后端服务",
+      body: `
+      <h4>连接方式</h4>
+      <p>WiFi 局域网内 HTTP/WebSocket，目标 <code>http://&lt;PC内网IP&gt;:8000</code>。</p>
+      <h4>接口清单</h4>
+      <table>
+        <tr><th>接口</th><th>方向</th><th>节奏/触发</th><th>用途</th></tr>
+        <tr><td><code>GET /fleet/status</code></td><td>APP→后端</td><td>每 800ms 轮询</td><td>全队位置/朝向/电量，驱动实时地图</td></tr>
+        <tr><td><code>POST /command</code></td><td>APP→后端</td><td>摇杆操作</td><td>控车（FORWARD/BACK/…/MOVE angle+speed/STOP）</td></tr>
+        <tr><td><code>GET /track</code></td><td>APP→后端</td><td>进轨迹页</td><td>历史轨迹</td></tr>
+        <tr><td><code>GET /admin/view</code></td><td>APP→后端</td><td>进后台页</td><td>Web 组件内嵌管理后台</td></tr>
+        <tr><td>HTTP 响应 / WS 帧</td><td>后端→APP</td><td>即时 / 0.5s 兜底</td><td>状态包络 {ok,…} / fleet_state 帧</td></tr>
+      </table>
+      <h4>报文示例</h4>
+      <pre><i>POST /command</i>
+{ "device_id": "car_001", "cmd": "MOVE", "angle": 90, "speed": 70 }
+
+<i>200 响应</i>
+{ "ok": true, "device_id": "…_car_001",
+  "command_id": "b67a…", "executed": true }
+
+<i>GET /fleet/status 响应（节选）</i>
+{ "ok": true, "cars": [ { "device_id": "…_car_001",
+  "name": "1号巡检车", "color": "#3aa55d", "online": true,
+  "x": 10.2, "y": 5.0, "heading": 90.0, "speed": 60.0,
+  "battery": 98.5 } ] }</pre>
+      <h4>说明</h4>
+      <ul>
+        <li>APP 不直连云端——所有能力都从后端这个"唯一状态源"获取</li>
+        <li>bind() 切换控制目标只是本地换选中项，不重新建连</li>
+      </ul>`
+    },
+    e2: {
+      title: "轨迹回放视图端 ↔ 后端服务",
+      body: `
+      <h4>连接方式</h4>
+      <p>普通 HTTP 客户端（网页或 APP 内页面），与监控大屏共用后端 :8000。</p>
+      <h4>接口清单</h4>
+      <table>
+        <tr><th>接口</th><th>方向</th><th>用途</th></tr>
+        <tr><td><code>GET /track?device_id=&amp;from=&amp;to=</code></td><td>视图→后端</td><td>查时间窗内轨迹点（时间升序）</td></tr>
+        <tr><td><code>GET /devices</code></td><td>视图→后端</td><td>车辆列表（筛选器数据源）</td></tr>
+        <tr><td><code>GET /track/view</code></td><td>视图→后端</td><td>加载回放页面本身（动态 HTML）</td></tr>
+      </table>
+      <h4>报文示例</h4>
+      <pre><i>GET /track?device_id=…_car_001&amp;from=…&amp;to=…</i>
+{ "ok": true, "device_id": "…_car_001",
+  "points": [ { "x": 10.2, "y": 5.0, "theta": 90.0,
+                "speed": 60.0, "battery": 98.5,
+                "t": "2026-11-08 08:30:00" } ] }</pre>
+      <h4>数据支线说明</h4>
+      <ul>
+        <li>轨迹入库发生在后端 poll_loop 抄影子时：<b>真实观测且变化才插行</b></li>
+        <li>乐观回显的预测值不入库 —— 回放看到的永远是车真实走过的地方</li>
+        <li>治理：7 天过期 + 总量 2 万条上限（SQLite WAL）</li>
+        <li>缺省时间窗最近 24 小时；时间支持 Unix 秒或 <code>YYYY-MM-DD HH:MM[:SS]</code></li>
+      </ul>`
+    },
+    e3: {
+      title: "后端服务 ↔ 华为云 IoTDA",
+      body: `
+      <h4>连接方式</h4>
+      <p>HTTPS 应用侧 API，IoTDA V5 Python SDK（<code>huaweicloudsdkiotda</code>），AK/SK 鉴权（<code>cloud_config.json</code>）。</p>
+      <h4>调用清单</h4>
+      <table>
+        <tr><th>SDK 方法</th><th>方向</th><th>时机</th><th>用途</th></tr>
+        <tr><td>ShowDevice</td><td>后端→云</td><td>每 2s</td><td>查单台在线状态</td></tr>
+        <tr><td>ShowDeviceShadow</td><td>后端→云</td><td>每 2s</td><td>读影子属性（x/y/theta/speed/battery）</td></tr>
+        <tr><td>CreateCommand</td><td>后端→云</td><td>/command 受理时</td><td>下发 move/stop，拿 command_id</td></tr>
+        <tr><td>AddDevice / DeleteDevice</td><td>后端→云</td><td>注册/注销</td><td>云端设备建档/删除（先删残留）</td></tr>
+        <tr><td>ListDevices</td><td>后端→云</td><td>对账时</td><td>列云端设备对比注册表</td></tr>
+        <tr><td>响应</td><td>云→后端</td><td>即时</td><td>状态/影子属性/command_id/设备列表</td></tr>
+      </table>
+      <h4>关键语义</h4>
+      <ul>
+        <li>CreateCommand 返回的是<b>受理回执</b>而非执行回执（拉模式）——真实性靠设备随后的属性上报确认</li>
+        <li>这是"轮询拉取"通道；升级为 AMQP/推送订阅后可拿到设备实时回执</li>
+      </ul>
+      <h4>SDK 踩坑记录</h4>
+      <ul>
+        <li>ListDevices 过滤参数不生效（查状态逐台 ShowDevice）；limit 上限 50</li>
+        <li>影子数值是 Decimal；命令体类是 DeviceCommandRequest</li>
+      </ul>`
+    },
+    e4: {
+      title: "模拟小车端 ↔ 华为云 IoTDA",
+      body: `
+      <h4>连接方式</h4>
+      <p>MQTT over TLS :8883，设备三元组认证（密钥在 devices.json）。这是<b>真车也要遵守的协议合同</b>。</p>
+      <h4>上行 · 属性上报</h4>
+      <pre><i>Topic</i>  $oc/devices/{id}/sys/properties/report
+{ "services": [{ "service_id": "car_status",
+  "properties": { "x": 10.2, "y": 5.0, "theta": 90.0,
+                  "speed": 60.0, "battery": 98.5 } }] }</pre>
+      <table>
+        <tr><th>时机</th><th>间隔</th></tr>
+        <tr><td>行驶中</td><td>5 s（配额硬约束）</td></tr>
+        <tr><td>静止</td><td>60 s</td></tr>
+        <tr><td>命令执行后</td><td>立即补报（限流 2s）</td></tr>
+      </table>
+      <h4>下行 · 命令</h4>
+      <pre><i>订阅</i>  $oc/devices/{id}/sys/commands/#
+{ "command_name": "move", "service_id": "car_control",
+  "paras": { "vx": 0.7, "vy": 0.0 } }    <i>// 或 stop</i>
+<i>回执</i>  …/commands/request_id={rid}</pre>
+      <h4>注意</h4>
+      <ul>
+        <li>命令挂 <code>car_control</code>、属性挂 <code>car_status</code>，service_id 不可混</li>
+        <li>连接建立后云端即判 ONLINE；断开约数秒后判 OFFLINE</li>
+      </ul>`
+    },
+    e5: {
+      title: "后端服务 → 模拟小车端",
+      body: `
+      <h4>连接方式</h4>
+      <p>本机 <b>subprocess 进程管理</b>（非网络协议），管理后台"上线/下线"按钮触发。</p>
+      <h4>行为明细</h4>
+      <table>
+        <tr><th>操作</th><th>实现</th></tr>
+        <tr><td>上线（start）</td><td>清理僵死残留进程 → 以 CREATE_NEW_CONSOLE 拉起 <code>python car_mqtt_client.py --device car_00N</code>（弹出模拟器黑窗）</td></tr>
+        <tr><td>下线（stop）</td><td>按命令行特征（car_mqtt_client.py + --device 节点名）扫描并 taskkill 全部匹配实例——后端重启过也能杀外部启动的进程</td></tr>
+        <tr><td>删除设备</td><td>注销前先自动停掉其模拟器</td></tr>
+      </table>
+      <h4>附带调试通道</h4>
+      <p>每台模拟器监听本机端口 8081~8085，<code>GET http://127.0.0.1:808N/state</code> 返回进程内存里的 20Hz 实时状态。<b>仅调试用</b>，正式数据链路不走这条线（正式链路是 模拟器→MQTT→影子→后端轮询）。</p>
+      <h4>提醒</h4>
+      <ul>
+        <li>拉起的黑窗是模拟器本体，关窗 = 车下线，只能最小化</li>
+        <li>这条"管理通道"是 APP 能远程让车上线的根本原因：APP 发请求 → 后端代为启动本机进程 → 进程连云 → 车在线</li>
+      </ul>`
+    }
+  };
+
+  var panel = document.getElementById("panel");
+  var mask  = document.getElementById("mask");
+  var pKind = document.getElementById("pKind");
+  var pTitle = document.getElementById("pTitle");
+  var pBody = document.getElementById("pBody");
+  var current = null;
+
+  function open(kind, isEdge, title){
+    var th = THEME[kind];
+    pKind.textContent = isEdge ? "接口连线" : "节点";
+    pKind.style.background = th.bg;
+    pKind.style.color = th.color;
+    pTitle.textContent = title;
+    pBody.innerHTML = (isEdge ? EDGES[kind] : NODES[kind]).body;
+    panel.classList.add("open");
+    if (window.innerWidth <= 760) mask.classList.add("on");
+    if (current) current.classList.remove("sel");
+    var sel = document.querySelector('[data-' + (isEdge ? 'edge' : 'node') + '="' + kind + '"]');
+    if (sel){ sel.classList.add("sel"); current = sel; }
+  }
+  function close(){
+    panel.classList.remove("open");
+    mask.classList.remove("on");
+    if (current){ current.classList.remove("sel"); current = null; }
+  }
+
+  document.getElementById("pClose").addEventListener("click", close);
+  mask.addEventListener("click", close);
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") close(); });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".node"), function(n){
+    n.addEventListener("click", function(){
+      var k = n.getAttribute("data-node");
+      open(k, false, THEME[k].label);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".edge"), function(e){
+    e.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      var k = e.getAttribute("data-edge");
+      open(k, true, EDGES[k].title);
+    });
+  });
+})();
+</script>
+</body>
+</html>

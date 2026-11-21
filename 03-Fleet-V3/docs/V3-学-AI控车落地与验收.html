@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · AI 控车落地与验收（第⑦步已实现）</title>
+<style>
+  :root{--bg:#f5f8fc;--card:#fff;--ink:#1f2933;--dim:#5b6b7c;--line:#dde5ee;
+        --c0:#3f51b5;--c1:#0f8a8a;--c2:#d97706;--c3:#7c3aed;--hot:#b23b2e;
+        --shadow:0 2px 10px rgba(31,41,51,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.75;font-size:15px;
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,-apple-system,sans-serif}
+  a{color:#1d6fa5;text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;font-family:Consolas,monospace;color:#234}
+  pre{background:#1e2a38;color:#e9f2f8;border-radius:8px;padding:12px 14px;font-size:12.5px;
+      font-family:Consolas,monospace;line-height:1.6;overflow-x:auto;margin:8px 0 0;
+      white-space:pre-wrap;word-break:break-all}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a 0%,#1c5c6e 100%);color:#fff;padding:34px 20px 30px}
+  .hero .inner{max-width:1120px;margin:0 auto}
+  .hero h1{margin:0 0 8px;font-size:26px}
+  .hero .sub{font-size:14.5px;color:#c7dbe6;margin:0 0 12px}
+  .hero p{max-width:920px;margin:0 0 8px;color:#e6f0f5;font-size:14px}
+  .hero .back{display:inline-block;margin-top:12px;color:#a8f0dc;font-size:13px;margin-right:16px}
+  .topnav{position:sticky;top:0;z-index:9;background:#fff;border-bottom:1px solid var(--line);
+          box-shadow:0 1px 6px rgba(31,41,51,.05)}
+  .topnav .inner{max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;gap:2px;padding:8px 20px}
+  .topnav a{font-size:13px;color:var(--dim);padding:6px 11px;border-radius:20px}
+  .topnav a:hover{background:#eef3f9;color:var(--ink);text-decoration:none}
+  section{margin-top:34px;scroll-margin-top:58px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+  .sec-no{width:34px;height:34px;flex:none;border-radius:9px;color:#fff;font-weight:700;
+          display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--c1)}
+  .sec-head h2{margin:0;font-size:21px}
+  .sec-head .tag{font-size:12px;color:var(--dim);background:#eaf0f6;padding:3px 10px;border-radius:12px}
+  .lead{color:var(--dim);margin:0 0 14px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+  .card h3{margin:0 0 8px;font-size:16px}.card p{margin:0 0 8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.grid2,.grid3{grid-template-columns:1fr}}
+  .concl{background:linear-gradient(100deg,#eef7f6,#f2f5ff);border-left:5px solid var(--c1);
+         border-radius:10px;padding:18px 20px;font-size:17px;font-weight:600;line-height:1.85}
+  .concl small{display:block;font-weight:400;font-size:14px;color:var(--dim);margin-top:8px}
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px;background:#eaf0f6;
+        color:var(--dim);margin:0 5px 3px 0;white-space:nowrap}
+  .pill.ok{background:#e5f5e9;color:#237a3a}.pill.hot{background:#fdecea;color:#b23b2e}
+  .pill.l{background:#f0e9fb;color:#6632ad}.pill.d{background:#fdf0dc;color:#a35b06}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#eef3f9;font-weight:700}tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line)}
+  .file{font-family:Consolas,monospace;font-size:.88em;color:#7a4b00;background:#fff5e3;
+        padding:1px 5px;border-radius:4px}
+  ul{margin:6px 0 8px;padding-left:22px}li{margin:4px 0}
+  .note{font-size:13px;color:var(--dim)}
+  .okbox{background:#eef9f2;border-left:4px solid #2f9e56;padding:10px 14px;border-radius:6px;margin:10px 0}
+  .warn{background:#fff6f5;border-left:4px solid var(--hot);padding:10px 14px;border-radius:6px;margin:10px 0}
+  .bar{border-left:4px solid var(--c1);border-radius:4px;padding-left:14px;margin:10px 0}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:7px;
+       padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit;float:right}
+  .btn:hover{background:#eef3f9}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;
+               font-size:13px;cursor:pointer;font-family:inherit;color:var(--dim)}
+  .tabs button.on{background:#20304a;color:#fff;border-color:#20304a}
+  .pane{display:none}.pane.on{display:block}
+  .svgwrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+  svg{display:block;min-width:900px;width:100%;height:auto}
+  .nd rect{fill:#f3f6fb;stroke:#d5dfeb;stroke-width:1.5}
+  .nd text{fill:#415163;font-size:12px;text-anchor:middle}
+  .nd .t2{fill:#8090a2;font-size:10.5px}
+  .nd.on rect{fill:#1c5c6e;stroke:#0f8a8a;stroke-width:2.5}
+  .nd.on text{fill:#fff}.nd.on .t2{fill:#bfe9df}
+  .nd{cursor:pointer}.ln{stroke:#cfd9e6;stroke-width:2.5;fill:none}
+  .detail{border:1px solid var(--line);border-radius:9px;padding:14px 16px;background:#fbfcfe;margin-top:12px}
+  .detail h3{margin:0 0 6px;font-size:16px}
+  .qitem{border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-bottom:10px;background:#fff}
+  .qitem p{margin:0 0 8px;font-weight:600}
+  .qitem label{display:block;font-size:13.5px;margin:4px 0;cursor:pointer;font-weight:400}
+  .qitem .fb{margin-top:8px;font-size:13px;display:none}
+  .qitem .fb.show{display:block}.qitem .fb.good{color:#237a3a}.qitem .fb.bad{color:var(--hot)}
+  footer{margin-top:36px;font-size:12.5px;color:var(--dim);text-align:center;line-height:2}
+</style>
+</head>
+<body>
+<div class="hero"><div class="inner">
+  <h1>AI 控车落地与验收 · 第 ⑦ 步已实现</h1>
+  <div class="sub">按「一句话结论 → 生活比喻 → 项目位置 → 文件与接口 → 逐步拆解配图 → 常见坑 → 自测」组织 · 2026-11-08 实测通过</div>
+  <p>你确认的流程：<strong>语音采集 → 语音转文字 → 大模型判定文字含义 → 解析规范指令 → 校验 → 下发</strong>，已在工程里跑通。同一个全模态模型 <code>qwen3.8-omni-flash</code> 兼任 ASR 与语义解析两次调用；密钥只放本地配置，前端不碰。</p>
+  <p>实测：一句话解析 <b>1.74 秒</b>得到 <code>MOVE(angle=270, speed=70) + STOP</code>；真实下发拿到云端 <code>command_id</code>；幻觉命令、模糊语句、静音音频都被正确拦下。</p>
+  <div>
+    <a class="back" href="http://127.0.0.1:8000/ai/view">打开实际功能页（需后端在跑）</a>
+    <a class="back" href="V3-学习导航.html">返回学习导航</a>
+    <a class="back" href="V3-学-自然语言控车与语音链路.html">方案讲解</a>
+  </div>
+</div></div>
+<div class="topnav"><div class="inner">
+  <a href="#s1">① 一句话结论</a><a href="#s2">② 生活比喻</a><a href="#s3">③ 项目位置</a>
+  <a href="#s4">④ 文件与接口</a><a href="#s5">⑤ 逐步拆解</a><a href="#s6">⑥ 常见坑</a><a href="#s7">⑦ 自测</a>
+</div></div>
+
+<div class="wrap">
+
+<!-- 1 -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>一句话结论</h2><span class="tag">已经能用了</span></div>
+  <div class="concl">
+    按你说的流程，第 ⑦ 步 AI 增强<strong>已经写进工程并实测通过</strong>：打开 <code>http://127.0.0.1:8000/ai/view</code>，选车、说一句或打一句，后端会先转写、再让大模型填成规范指令、逐条校验，最后走<strong>原来那条</strong> <code>/command → 华为云 → MQTT → 小车</code> 链路。
+    <small>关键点：① 没有新协议、没有绕开白名单，小车代码一行没改；② 语音转文字和语义解析是<strong>同一个模型的两次调用</strong>（先只出逐字稿、再 Function Calling 出 JSON），不是让文本模型去"听"；③ 密钥只存在 <span class="file">server/ai_config.json</span>，已加 <span class="file">.gitignore</span>，<b>没有写进任何 HTML、文档或日志</b>。</small>
+  </div>
+  <div class="grid3" style="margin-top:14px">
+    <div class="card"><h3><span class="pill ok">已实现</span>后端</h3><p><code>POST /ai/command</code>（文字 / 语音 / dry_run）、<code>GET /ai/view</code>、<code>/health</code> 增加 <code>ai_configured</code>。命令执行核心抽成 <code>dispatch_command()</code>，网页摇杆与 AI 共用。</p></div>
+    <div class="card"><h3><span class="pill ok">已实现</span>网页</h3><p>新页 <span class="file">web/ai_chat.html</span>：选车、文字、语音录音（自动转 16k WAV）、只解析、真实下发、急停、四块结果展示。大屏和后台各加了一个「AI 语音控车」入口。</p></div>
+    <div class="card"><h3><span class="pill l">需重构建</span>APP</h3><p><span class="file">Index.ets</span> 加了「AI 控车」切换按钮，把内嵌 Web 从 <code>/admin/view</code> 切到 <code>/ai/view</code>（文字模式）。<b>要在 DevEco 重新构建安装才看得到</b>；语音输入需真机 + 原生语音 Kit。</p></div>
+  </div>
+  <div class="warn"><strong>关于你发来的密钥：</strong>它已经出现在聊天记录里。我只把它写进本地 <span class="file">server/ai_config.json</span> 并加入忽略规则，没有复制到任何讲解文件、日志或代码里。如果这个 key 会长期使用，建议到平台<b>轮换一个新 key</b>，以后用环境变量 <code>V3_AI_API_KEY</code> 提供，不必贴进对话。</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>生活比喻：点菜流程真的装进去了</h2><span class="tag">四个角色各就各位</span></div>
+  <div class="card">
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:18%">角色</th><th>项目里由谁担当</th><th style="width:32%">真实代码 / 文件</th></tr></thead>
+      <tbody>
+        <tr><td><b>耳朵</b>（采集）</td><td>网页 <code>getUserMedia + MediaRecorder</code>，录完在浏览器里重采样成 16k 单声道 WAV；APP 目前用打字输入，真机语音待接原生 Kit</td><td><span class="file">web/ai_chat.html</span></td></tr>
+        <tr><td><b>速记员</b>（ASR）</td><td>同一个 <code>qwen3.8-omni-flash</code> 的<b>第一次</b>调用：音频以 <code>data:audio/wav;base64,…</code> 送进去，提示词要求"只输出逐字稿，不解释、不描述音效"</td><td><span class="file">server/ai_agent.py · transcribe()</span></td></tr>
+        <tr><td><b>点单顾问</b>（LLM）</td><td><b>第二次</b>调用：纯文字 + <code>tools</code> 函数定义，让模型把"慢慢 / 往东 / 三秒"填成 <code>device_id / cmd / speed / angle / duration_ms</code></td><td><span class="file">server/ai_agent.py · parse_instruction()</span></td></tr>
+        <tr><td><b>收银台</b>（校验）</td><td>车号必须能对应 <code>devices.json</code>、命令必须在 6 个白名单里、speed 0~100、angle 0~360、时长与步数有上限；任一项不过<b>整单拒绝</b></td><td><span class="file">ai_agent.normalize()</span> + <span class="file">app.py · build_move_paras()</span></td></tr>
+        <tr><td><b>后厨</b>（执行）</td><td>逐条调共用的 <code>dispatch_command()</code>，转 <code>move(vx,vy)/stop</code> → <code>CreateCommand</code> → MQTT 8883 → 车；带时长就到点补发 <code>STOP</code></td><td><span class="file">server/app.py:608 附近</span></td></tr>
+        <tr><td><b>回单</b>（反馈）</td><td>页面显示逐字稿、plan JSON、每步真实回执、最终回复；回执只用 <code>/command</code> 的真实返回值，不用模型自己编的"已执行"</td><td><span class="file">web/ai_chat.html</span> + <code>audit()</code></td></tr>
+      </tbody>
+    </table></div>
+    <div class="bar">为什么坚持分两次调用？因为逐字稿要显示在页面上、要写进审计日志、出错时能分清"是听错了还是理解错了"。<a href="V3-学-全模态模型一步到位可行吗.html">一次调用直出</a>技术上也可行，本页把它留成后续可切换的备选。</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>项目位置：改了哪些文件</h2><span class="tag">一份改动清单</span></div>
+  <div class="card">
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:30%">文件</th><th style="width:12%">状态</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><span class="file">server/ai_config.json</span></td><td><span class="pill hot">新建·含密钥</span></td><td>base_url / api_key / model / timeout / max_plan_steps(8) / max_duration_ms(10000) / enable_thinking(false)。支持环境变量覆盖。<b>已 gitignore</b></td></tr>
+        <tr><td><span class="file">.gitignore</span></td><td>新建</td><td>忽略 <code>server/ai_config.json</code>、<code>cloud_config.json</code>、证书、<code>.env</code>、db/log/构建产物</td></tr>
+        <tr><td><span class="file">server/ai_agent.py</span></td><td>新建</td><td>纯标准库（urllib）实现：<code>load_config / _chat / transcribe / parse_instruction / normalize</code>。不依赖 openai / requests，任何 Python 都能跑</td></tr>
+        <tr><td><span class="file">server/app.py</span></td><td>修改</td><td>① <code>import ai_agent</code>；② 把 <code>/command</code> 的下发核心抽成 <code>dispatch_command()</code>，路由与 AI 共用；③ 新增 <code>POST /ai/command</code>、<code>GET /ai/view</code>、<code>AI_LOCK</code>；④ <code>/health</code> 加 <code>ai_configured</code>；⑤ 启动横幅加 AI 地址</td></tr>
+        <tr><td><span class="file">web/ai_chat.html</span></td><td>新建</td><td>验收展示页：设备下拉、示例语句、文字/语音输入、dry_run、急停、四块结果区、安全上下文自检、WAV 转码</td></tr>
+        <tr><td><span class="file">web/monitor.html</span> / <span class="file">web/admin.html</span></td><td>各加 1 行</td><td>顶部导航新增「AI 语音控车 ↗」链接到 <code>/ai/view</code></td></tr>
+        <tr><td><span class="file">CarFleet/.../pages/Index.ets</span></td><td>修改</td><td>加 <code>@State adminPage</code> 与切换按钮，用 <code>webController.loadUrl()</code> 在管理后台 / AI 控车页之间切换</td></tr>
+        <tr><td><span class="file">docs/V3-学习导航.html</span> 等 4 份教材</td><td>修改</td><td>专题清单加 3 条链接；两份实现前写的教材加"已落地"提示横幅，避免状态描述过时</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note"><b>没动的东西：</b><span class="file">device/car_mqtt_client.py</span>（小车模拟器）、<span class="file">server/devices.json</span>、<span class="file">cloud_config.json</span>、轨迹库、WebSocket、摇杆与后台逻辑，全部保持原样。小车端完全不知道"指令是 AI 生成的"。</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>文件与接口：契约与真实报文</h2><span class="tag">可复制</span></div>
+  <div class="grid2">
+    <div class="card">
+      <h3>POST /ai/command<button class="btn" data-copy="c1">复制</button></h3>
+      <pre id="c1">// 文字模式（先用这个验收）
+POST http://127.0.0.1:8000/ai/command
+Content-Type: application/json
+
+{ "text": "让2号车快点往西开两秒然后停",
+  "device_id": "car_002",     // 页面默认车；语音里说了别的车号以语音为准
+  "dry_run": true }           // true=只解析不下发
+
+// 语音模式（audio_b64 与 text 二选一）
+{ "audio_b64": "&lt;16k 16bit 单声道 WAV 的 base64&gt;",
+  "mime": "audio/wav", "device_id": "car_001", "dry_run": false }
+
+// 响应（真实实测，200）
+{ "ok": true,
+  "transcript": "让2号车快点往西开两秒然后停",
+  "device_id": "YOUR_PRODUCT_ID_car_002",
+  "plan": [ {"cmd":"MOVE","speed":70,"angle":270.0,"duration_ms":2000},
+            {"cmd":"STOP","duration_ms":0} ],
+  "steps": [ ... 每步的真实 command_id / paras / ok ... ],
+  "say": "已为2号车生成向西快速行驶2秒后停止的指令计划。",
+  "reply": "仅解析，未下发任何命令（dry_run）",
+  "dry_run": true, "elapsed": 1.74 }</pre>
+    </div>
+    <div class="card">
+      <h3>配置与安全边界<button class="btn" data-copy="c2">复制</button></h3>
+      <pre id="c2">// server/ai_config.json（密钥不在此展示，也不在任何文档里）
+{
+  "base_url": "https://maas.qianwenaiapi.com/compatible-mode/v1",
+  "api_key":  "YOUR_CREDENTIAL",
+  "model":    "qwen3.8-omni-flash",
+  "timeout": 30,
+  "max_plan_steps": 8,
+  "max_duration_ms": 10000,
+  "enable_thinking": false
+}
+
+// 唯一对外端点：POST {base_url}/chat/completions
+//  文字模式  → 调 1 次（解析）
+//  语音模式  → 调 2 次（转写 + 解析）
+
+// 命令白名单（服务端硬校验，与模型无关）
+CMD_WHITELIST = ("FORWARD","BACK","LEFT","RIGHT","MOVE","STOP")
+speed 0~100 | MOVE angle 0~360 | 车号必须已注册 | 冻结设备拒绝</pre>
+      <p class="note">中转站实测：<code>input_audio.data</code> 必须是 <code>data:audio/wav;base64,…</code> 或 URL，<b>裸 base64 会被拒</b>；<code>/audio/transcriptions</code> 返回 404，所以音频统一走 Chat Completions。</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>页面与入口</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:26%">入口</th><th>地址 / 操作</th><th style="width:28%">能看到什么</th></tr></thead>
+      <tbody>
+        <tr><td>AI 控车页</td><td><code>http://127.0.0.1:8000/ai/view</code></td><td>逐字稿、plan JSON、每步回执、最终回复、耗时</td></tr>
+        <tr><td>大屏 / 后台</td><td>顶部「AI 语音控车 ↗」链接</td><td>同页新标签打开</td></tr>
+        <tr><td>APP 内嵌</td><td>管理后台视图右上角「AI 控车」按钮（需 DevEco 重构建）</td><td>文字模式的同一页面</td></tr>
+        <tr><td>健康检查</td><td><code>curl http://127.0.0.1:8000/health</code></td><td><code>"ai_configured": true</code></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>逐步拆解：点方块看每一跳，附实测记录</h2><span class="tag">交互流程图 + 验收清单</span></div>
+  <div class="card">
+    <div class="svgwrap">
+      <svg viewBox="0 0 1000 190" id="flow" role="img" aria-label="AI 控车七跳链路">
+        <text x="20" y="24" fill="#5b6b7c" font-size="12">音频 / 文字（前端）</text>
+        <text x="980" y="24" fill="#5b6b7c" font-size="12" text-anchor="end">真实执行回执</text>
+        <path class="ln" d="M144 102 L158 102"></path><path class="ln" d="M284 102 L298 102"></path>
+        <path class="ln" d="M424 102 L438 102"></path><path class="ln" d="M564 102 L578 102"></path>
+        <path class="ln" d="M704 102 L718 102"></path><path class="ln" d="M844 102 L858 102"></path>
+        <g class="nd" data-i="0"><rect x="20" y="60" width="124" height="84" rx="10"></rect><text x="82" y="94">① 采集</text><text class="t2" x="82" y="116">麦克风/文字</text></g>
+        <g class="nd" data-i="1"><rect x="160" y="60" width="124" height="84" rx="10"></rect><text x="222" y="94">② ASR 转写</text><text class="t2" x="222" y="116">音频→逐字稿</text></g>
+        <g class="nd" data-i="2"><rect x="300" y="60" width="124" height="84" rx="10"></rect><text x="362" y="94">③ LLM 解析</text><text class="t2" x="362" y="116">Function Call</text></g>
+        <g class="nd" data-i="3"><rect x="440" y="60" width="124" height="84" rx="10"></rect><text x="502" y="94">④ 白名单校验</text><text class="t2" x="502" y="116">车号/范围</text></g>
+        <g class="nd" data-i="4"><rect x="580" y="60" width="124" height="84" rx="10"></rect><text x="642" y="94">⑤ 任务排程</text><text class="t2" x="642" y="116">到点补 STOP</text></g>
+        <g class="nd" data-i="5"><rect x="720" y="60" width="124" height="84" rx="10"></rect><text x="782" y="94">⑥ /command</text><text class="t2" x="782" y="116">云→MQTT→车</text></g>
+        <g class="nd" data-i="6"><rect x="860" y="60" width="124" height="84" rx="10"></rect><text x="922" y="94">⑦ 反馈</text><text class="t2" x="922" y="116">真实回执</text></g>
+        <text x="20" y="172" fill="#8090a2" font-size="11">①②④⑤⑥⑦ 在 PC 后端 :8000；③ 走 HTTPS 到模型服务；⑥ 之后完全复用已验收的云链路。</text>
+      </svg>
+    </div>
+    <div class="detail" id="detail"></div>
+  </div>
+
+  <div class="card">
+    <h3>2026-11-08 实测记录（后端重启后逐条跑过）</h3>
+    <div class="tabs" id="tabs">
+      <button class="on" data-pane="p-real">真实结果</button>
+      <button data-pane="p-check">验收清单</button>
+      <button data-pane="p-curl">动手命令</button>
+    </div>
+    <div class="pane on" id="p-real">
+      <div class="tblwrap"><table>
+        <thead><tr><th style="width:26%">用例</th><th style="width:14%">结果</th><th>实际输出</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET /health</code></td><td><span class="pill ok">200</span></td><td><code>{"ok":true,"total":4,"online":1,"local_fast":true,"ai_configured":true}</code></td></tr>
+          <tr><td><code>GET /ai/view</code></td><td><span class="pill ok">200</span></td><td>返回对话页 HTML</td></tr>
+          <tr><td>「让2号车快点往西开两秒然后停」<br>dry_run</td><td><span class="pill ok">200 / 1.74s</span></td><td><code>MOVE(speed=70, angle=270, 2000ms) + STOP</code>，车号 car_002</td></tr>
+          <tr><td>「让1号车慢慢往东开三秒然后停」<br>dry_run</td><td><span class="pill ok">200 / 1.78s</span></td><td><code>MOVE(speed=35, angle=90, 3000ms) + STOP</code>，车号 car_001</td></tr>
+          <tr><td>「让1号车停下来」<br>真实下发</td><td><span class="pill ok">200 / 3.15s</span></td><td><code>STOP</code> 拿到云端 <code>command_id=1e4c244e-…</code>；审计日志 <code>source=ai</code></td></tr>
+          <tr><td>幻觉命令 <code>cmd=FLY</code> 直打 /command</td><td><span class="pill hot">400 拦下</span></td><td><code>未知 cmd: 'FLY'（白名单: FORWARD/BACK/…）</code></td></tr>
+          <tr><td>「把车开到月亮上去」</td><td><span class="pill hot">400 澄清</span></td><td>模型自己回「无法执行前往月亮的指令，请提供具体地面坐标或目标点位信息」，后端整单不下发</td></tr>
+          <tr><td>静音 WAV 走语音分支</td><td><span class="pill hot">400 过滤</span></td><td><code>没有识别到清晰的语音，请重说或改用文字输入</code>（模型对静音的幻觉描述被挡掉）</td></tr>
+          <tr><td>接口探测</td><td>—</td><td>裸 base64 → 400「URL 不合法」；<code>/audio/transcriptions</code> → 404；<code>tools</code> → 正常返回 <code>tool_calls</code></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="pane" id="p-check">
+      <ol>
+        <li>先运行 <code>start_all_cars.bat</code> 让小车模拟器上线，再运行 <code>python server/app.py</code>（当前已重启在运行）。</li>
+        <li>PC 浏览器打开 <code>http://127.0.0.1:8000/ai/view</code>；顶部三个圆点应显示后端、AI 配置、麦克风状态。</li>
+        <li>选一台<b>在线</b>车，点示例语句，先点「只解析（dry_run）」→ 右侧应出现逐字稿、plan JSON、<code>steps: []</code>。</li>
+        <li>取消 dry_run 点「解析并下发」→ 出现每步 <code>command_id</code>；小车在线时大屏同车会动，模拟器黑窗打印 <code>[命令] move vx=… vy=…</code>。</li>
+        <li>说一句话：点「点一下开始录音」→ 说完再点一次 → 页面显示录音大小、转写结果和执行回执。<b>必须用 127.0.0.1 / localhost 打开</b>。</li>
+        <li>点「紧急停止」验证随时能刹住；再打开 <code>server/commands.log</code> 看带 <code>source=ai</code> 的审计行。</li>
+      </ol>
+      <div class="okbox"><strong>三处对上即整圈通：</strong>对话页有真实 command_id、小车黑窗有命令打印、大屏上同一台车在动 / 停下。</div>
+    </div>
+    <div class="pane" id="p-curl">
+      <pre># 1) 健康检查
+curl http://127.0.0.1:8000/health
+
+# 2) 只解析（不下发，最安全）
+curl -X POST http://127.0.0.1:8000/ai/command -H "Content-Type: application/json" -d "{\"text\":\"让1号车慢慢往东开三秒然后停\",\"device_id\":\"car_001\",\"dry_run\":true}"
+
+# 3) 真实下发（车在线时才有 command_id）
+curl -X POST http://127.0.0.1:8000/ai/command -H "Content-Type: application/json" -d "{\"text\":\"让1号车停下来\",\"device_id\":\"car_001\"}"
+
+# 4) 白名单仍然拦得住
+curl -X POST http://127.0.0.1:8000/command -H "Content-Type: application/json" -d "{\"device_id\":\"car_001\",\"cmd\":\"FLY\"}"
+
+# 5) 看 AI 审计记录
+tail -n 8 server/commands.log</pre>
+      <p class="note">Windows 的 <code>curl</code> 对中文与转义较敏感；更省事的做法是直接在 <code>/ai/view</code> 页面点按钮，右侧「原始响应」就是同样的 JSON。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>常见坑</h2><span class="tag">全部是这次实测踩到或提前挡掉的</span></div>
+  <div class="grid2">
+    <div class="card"><h3><span class="pill hot">接口</span>裸 base64 会被拒</h3><p>中转的 <code>input_audio.data</code> 要 URL 或 <code>data:audio/wav;base64,…</code>。直接塞裸 base64 → 400「The provided URL does not appear to be valid」。后端 <code>transcribe()</code> 已自动补 data URI。</p></div>
+    <div class="card"><h3><span class="pill hot">接口</span>没有 /audio/transcriptions</h3><p>该中转返回 404，别照 OpenAI 的 Whisper 端点写。音频统一放进 <code>chat/completions</code> 的 <code>input_audio</code>。</p></div>
+    <div class="card"><h3><span class="pill hot">数据</span>模型把「3号车」输出成 "3"</h3><p>实测 Function Calling 返回 <code>device_id: "3"</code>。<code>normalize()</code> 会自动补成 <code>car_003</code> 并用 <code>resolve_device_id()</code> 复核；编造的 <code>car_099</code> 直接整单拒绝。</p></div>
+    <div class="card"><h3><span class="pill hot">数据</span>静音被模型"编"成一段音乐</h3><p>全模态模型面对无语音音频容易输出听感描述。转写层加了幻觉词过滤 + 必须含控车线索词的双重检查，否则返回「没有识别到清晰的语音」。</p></div>
+    <div class="card"><h3><span class="pill d">延迟</span>深度思考默认开启</h3><p>响应里有 <code>reasoning_content</code>，思考 token 也计费。配置里 <code>enable_thinking: false</code>，短指令实测 1.7~3.2 秒完成"解析 + 下发"。</p></div>
+    <div class="card"><h3><span class="pill d">安全</span>AI 输出仍必须过白名单</h3><p>工具 schema 里的 enum/min/max 只是建议；服务端 <code>normalize()</code> 与 <code>build_move_paras()</code> 又各验一遍。幻觉命令、越界速度、冻结设备都被拦。</p></div>
+    <div class="card"><h3><span class="pill d">协议</span>「开三秒」不会自动停</h3><p>现有 <code>/command</code> 没有时长字段。后端把 <code>duration_ms</code> 变成"等 3 秒再发下一条 STOP"，全程上限 10 秒、最多 8 步，并用 <code>AI_LOCK</code> 防止两个 AI 任务交错控车。</p></div>
+    <div class="card"><h3><span class="pill d">反馈</span>别把模型的 say 当执行结果</h3><p>页面上的「已下发 N 条命令」由每步真实返回值统计；任一步 502/403 就中止后续并如实说失败，不用模型自己写的"已完成"。</p></div>
+    <div class="card"><h3><span class="pill l">网页</span>局域网 IP 打开时麦克风灰掉</h3><p><code>http://192.168.x.x:8000</code> 不是安全上下文。PC 用 <code>127.0.0.1</code>；手机/别的电脑访问要先按 <a href="V3-学-HTTP与HTTPS.html">HTTP 与 HTTPS</a> 升级，或暂时只用文字输入。</p></div>
+    <div class="card"><h3><span class="pill l">音频</span>webm/opus 要转 WAV</h3><p>MediaRecorder 默认给 webm/opus，云 ASR 常要 wav/pcm。页面用 <code>AudioContext</code> 解码后重采样到 16k 单声道并手写 WAV 头，再 base64 上传。</p></div>
+    <div class="card"><h3><span class="pill l">APP</span>模拟器只能玩文字模式</h3><p>端侧语音识别需要真机与 <code>ohos.permission.MICROPHONE</code>；DevEco 虚拟手机没有真实麦克风。APP 内嵌 Web 也请用「AI 控车」按钮切页后先打字验收，并记得重新构建安装。</p></div>
+    <div class="card"><h3><span class="pill l">密钥</span>别让 key 进仓库 / 文档</h3><p>配置支持 <code>V3_AI_API_KEY</code> 等环境变量覆盖；<code>.gitignore</code> 已忽略配置文件与已有明文 AK/SK 的 <code>cloud_config.json</code>。地域化 API Key 不通用，换中转要连地址一起改。</p></div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>自测</h2><span class="tag">5 题判分</span></div>
+  <div class="card">
+    <div id="quizBox"></div>
+    <div class="okbox" id="quizScore">答对 0 / 5</div>
+  </div>
+  <div class="card">
+    <h3>还没做 / 下一步</h3>
+    <ul>
+      <li><b>APP 原生语音</b>：加麦克风权限与 <code>@kit.CoreSpeechKit</code> 的 <code>speechRecognizer</code>，真机上把文字丢给同一个 <code>/ai/command</code>（当前 APP 只做了文字模式的内嵌页切换）。</li>
+      <li><b>地图点位</b>：「去 3 号楼」目前会被模型礼貌拒绝，因为项目没有名称→坐标表；补 <code>points.json</code> 后才能演示路线图里的目标点导航。</li>
+      <li><b>巡检日报</b>：路线图 ⑦ 第 2 项还没做，可用 <code>/track</code> + <code>commands.log</code> 让同一个模型生成文字日报。</li>
+      <li><b>HTTPS</b>：真机浏览器 / 跨设备语音采集的前置条件，按已有教材升级后再开麦克风。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>口径说明</h3>
+    <p class="note">本页所有实测数据来自 2026-11-08 在本机重启后端后的真实请求（后端 <code>0.0.0.0:8000</code>、在线车 1 台）。模型能力、参数与计费以你账号所在平台的当前文档为准。讲解与文档中没有写入任何账号密钥；工程代码里唯一含密钥的文件是 <span class="file">server/ai_config.json</span>，已被 <code>.gitignore</code> 忽略。</p>
+  </div>
+</section>
+
+<footer>
+  V3 智能巡检车队 · 第 ⑦ 步 AI 增强落地说明 ｜ 生成于 2026-11-08 ｜
+  <a href="V3-学-自然语言控车与语音链路.html">方案讲解</a> ·
+  <a href="V3-学-全模态模型一步到位可行吗.html">方案 E 对比</a> ·
+  <a href="V3-学习导航.html">学习导航</a>
+</footer>
+</div>
+
+<script>
+(function(){
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var STEPS = [
+    {n:'① 采集', d:'网页 <code>getUserMedia + MediaRecorder</code> 录音，浏览器内重采样为 16k 单声道 WAV 并 base64 上传；文字模式跳过采集。页面会自检 <code>window.isSecureContext</code>，非安全上下文时禁用麦克风但保留文字输入。', f:'web/ai_chat.html'},
+    {n:'② ASR 转写', d:'后端把音频包成 <code>data:audio/wav;base64,…</code> 送 <code>chat/completions</code>，提示词强制"只输出逐字稿"。含幻觉词或不含控车线索的结果判为无效，返回「没有识别到清晰的语音」。', f:'server/ai_agent.py · transcribe()'},
+    {n:'③ LLM 解析', d:'纯文字 + <code>tools</code> 函数定义（设备清单、词表、白名单、角度/速度/时长），模型返回 <code>tool_calls</code>；没走工具时从正文抠 JSON 兜底；信息不足时返回带 <code>say</code> 的澄清。', f:'server/ai_agent.py · parse_instruction()'},
+    {n:'④ 白名单校验', d:'车号映射到 <code>devices.json</code>、cmd 必须属于 6 个合法命令、speed 0~100、angle 0~360、步数 ≤8、时长 ≤10s。任一项不过整单拒绝并写审计日志。', f:'ai_agent.normalize() + app.py:449/453'},
+    {n:'⑤ 任务排程', d:'<code>AI_LOCK</code> 保证同一时刻只有一个 AI 任务；逐条执行，遇到 <code>duration_ms</code> 就等待后再发下一条，因此"开三秒"会在 3 秒后自动补 <code>STOP</code>。任一步失败立即中止剩余计划。', f:'server/app.py · /ai/command'},
+    {n:'⑥ 既有 /command', d:'调用与摇杆共用的 <code>dispatch_command()</code>：<code>build_move_paras()</code> 转 <code>vx/vy</code> → <code>CreateCommand</code> → 华为云 → MQTT 8883 → 车，并触发乐观回显让大屏立即响应。小车代码零改动。', f:'server/app.py · dispatch_command()'},
+    {n:'⑦ 反馈', d:'用每步真实 <code>command_id / 错误码</code> 拼出回复，页面分四块显示逐字稿、plan、每步回执、原始响应；<code>audit()</code> 记录 <code>source=ai</code> 便于回溯。', f:'web/ai_chat.html + app.py · audit()'}
+  ];
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('#flow .nd'));
+  function show(i){
+    nodes.forEach(function(n,k){ n.className.baseVal = 'nd' + (k===i ? ' on' : ''); });
+    var s = STEPS[i];
+    document.getElementById('detail').innerHTML =
+      '<h3>' + esc(s.n) + '</h3><p>' + s.d + '</p>' +
+      '<div class="note"><b>代码位置：</b><span class="file">' + esc(s.f) + '</span></div>';
+  }
+  nodes.forEach(function(n){ n.addEventListener('click', function(){ show(+n.dataset.i); }); });
+  show(0);
+  document.addEventListener('keydown', function(e){
+    var cur = nodes.findIndex(function(n){ return n.className.baseVal.indexOf('on') >= 0; });
+    if (e.key === 'ArrowRight') show((cur+1) % STEPS.length);
+    else if (e.key === 'ArrowLeft') show((cur-1+STEPS.length) % STEPS.length);
+  });
+
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('#tabs button'));
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.className = ''; });
+      t.className = 'on';
+      Array.prototype.forEach.call(document.querySelectorAll('.pane'), function(p){
+        p.className = 'pane' + (p.id === t.dataset.pane ? ' on' : '');
+      });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('button[data-copy]'), function(b){
+    b.addEventListener('click', function(){
+      var t = document.getElementById(b.dataset.copy).textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){
+          b.textContent='已复制'; setTimeout(function(){ b.textContent='复制'; }, 1400);
+        });
+      } else { b.textContent = '请手动选中'; }
+    });
+  });
+
+  var QUIZ = [
+    {q:'这次落地后，小车模拟器（device/car_mqtt_client.py）改了吗？', a:['改了，加了 AI 命令解析','没改，AI 指令仍走原来的 /command → 华为云 → MQTT','改了上报频率','删掉重建了'], r:1,
+     why:'小车端完全不知道指令来源。新增的是后端翻译器与网页入口，下发链路复用 dispatch_command()。'},
+    {q:'语音与文字在本实现里分别调用几次模型？', a:['都是 1 次','文字 1 次（解析），语音 2 次（转写 + 解析）','都是 2 次','文字 0 次'], r:1,
+     why:'语音模式先 transcribe() 拿逐字稿，再 parse_instruction() 出 plan；文字模式跳过第一步。'},
+    {q:'模型返回 device_id="3" 会发生什么？', a:['直接下发失败','后端规范化成 car_003 并复核注册表','交给前端自己处理','把 3 当成速度'], r:1,
+     why:'实测模型确实输出过 "3"；normalize() 会补零成 car_003，再用 resolve_device_id() 校验，编造的 car_099 则整单拒绝。'},
+    {q:'「让1号车慢慢往东开三秒」为什么需要后端排程？', a:['因为模型不会算数','因为 /command 没有时长字段，必须等 3 秒后补发 STOP','因为 MQTT 会超时','因为小车没有电池'], r:1,
+     why:'duration_ms 是编排层字段，不是 /command 参数。后端定时器到点发下一条，否则车会一直按上一条速度跑。'},
+    {q:'用 http://192.168.1.23:8000/ai/view 打开，语音按钮为什么不能用？', a:['后端没启动','不是安全上下文，浏览器禁用麦克风；文字输入仍可用','模型不支持中文','密钥过期'], r:1,
+     why:'麦克风 API 只在 HTTPS / localhost / 127.0.0.1 可用。PC 本机改 127.0.0.1，跨设备访问要先升 HTTPS。'}
+  ];
+  var box = document.getElementById('quizBox'), answers = {};
+  QUIZ.forEach(function(item, qi){
+    var d = document.createElement('div'); d.className = 'qitem';
+    var html = '<p>' + (qi+1) + '. ' + esc(item.q) + '</p>';
+    item.a.forEach(function(t, ai){
+      html += '<label><input type="radio" name="q'+qi+'" value="'+ai+'"> ' + esc(t) + '</label>';
+    });
+    html += '<div class="fb" id="fb'+qi+'"></div>';
+    d.innerHTML = html;
+    d.addEventListener('change', function(e){
+      if (!e.target.name) return;
+      answers[qi] = +e.target.value;
+      var ok = answers[qi] === item.r, fb = document.getElementById('fb'+qi);
+      fb.className = 'fb show ' + (ok ? 'good' : 'bad');
+      fb.innerHTML = (ok ? '✓ 正确。' : '✗ 不对。') + esc(item.why);
+      var right = 0;
+      QUIZ.forEach(function(q,k){ if (answers[k] === q.r) right++; });
+      document.getElementById('quizScore').textContent = '答对 ' + right + ' / ' + QUIZ.length +
+        (right === QUIZ.length ? '　全对，去页面上实机验收吧' : '　（改答案会实时重新计分）');
+    });
+    box.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>

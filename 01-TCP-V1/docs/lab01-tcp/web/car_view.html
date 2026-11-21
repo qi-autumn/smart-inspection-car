@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab01 寻检车俯视图（最终版）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #e8edf4;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    gap: 14px;
+  }
+  header {
+    width: min(860px, 96vw);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 18px; color: #1f2d3d; font-weight: 600; }
+  #connBadge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: #5a6b7f;
+  }
+  #connDot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #b0b9c4; transition: background .2s;
+  }
+  #connDot.on { background: #22a35c; box-shadow: 0 0 6px rgba(34,163,92,.6); }
+  #stage {
+    width: min(860px, 96vw);
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(31,45,61,.08);
+    padding: 16px;
+  }
+  canvas { width: 100%; height: auto; display: block; border-radius: 8px; }
+  #hud {
+    width: min(860px, 96vw);
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(31,45,61,.08);
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .cell { text-align: center; min-width: 90px; }
+  .cell .k { font-size: 12px; color: #8896a6; margin-bottom: 4px; }
+  .cell .v { font-size: 20px; font-weight: 600; color: #1f2d3d; font-variant-numeric: tabular-nums; }
+  #footerTip { font-size: 12px; color: #9aa7b5; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🚗 Lab01 智能寻检车 · 俯视监控</h1>
+    <div id="connBadge"><span id="connDot"></span><span id="connText">连接中…</span></div>
+  </header>
+
+  <div id="stage">
+    <canvas id="field" width="800" height="600"></canvas>
+  </div>
+
+  <div id="hud">
+    <div class="cell"><div class="k">坐标 X</div><div class="v" id="hx">--</div></div>
+    <div class="cell"><div class="k">坐标 Y</div><div class="v" id="hy">--</div></div>
+    <div class="cell"><div class="k">朝向</div><div class="v" id="hh">--</div></div>
+    <div class="cell"><div class="k">速度</div><div class="v" id="hs">--</div></div>
+    <div class="cell"><div class="k">电量</div><div class="v" id="hb">--</div></div>
+  </div>
+
+  <div id="footerTip">浏览器为「只看不控」观察端 · 数据来源 ws://localhost:8889 · 每 100ms 一帧</div>
+
+<script>
+"use strict";
+
+// ============================================================
+// 最终版 = step2 + 三个产品化能力：
+//   ① 轨迹渐隐：最近 240 个位置点连成线，越新越亮——车"从哪来到哪去"一眼可见
+//   ② HUD 数字面板：坐标/朝向/速度/电量，比纯画面更适合投影讲解
+//   ③ 断线自动重连：车端重启后页面 2 秒内自动跟上，无需手动刷新
+// 绘图与坐标系部分与 step2 相同；新增逻辑集中在 TRAIL 和 connect()/scheduleReconnect()
+// ============================================================
+
+// ---------------- 配置 ----------------
+var WS_URL = "ws://" + (location.hostname || "localhost") + ":8889";
+var FIELD_W = 800, FIELD_H = 600;
+var TRAIL_MAX = 240;          // 轨迹点保留数量（240 帧 = 24 秒的足迹）
+
+// ---------------- 状态 ----------------
+var canvas = document.getElementById("field");
+var ctx = canvas.getContext("2d");
+var car = null;               // {x, y, heading, speed, battery}
+var trail = [];               // 历史轨迹 [{x, y}]——每帧 push 一个，超长 shift
+
+// ---------------- WebSocket（含自动重连） ----------------
+var ws = null, retryTimer = null;
+
+function connect() {
+  setConn(false, "连接中…");
+  try { ws = new WebSocket(WS_URL); } catch (e) { scheduleReconnect(); return; }
+
+  ws.onopen = function () { setConn(true, "已连接"); };
+
+  ws.onmessage = function (ev) {
+    car = JSON.parse(ev.data);
+    trail.push({ x: car.x, y: car.y });          // 每帧记一个足迹
+    if (trail.length > TRAIL_MAX) trail.shift(); // 只留最近 24 秒
+    updateHud();
+  };
+
+  ws.onclose = function () { setConn(false, "已断开，重连中…"); scheduleReconnect(); };
+  ws.onerror = function () { try { ws.close(); } catch (e) {} };
+}
+function scheduleReconnect() {
+  // 2 秒后重试；retryTimer 防止 onclose/onerror 触发两次排两个队
+  if (retryTimer) return;
+  retryTimer = setTimeout(function () { retryTimer = null; connect(); }, 2000);
+}
+function setConn(on, text) {
+  document.getElementById("connDot").className = on ? "on" : "";
+  document.getElementById("connText").textContent = text;
+}
+
+// ---------------- HUD ----------------
+function updateHud() {
+  document.getElementById("hx").textContent = car.x.toFixed(0);
+  document.getElementById("hy").textContent = car.y.toFixed(0);
+  document.getElementById("hh").textContent = car.heading.toFixed(0) + "°";
+  document.getElementById("hs").textContent = car.speed;
+  document.getElementById("hb").textContent = car.battery.toFixed(0) + "%";
+}
+
+// ---------------- 渲染 ----------------
+// heading 约定与 car_server.py 一致：0° = 朝上（本地 -Y），顺时针增大
+function headingRad(h) { return h * Math.PI / 180; }
+
+function drawGrid() {
+  ctx.fillStyle = "#f3f7fb";
+  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+  ctx.strokeStyle = "#dfe7f0";
+  ctx.lineWidth = 1;
+  for (var gx = 0; gx <= FIELD_W; gx += 50) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, FIELD_H); ctx.stroke();
+  }
+  for (var gy = 0; gy <= FIELD_H; gy += 50) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(FIELD_W, gy); ctx.stroke();
+  }
+  ctx.strokeStyle = "#c9d5e2";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, FIELD_W - 2, FIELD_H - 2);
+  ctx.fillStyle = "#b9c5d3";
+  ctx.font = "12px sans-serif";
+  ctx.fillText("N ↑  (0,0) 左上角 · 场地 800 × 600", 10, 18);
+}
+
+function drawTrail() {
+  if (trail.length < 2) return;
+  ctx.lineWidth = 2;
+  for (var i = 1; i < trail.length; i++) {
+    var alpha = i / trail.length;                 // 越新越亮 -> 渐隐的旧轨迹
+    ctx.strokeStyle = "rgba(64,132,220," + (alpha * 0.55).toFixed(3) + ")";
+    ctx.beginPath();
+    ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+    ctx.lineTo(trail[i].x, trail[i].y);
+    ctx.stroke();
+  }
+}
+
+function drawCar() {
+  var rad = headingRad(car.heading);
+  ctx.save();
+  ctx.translate(car.x, car.y);
+  ctx.rotate(rad);                 // rotate 后本地 -Y 即车头方向（0°=朝上约定）
+
+  // 车影
+  ctx.fillStyle = "rgba(31,45,61,.15)";
+  ctx.save(); ctx.translate(3, 3); roundRect(-15, -22, 30, 44, 6); ctx.fill(); ctx.restore();
+
+  // 车身：前进蓝 / 后退橙 / 静止灰
+  var moving = car.speed !== 0;
+  var body = moving ? (car.speed > 0 ? "#2f7bd9" : "#c88719") : "#7a8a9c";
+  ctx.fillStyle = body;
+  roundRect(-15, -22, 30, 44, 6);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.85)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 车窗（偏车尾一侧）
+  ctx.fillStyle = "rgba(255,255,255,.55)";
+  roundRect(-11, -4, 22, 16, 3);
+  ctx.fill();
+
+  // 车头箭头：指向本地 -Y，rotate 后即运动方向
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(0, -20); ctx.lineTo(-8, -8); ctx.lineTo(8, -8);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawIdleHint() {
+  ctx.fillStyle = "#8b99a9";
+  ctx.font = "16px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("等待小车状态…（请确认 car_server.py 已启动）", FIELD_W / 2, FIELD_H / 2);
+  ctx.textAlign = "start";
+}
+
+function render() {
+  drawGrid();
+  if (car) { drawTrail(); drawCar(); } else { drawIdleHint(); }
+  requestAnimationFrame(render);
+}
+
+connect();
+render();
+</script>
+</body>
+</html>

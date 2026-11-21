@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>03 · TCP 与 HTTP — 项目知识手册</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f4f6f9;
+         color: #1f2d3d; line-height: 1.75; padding: 28px 16px 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; margin-bottom: 20px; }
+  .topbar a, .nav a { color: #185FA5; text-decoration: none; }
+  .topbar a:hover, .nav a:hover { text-decoration: underline; }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  .sub { color: #7a8a9c; font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 20px; margin: 34px 0 12px; padding-left: 10px;
+       border-left: 4px solid #185FA5; }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: #2c3e50; }
+  p { margin: 8px 0; }
+  .card { background: #fff; border-radius: 12px; padding: 18px 22px;
+          box-shadow: 0 2px 8px rgba(31,45,61,.06); margin: 14px 0; }
+  pre { background: #1f2d3d; color: #d8e2ec; border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6;
+        margin: 10px 0; }
+  code { font-family: Consolas, "Courier New", monospace; }
+  p code, li code { background: #e8eef5; color: #185FA5; border-radius: 4px;
+                    padding: 1px 6px; font-size: 0.92em; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid #d5dde6; padding: 8px 12px; text-align: left; }
+  th { background: #eef3fa; }
+  .tip { border-left: 4px solid #22a35c; background: #eef8f2;
+         padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .warn { border-left: 4px solid #d9822b; background: #fdf5ec;
+          padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .qa { margin: 14px 0; }
+  .qa .q { font-weight: 600; color: #185FA5; }
+  .nav { display: flex; justify-content: space-between; margin-top: 40px;
+         font-size: 14px; padding-top: 14px; border-top: 1px solid #d5dde6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <a href="index.html">← 知识手册主页</a>
+    <span>03 / 06</span>
+    <a href="kb-04-websocket.html">下一篇：Socket 与 WebSocket →</a>
+  </div>
+
+  <h1>TCP 与 HTTP：关系与比较</h1>
+  <div class="sub">对应项目场景：TCP 直连控车（8888） vs 浏览器访问网页 / 未来 Flask 后端（HTTP）</div>
+
+  <h2>一、为什么这是重点</h2>
+  <p>面试官最爱问的排序题："讲讲从输入网址到页面显示的过程"——考的就是 TCP 和 HTTP 的关系。
+  而本项目给了你一个罕见的对照样本：<b>同一辆车的状态，既走了裸 TCP（8888），也走了
+  WebSocket（8889，底层同样是 TCP）</b>。学完这页你要能回答：什么时候直接用 TCP，什么时候套一层应用层协议。</p>
+
+  <h2>二、核心概念：不在一个层次上的两个协议</h2>
+  <div class="card">
+    <pre><code>OSI/TCPIP 分层（自上而下）：
+  应用层   HTTP / WebSocket / 我们的 CMD-STATE 协议 / DNS ...
+  传输层   TCP / UDP          ← 字节可靠搬运
+  网络层   IP                 ← 找到哪台机器
+  链路层   以太网 / Wi-Fi     ← 在这个网里传</code></pre>
+    <p><b>TCP</b>：传输层协议。只负责一件事——把字节<b>可靠、有序</b>地从 A 搬到 B
+    （丢包重传、按序重组、流量控制）。它不知道也不关心你传的是什么：一段话？一张图？都只是字节。</p>
+    <p><b>HTTP</b>：应用层协议，<b>建立在 TCP 之上</b>。它规定了"消息"长什么样：
+    请求行 + 头部 + 体，语义是"请求-响应"——客户端问一句，服务端答一句，答完这一轮就结束了。</p>
+    <p>一句话记住：<b>TCP 负责把货送到，HTTP 规定货物怎么打包、对话怎么进行。</b>
+    说"HTTP 比 TCP 高级"不如说"HTTP 是 TCP 上的一种对话格式"。</p>
+  </div>
+
+  <h2>三、项目案例复盘：为什么控车不用 HTTP</h2>
+  <div class="card">
+    <p>假设用 HTTP 实现本项目的控车，会是什么样？</p>
+    <pre><code>POST http://车:8888/command   body: {"action":"FORWARD","speed":70}   → {"ack":true}
+GET  http://车:8888/status    → {"x":400,"y":286,"heading":0,...}    （每 100ms 调一次！）</code></pre>
+    <p>三个致命问题：</p>
+    <p>① <b>请求-响应模式推不了</b>：HTTP 必须客户端先问服务端才能答。要"实时"就得 1 秒问 10 次
+    （轮询），每次都是完整的建连（或复用连接）+ 完整的请求头 + 解析，开销大延迟不稳；</p>
+    <p>② <b>HTTP 头部笨重</b>：查一次位置，有效数据 50 字节，头部几百字节——对 100ms 一次的实时流是浪费；</p>
+    <p>③ <b>服务端无法主动找客户端</b>：紧急消息（比如"电量告急"）没有通道。</p>
+    <p>所以控车链路选了<b>裸 TCP + 自定义文本协议</b>：连接建一次，双向随时发，帧极小（一行文本）。
+    而 HTTP 在什么场合合适？<b>低频、一问一答、跨公网、要兼容万物</b>的场景——
+    下一阶段 APP 查询华为云平台的设备影子，就是标准的 HTTP GET。</p>
+    <div class="tip">伏笔：课程下半场你会同时用到两种——APP 到 Flask 后端走 HTTP（低频查询/下发），
+    后端到云平台走 SDK/HTTP，车到云走 MQTT。到时候回头看这页，选型逻辑一目了然。</div>
+  </div>
+
+  <h2>四、对照表</h2>
+  <div class="card">
+    <table>
+      <tr><th></th><th>TCP（裸）</th><th>HTTP</th></tr>
+      <tr><td>层次</td><td>传输层</td><td>应用层（基于 TCP）</td></tr>
+      <tr><td>消息概念</td><td>没有！只有字节流（→ 粘包问题，见 06 课）</td><td>有，格式严格：请求行/头/体</td></tr>
+      <tr><td>通信模式</td><td>全双工，双向随时发</td><td>请求-响应，客户端发起</td></tr>
+      <tr><td>连接</td><td>长连接天然支持</td><td>默认短交互（HTTP/1.1 keep-alive 可复用连接，但语义仍是一问一答）</td></tr>
+      <tr><td>服务端主动推送</td><td>可以（本项目 STATE 广播）</td><td>不行（要推送得用 WebSocket / SSE）</td></tr>
+      <tr><td>头部开销</td><td>零（协议自己定）</td><td>每请求几百字节起</td></tr>
+      <tr><td>生态</td><td>一切自己造：分帧、心跳、错误码</td><td>极其成熟：浏览器、证书、CDN、鉴权标准全都有</td></tr>
+      <tr><td>本项目场景</td><td>控车 + 状态推流（8888）</td><td>（下半场）查设备影子、业务后端 API</td></tr>
+    </table>
+    <div class="warn">常见误区一："HTTPS 是比 HTTP 更高级的传输协议"——错，HTTPS = HTTP over TLS，
+    还是应用层，只是外面套了加密。误区二："用了 HTTP 就不需要 TCP 了"——HTTP 本身就跑在 TCP 上
+    （HTTP/3 的 QUIC 除外，那是另一段故事，面试聊到可作加分项）。</div>
+  </div>
+
+  <h2>五、面试高频问答</h2>
+  <div class="card qa">
+    <p class="q">Q1：TCP 和 HTTP 的关系？</p>
+    <p>A：HTTP 是应用层协议，TCP 是传输层协议；HTTP 的请求和响应最终都由 TCP 负责可靠传输。
+    关系是"承载"而非"并列"：HTTP 规定对话内容格式，TCP 保证字节可靠有序到达。</p>
+
+    <p class="q">Q2：TCP 为什么是可靠的？</p>
+    <p>A：三大机制：① 序号 + 确认应答（ACK），收不到确认就重传；② 校验和检测损坏；
+    ③ 滑动窗口做流量控制、拥塞控制。代价是开销和延迟——UDP 就是砍掉这些换速度的。</p>
+
+    <p class="q">Q3：三次握手为什么是三次，两次行不行？</p>
+    <p>A：两次不行：服务端无法确认"客户端收到了我的确认"，旧的失效连接请求迟到时会造成资源浪费
+    （经典解释：历史重复连接请求问题）。三次让双方各确认一次"对方的收发能力都正常"。</p>
+
+    <p class="q">Q4：GET 和 POST 的区别？（HTTP 高频）</p>
+    <p>A：语义上 GET 取资源（参数在 URL、幂等、可缓存），POST 提交数据（参数在体、不幂等）。
+    本质都是 TCP 上的报文，区别是约定而非技术。（能补一句"幂等"的定义更佳：同一请求执行一次和多次效果相同。）</p>
+
+    <p class="q">Q5：什么场景选裸 TCP 自定义协议，什么场景选 HTTP？</p>
+    <p>A：实时双向流（聊天/游戏/控车/行情）→ TCP/长连接 + 自定义协议或 WebSocket；
+    低频请求-响应、面向公网与第三方 → HTTP（生态、安全、缓存、负载均衡全都是现成的）。
+    结合本项目控车选型回答即可满分。</p>
+  </div>
+
+  <h2>六、动手验证与思考题</h2>
+  <div class="card">
+    <p><b>验证 1</b>：用 telnet/nc 或 <code>step1_test_client.py</code> 直连 8888，手敲协议帧——
+    你正在"扮演 HTTP 报文出现之前的程序员"，亲身体会应用层协议是自己定的。</p>
+    <p><b>思考 1</b>：如果给你需求"APP 每 5 秒查一次车的位置，别的没了"，还值得用长连接 + 推送吗？
+    用 HTTP 轮询行不行？（答案：5 秒一次属于低频，HTTP 更简单——选型永远跟着频率和实时性要求走。）</p>
+    <p><b>思考 2</b>：STATE 帧为什么设计成 <code>x=..,y=..</code> 的文本而不用 JSON？
+    （提示：比较两种格式的字节数和解析成本；100ms 一帧时差距被放大 10 倍/秒。这也是嵌入式领域偏爱二进制定长帧的原因。）</p>
+  </div>
+
+  <div class="nav">
+    <a href="index.html">← 返回主页</a>
+    <a href="kb-04-websocket.html">04 · Socket 与 WebSocket →</a>
+  </div>
+
+</div>
+</body>
+</html>

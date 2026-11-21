@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>04 · Socket 与 WebSocket — 项目知识手册</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f4f6f9;
+         color: #1f2d3d; line-height: 1.75; padding: 28px 16px 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; margin-bottom: 20px; }
+  .topbar a, .nav a { color: #185FA5; text-decoration: none; }
+  .topbar a:hover, .nav a:hover { text-decoration: underline; }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  .sub { color: #7a8a9c; font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 20px; margin: 34px 0 12px; padding-left: 10px;
+       border-left: 4px solid #185FA5; }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: #2c3e50; }
+  p { margin: 8px 0; }
+  .card { background: #fff; border-radius: 12px; padding: 18px 22px;
+          box-shadow: 0 2px 8px rgba(31,45,61,.06); margin: 14px 0; }
+  pre { background: #1f2d3d; color: #d8e2ec; border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6;
+        margin: 10px 0; }
+  code { font-family: Consolas, "Courier New", monospace; }
+  p code, li code { background: #e8eef5; color: #185FA5; border-radius: 4px;
+                    padding: 1px 6px; font-size: 0.92em; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid #d5dde6; padding: 8px 12px; text-align: left; }
+  th { background: #eef3fa; }
+  .tip { border-left: 4px solid #22a35c; background: #eef8f2;
+         padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .warn { border-left: 4px solid #d9822b; background: #fdf5ec;
+          padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .qa { margin: 14px 0; }
+  .qa .q { font-weight: 600; color: #185FA5; }
+  .nav { display: flex; justify-content: space-between; margin-top: 40px;
+         font-size: 14px; padding-top: 14px; border-top: 1px solid #d5dde6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <a href="index.html">← 知识手册主页</a>
+    <span>04 / 06</span>
+    <a href="kb-05-canvas.html">下一篇：Canvas 实时渲染 →</a>
+  </div>
+
+  <h1>Socket 与 WebSocket：名字像，是两回事</h1>
+  <div class="sub">对应项目场景：APP 走 TCP Socket（8888） · 浏览器俯视图走 WebSocket（8889）</div>
+
+  <h2>一、为什么这是重点</h2>
+  <p>"WebSocket 和 Socket 什么区别？"是本项目最容易被学生问倒的题——两个名字长得像，
+  层次却完全不同。而这个项目恰好<b>两个都用上了</b>，还给出了"为什么浏览器必须用 WebSocket"
+  的真实原因，你的回答可以全程落地到自己的代码。</p>
+
+  <h2>二、项目案例复盘：同一辆车，两个窗口</h2>
+  <div class="card">
+    <pre><code>APP(鸿蒙) --TCP Socket:8888--------→ car_server.py --WebSocket:8889(JSON)→ 浏览器俯视图
+test_client.py --TCP Socket:8888--→     （同一进程，同一份 Car 状态）</code></pre>
+    <p>car_server.py 里这两个服务是这样并存的：</p>
+    <pre><code># ① TCP Socket 服务（给 APP / 测试脚本）：协议自己定，一行一帧
+server = await asyncio.start_server(client_handler, HOST, 8888)
+
+# ② WebSocket 服务（给浏览器）：现成协议，一帧 JSON
+ws_server = await websockets.serve(ws_handler, HOST, 8889)</code></pre>
+  </div>
+
+  <h2>三、核心概念</h2>
+  <div class="card">
+    <h3>1. Socket 是什么？</h3>
+    <p>Socket（套接字）<b>不是协议，是操作系统提供的网络编程接口</b>——你和 TCP/UDP 打交道的"门"。
+    你说"往这个 socket 写数据"，操作系统替你封装成 TCP 段、IP 包发出去。
+    常说的"TCP Socket""UDP Socket"指的是经由这个接口使用 TCP 或 UDP。</p>
+    <p>本项目三个 Socket 使用者：test_client.py（Python 标准库 socket）、
+    CarClient.ets（鸿蒙 <code>@ohos.net.socket</code>）、car_server.py 的 TCP 侧。</p>
+    <h3>2. WebSocket 是什么？</h3>
+    <p>WebSocket 是一个<b>应用层协议</b>（和 HTTP 平级），专为"浏览器里做实时双向通信"而生。
+    它的建立过程很聪明——<b>借道 HTTP</b>：</p>
+    <pre><code>① 浏览器发一个特殊的 HTTP 请求（带 Upgrade: websocket 头）
+② 服务端同意，回 101 Switching Protocols
+③ 从此刻起，这条 TCP 连接"改换频道"，双方改说 WebSocket 帧格式
+④ 之后就是全双工：服务器可以随时主动推帧给浏览器</code></pre>
+    <p>所以准确说法是：<b>WebSocket = 先用 HTTP 握手，再升级成基于 TCP 的长连接帧协议</b>。</p>
+    <h3>3. 为什么浏览器连不了"裸 Socket"？</h3>
+    <p>出于安全模型，<b>浏览器只允许页面使用 HTTP(S)/WebSocket(WSS) 这类应用层协议</b>，
+    不开放原始 TCP/UDP 给网页脚本（否则任何网页都能随意识别内网端口、发送任意包）。
+    这就是本项目单元 4 的诞生理由：</p>
+    <div class="warn">俯视图页面最初想直连 8888 收 STATE——连不上，浏览器不让。
+    于是车端开了第二个服务：WebSocket 8889，把同一份状态翻译成 JSON 推给浏览器。
+    "浏览器不能直连裸 TCP"不是 bug，是浏览器的安全设计。</div>
+  </div>
+
+  <h2>四、对照表</h2>
+  <div class="card">
+    <table>
+      <tr><th></th><th>Socket（TCP）</th><th>WebSocket</th></tr>
+      <tr><td>本质</td><td>操作系统 API 接口</td><td>应用层协议（RFC 6455）</td></tr>
+      <tr><td>层次</td><td>传输层之上、应用之下的"门"</td><td>应用层（基于 TCP）</td></tr>
+      <tr><td>谁在用</td><td>任何语言任何程序</td><td>主要是浏览器页面 / 前端框架</td></tr>
+      <tr><td>消息边界</td><td>无（字节流，要自己分帧）</td><td>有（协议自带帧边界，收到的就是完整一条消息）</td></tr>
+      <tr><td>握手</td><td>三次握手（传输层）</td><td>三次握手 + HTTP Upgrade 握手（应用层）</td></tr>
+      <tr><td>数据格式</td><td>完全自定义</td><td>帧格式固定，内容随意（本项目用 JSON 文本帧）</td></tr>
+      <tr><td>本项目</td><td>8888：APP/脚本 ↔ 车，CMD-STATE 协议</td><td>8889：俯视图 ↔ 车，JSON 状态帧</td></tr>
+    </table>
+    <div class="tip">一个容易加分又容易翻车的细节：WebSocket 自带消息边界（收一条是一条），
+    TCP Socket 没有（要自己按 \n 分帧）。所以本项目里 CarClient.ets 和 test_client.py 都要写分帧缓冲，
+    而 car_view.html 里直接 <code>JSON.parse(ev.data)</code> 就行——不用处理粘包。为什么？各自翻代码验证。</div>
+  </div>
+
+  <h2>五、面试高频问答</h2>
+  <div class="card qa">
+    <p class="q">Q1：WebSocket 和 Socket 的区别？（必考）</p>
+    <p>A：Socket 是操作系统提供的网络编程接口（可以用 TCP 也可以用 UDP）；WebSocket 是构建在 TCP 之上的
+    应用层协议，通过 HTTP 握手升级而来，为浏览器提供全双工通道。两者不在同一层次：
+    一个是"门"，一个是"门上跑的一种方言"。WebSocket 解决的是"网页无法使用原始 TCP"的限制。</p>
+
+    <p class="q">Q2：WebSocket 和 HTTP 什么关系？</p>
+    <p>A：WebSocket 的握手是一个合法的 HTTP 请求（Upgrade 头），服务器回 101 后连接语义从
+    "请求-响应"切换为"全双工帧"。所以可以说 WebSocket 站在 HTTP 的肩膀上，但握手之后与 HTTP 无关。</p>
+
+    <p class="q">Q3：WebSocket 也是长连接吗？怎么保活？</p>
+    <p>A：是。协议自带 Ping/Pong 控制帧做心跳（注意：和我们应用层自己定义的 PING/PONG 文本帧不是一回事——
+    我们在 TCP 自定义协议里造了应用层心跳，而 WebSocket 协议层面内置了等价物）。</p>
+
+    <p class="q">Q4：既然 WebSocket 全双工又自带分帧，为什么本项目控车链路不用 WebSocket？</p>
+    <p>A：因为鸿蒙 APP 不是浏览器，完全可以直接用 TCP Socket，少一层握手和帧封装、协议更轻；
+    WebSocket 的价值在于"浏览器也能玩"。合理推论：如果哪天要做一个网页版控制台（不只看还能控），
+    把 8889 服务从"只读广播"升级成"也收命令"就是最短路径——但要想清楚安全后果（浏览器端人人可发指令）。</p>
+
+    <p class="q">Q5：WebSocket、SSE、轮询怎么选？</p>
+    <p>A：双向实时 → WebSocket；只需服务端单向推（股票弹幕通知）→ SSE 更轻；
+    低频更新 → 轮询/长轮询就够。选型依据还是频率与方向性。</p>
+  </div>
+
+  <h2>六、动手验证与思考题</h2>
+  <div class="card">
+    <p><b>验证 1</b>：打开俯视图页面时按 F12 → Network → WS 标签页，能看到 101 状态码的握手和
+    每 100ms 一条的 JSON 帧——亲眼看"HTTP 升级"的那一刻。</p>
+    <p><b>思考 1</b>：把 car_server.py 的 WS 端口改成 8890，页面要改几处？（答：页面里 WS_URL 一处——
+    两端约定端口的契约意识，和协议字段契约是一回事。）</p>
+    <p><b>思考 2</b>：如果俯视图页面也想发控制指令（网页也能开车），协议和服务端要怎么改？
+    有什么安全风险？（关键词：只读广播 vs 控制通道、鉴权）</p>
+  </div>
+
+  <div class="nav">
+    <a href="index.html">← 返回主页</a>
+    <a href="kb-05-canvas.html">05 · Canvas 实时渲染 →</a>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+# ---- 本地凭据：绝不上传 ----
+server/ai_config.json
+server/cloud_config.json
+server/devices.json
+config.local.json
+set_env.bat
+.env
+*.p12
+*.p7b
+*.cer
+*.pem
+*.hap
+
+# ---- Python 运行时 ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# ---- DevEco / HarmonyOS 本机产物 ----
+.idea/
+.hvigor/
+build/
+oh_modules/
+node_modules/
+local.properties
+
+# ---- 操作系统 ----
+Thumbs.db
+.DS_Store

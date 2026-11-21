@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · 把软件装到 DAYU200 开发板上运行</title>
+<style>
+  :root{--bg:#f5f8fc;--card:#fff;--ink:#1f2933;--dim:#5b6b7c;--line:#dde5ee;
+        --c0:#3f51b5;--c1:#0f8a8a;--c2:#d97706;--c3:#7c3aed;--hot:#b23b2e;--good:#2f9e56;
+        --shadow:0 2px 10px rgba(31,41,51,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.75;font-size:15px;
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,-apple-system,sans-serif}
+  a{color:#1d6fa5;text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;font-family:Consolas,monospace;color:#234}
+  pre{background:#1e2a38;color:#e9f2f8;border-radius:8px;padding:12px 14px;font-size:12.5px;
+      font-family:Consolas,monospace;line-height:1.65;overflow-x:auto;margin:8px 0 0;
+      white-space:pre-wrap;word-break:break-all}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a 0%,#1c5c6e 100%);color:#fff;padding:34px 20px 30px}
+  .hero .inner{max-width:1120px;margin:0 auto}
+  .hero h1{margin:0 0 8px;font-size:26px}
+  .hero .sub{font-size:14.5px;color:#c7dbe6;margin:0 0 12px}
+  .hero p{max-width:960px;margin:0 0 8px;color:#e6f0f5;font-size:14px}
+  .hero .back{display:inline-block;margin-top:12px;color:#a8f0dc;font-size:13px;margin-right:16px}
+  .topnav{position:sticky;top:0;z-index:9;background:#fff;border-bottom:1px solid var(--line);
+          box-shadow:0 1px 6px rgba(31,41,51,.05)}
+  .topnav .inner{max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;gap:2px;padding:8px 20px}
+  .topnav a{font-size:13px;color:var(--dim);padding:6px 11px;border-radius:20px}
+  .topnav a:hover{background:#eef3f9;color:var(--ink);text-decoration:none}
+  section{margin-top:34px;scroll-margin-top:58px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+  .sec-no{width:34px;height:34px;flex:none;border-radius:9px;color:#fff;font-weight:700;
+          display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--c1)}
+  .sec-head h2{margin:0;font-size:21px}
+  .sec-head .tag{font-size:12px;color:var(--dim);background:#eaf0f6;padding:3px 10px;border-radius:12px}
+  .lead{color:var(--dim);margin:0 0 14px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+  .card h3{margin:0 0 8px;font-size:16px}.card p{margin:0 0 8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.grid2,.grid3{grid-template-columns:1fr}}
+  .concl{background:linear-gradient(100deg,#eef7f6,#f2f5ff);border-left:5px solid var(--c1);
+         border-radius:10px;padding:18px 20px;font-size:17px;font-weight:600;line-height:1.85}
+  .concl small{display:block;font-weight:400;font-size:14px;color:var(--dim);margin-top:8px}
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px;background:#eaf0f6;
+        color:var(--dim);margin:0 5px 3px 0;white-space:nowrap}
+  .pill.ok{background:#e5f5e9;color:#237a3a}.pill.hot{background:#fdecea;color:#b23b2e}
+  .pill.l{background:#f0e9fb;color:#6632ad}.pill.d{background:#fdf0dc;color:#a35b06}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#eef3f9;font-weight:700}tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line)}
+  .file{font-family:Consolas,monospace;font-size:.88em;color:#7a4b00;background:#fff5e3;
+        padding:1px 5px;border-radius:4px}
+  ul{margin:6px 0 8px;padding-left:22px}li{margin:4px 0}
+  .note{font-size:13px;color:var(--dim)}
+  .okbox{background:#eef9f2;border-left:4px solid var(--good);padding:10px 14px;border-radius:6px;margin:10px 0}
+  .warn{background:#fff6f5;border-left:4px solid var(--hot);padding:10px 14px;border-radius:6px;margin:10px 0}
+  .bar{border-left:4px solid var(--c1);border-radius:4px;padding-left:14px;margin:10px 0}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:7px;
+       padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit;float:right}
+  .btn:hover{background:#eef3f9}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;
+               font-size:13px;cursor:pointer;font-family:inherit;color:var(--dim)}
+  .tabs button.on{background:var(--c1);border-color:var(--c1);color:#fff;font-weight:700}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+  .steps button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 10px;
+                font-size:12px;cursor:pointer;font-family:inherit;color:var(--dim)}
+  .steps button.on{background:var(--c0);border-color:var(--c0);color:#fff}
+  .detail{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow)}
+  .detail h3{margin:0 0 8px;font-size:17px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:12.5px}
+  .meta b{background:#eaf0f6;color:var(--dim);padding:3px 8px;border-radius:5px;font-weight:600}
+  .meta span{background:#f6f9fc;padding:3px 8px;border-radius:5px;color:#334}
+  svg{width:100%;height:auto;display:block;background:#fbfdff;border:1px solid var(--line);border-radius:10px}
+  .nd{cursor:pointer}.nd rect{stroke-width:2;transition:fill .25s,stroke .25s}
+  .nd:hover rect{stroke:var(--c0)}
+  .nd text{font-size:12px;font-family:"Microsoft YaHei",sans-serif;pointer-events:none}
+  .nd .small{font-size:10px}
+  .copy{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 9px;
+        font-size:11.5px;cursor:pointer;font-family:inherit;color:var(--dim)}
+  .copy:hover{background:#eef3f9}
+  .q{border:1px solid var(--line);border-radius:9px;background:#fff;padding:13px 15px;margin-bottom:10px}
+  .q p{margin:0 0 8px;font-weight:600}
+  .q label{display:block;font-size:13.5px;padding:3px 0;cursor:pointer}
+  .q .fb{font-size:12.5px;margin-top:7px;padding:6px 9px;border-radius:5px;display:none}
+  .q .fb.y{display:block;background:#e9f7ee;color:#1d6b36}
+  .q .fb.n{display:block;background:#fdecea;color:#a13325}
+  .step{border:1px solid var(--line);border-radius:9px;background:#fff;padding:12px 15px;margin-bottom:9px}
+  .step h4{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:9px}
+  .step .no{width:23px;height:23px;flex:none;border-radius:50%;background:var(--c1);color:#fff;
+            font-size:12px;display:flex;align-items:center;justify-content:center}
+  .step .exp{background:#eef9f2;border-left:3px solid var(--good);padding:7px 10px;
+             margin-top:8px;font-size:12.5px;border-radius:0 5px 5px 0}
+  .step .cmd{position:relative}
+  .chk{list-style:none;padding-left:0}
+  .chk li{padding-left:26px;position:relative;margin:7px 0}
+  .chk li:before{content:"☐";position:absolute;left:0;font-size:17px;color:var(--c1);top:-2px}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <h1>把软件装到 DAYU200 开发板上运行</h1>
+    <p class="sub">设备实拍核对 · 2026-11-08 · 按源码、签名包与 hdc 实测结果写成</p>
+    <p>照片里是<b>润和软件 HH-SCDAYU200（大禹系列 / RK3568）</b>，「关于设备」显示 <b>OpenHarmony 7.0.0.33</b>、型号 <code>ohos</code>。但把板子接上电脑后，<code>hdc</code> 读到的真实系统是 <b>OpenHarmony 5.0.3.135 / API 15</b>，与 <span class="file">CarOH/DAYU200部署指南.md</span> 里假设的 API 26 不一致。<b>本页是 2026-11-08 的真实安装实录：线已接上、包已尝试安装、被系统拒绝；下面给出原因和三条可行出路。</b></p>
+    <a class="back" href="V3-学习导航.html">← 返回学习导航</a>
+    <a class="back" href="V3-学-HAP构建签名与真机安装.html">← 相关：HAP 签名与真机安装</a>
+    <a class="back" href="/ai/view">打开 PC 后端功能页（需后端在跑）↗</a>
+  </div>
+</div>
+
+<div class="topnav"><div class="inner">
+  <a href="#s1">1 一句话结论</a><a href="#s2">2 生活比喻</a><a href="#s3">3 项目位置</a>
+  <a href="#s4">4 文件与接口</a><a href="#s5">5 逐步拆解配图</a><a href="#s6">6 常见坑</a><a href="#s7">7 自测</a>
+</div></div>
+
+<div class="wrap">
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>一句话结论</h2><span class="tag">先给答案</span></div>
+  <div class="concl">
+    <b>订正后的结论：你要的是 <code>E:\Harmony\Project\CarFleet</code>（V3 车队 APP），不是板子预装的「寻检车云控」。</b>这个包<b>已经真的装进板子了</b>（<code>install bundle successfully</code>，桌面出现图标），但<b>一点开就崩溃</b>——板子是 OpenHarmony 5.0.3.135 / API 15，跑不了 API 22 编译出来的方舟字节码。
+    <small>板子上原有的 <code>com.example.smart_car_oh</code> 是系统预置的<b>别人的</b>示例应用（<code>appDistributionType: os_integration</code>），跟你的 V3 项目无关，不要拿它当交付。完整实测过程、逐步命令输出、崩溃日志与三条后续路线见 <a href="V3-学-CarFleet上板实录.html"><strong>V3-学-CarFleet上板实录.html</strong></a>；本页下方残留的旧判断一律以那份为准。</small>
+  </div>
+  <div class="warn" style="border-left-width:6px;font-size:14.5px">
+    <b>⚠️ 2026-11-08 17:02 订正说明</b>：本页最早写成于「误以为板子上的软件就是用户的 V3」时，下面第 5 段的路线表、第 6 段的坑表以及结尾「这次实际做了什么」仍留有旧说法。事实是：<b>用户明确否认预装应用属于自己；随后我用 OpenHarmony 官方调试证书给 CarFleet 重签、按 OpenHarmony 规则降版本声明，安装成功，但启动即 <code>Cpp Crash</code></b>。请以新教材为准。
+  </div>
+
+  <div class="card" style="margin-top:14px;border-left:5px solid var(--hot)">
+    <h3>🎯 订正：板子预装的不是你的软件</h3>
+    <p>唤醒后抓到的界面是「<b>寻检车云控</b>」（<code>GET /health</code>、<code>刷新状态</code>、<code>POST /command</code>、设备影子、运动 5 秒／静止 60 秒上报）。它描述的是同类架构，<b>但用户已明确这不是他的 V3 软件</b>；<code>bm dump</code> 显示它是 <code>appDistributionType: os_integration</code> 的系统预置应用。</p>
+    <p><b>随后真正做的事：</b>取 <code>CarFleet\entry\build\default\outputs\default\entry-default-unsigned.hap</code> → 把包内 <code>minAPIVersion/targetAPIVersion</code> 按 OpenHarmony 规则改成 12、<code>compileSdkType=OpenHarmony</code>、补 <code>deviceTypes</code> → 用绑定板子 UDID 的 OpenHarmony 官方调试 profile + <code>app-sign-chain.pem</code> 重新签名 → <code>hdc install -r carfleet-oh-signed.hap</code> 返回 <code>install bundle successfully</code>，桌面出现新图标。</p>
+    <div class="warn"><b>但启动失败：</b><code>aa start</code> 返回 <code>start ability successfully</code>、进程短暂存在后被杀；<code>hilog</code> 抓到 <code>Kill Reason:Cpp Crash</code> / <code>exit with signal:6</code> / <code>ArkCompiler: SafeInsideStub: The stub file is not loaded</code>。根因是包里 <code>ets/modules.abc</code> 由 API 22 的 <code>ark13.0.1.0</code> 编译，板子 API 15 的运行时加载不了 —— <b>改声明能骗过安装器，骗不过运行时</b>。</div>
+    <p class="note">网络部分（PC 后端当时没跑、热点客户端隔离、<code>rport tcp:8000</code> 反向转发）依然成立，但那是为了让<b>别人的</b>预装 APP 连后端；对 CarFleet 而言，前提是先把运行时版本问题解决。</p>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>三个工程，只有一个能装到这块板</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>工程</th><th>系统 / SDK</th><th>干什么</th><th>能装到 DAYU200？</th></tr></thead>
+      <tbody>
+        <tr><td><b>CarOH</b><br><span class="file">E:\Harmony\Project\CarOH</span></td>
+            <td><code>runtimeOS: OpenHarmony</code><br>compileSdk / compatibleSdk = <b>20</b></td>
+            <td>第二阶段：单车控车 APP。两种模式 —— TCP 直连 <code>:9000</code> / 云端模式 <code>:9090</code></td>
+            <td><span class="pill hot">❌ 实测装不上</span> 包声明 <code>minAPIVersion=20</code> 且 <code>rpcid.sc</code> 要求 API 20 的 syscap，板子只有 API 15 → <code>9568293 check syscap failed</code></td></tr>
+        <tr><td><b>CarFleet</b>（V3 车队 APP）<br><span class="file">E:\Harmony\Project\CarFleet</span></td>
+            <td><code>runtimeOS: HarmonyOS</code><br>target / compatible = <code>6.0.2(22)</code>，签名类型 HarmonyOS</td>
+            <td>第 ⑥ 步：多车列表、摇杆、轨迹、内嵌后台、AI 控车</td>
+            <td><span class="pill hot">❌ 不能</span> 商用系统专用，依赖 <code>@kit.ArkWeb</code> 等 HarmonyOS Kit；OpenHarmony 标准系统没有这些 Kit</td></tr>
+        <tr><td><b>v3-fleet 网页</b><br><span class="file">E:\Harmony\Project\v3-fleet\web</span></td>
+            <td>普通 HTML / JS，跑在 Flask <code>:8000</code></td>
+            <td>大屏、管理后台、轨迹回放、<b>AI 语音控车</b></td>
+            <td><span class="pill d">⚠ 不用装</span> 板子只要有浏览器，开 <code>http://&lt;PC IP&gt;:8000/...</code> 就能用整套 V3；这是想在这块板上玩 AI 的最省事路线</td></tr>
+      </tbody>
+    </table></div>
+    <div class="warn"><b>最容易混的一点：</b><code>CarOH</code> 的 <code>9000</code> / <code>9090</code> 和 V3 的 <code>8000</code> 是<b>三套完全不同的后端</b>。把 CarOH 装上去、却去连 V3 的 8000，或反过来开 V3 网页却去跑 <code>car_server.py</code>，都会"装好了但连不上"。下面第 5 段专门把三条线画开。</div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>生活比喻</h2><span class="tag">为什么"装软件"还分系统</span></div>
+  <div class="card">
+    <p>把这件事想成<b>给一台装了 Linux 的工控机装软件</b>：</p>
+    <ul>
+      <li><b>板子 = 一台小电脑</b>，出厂已经装好操作系统（OpenHarmony 7.0.0.33）。<b>烧录</b>是把整套系统镜像重新刷进去 —— 那只在系统坏了或要换版本时才做，现在完全不需要。</li>
+      <li><b>HAP = 这个系统认的安装包</b>，相当于 <code>.apk</code> / <code>.exe</code>。<code>hdc install</code> 就是"双击安装包"。</li>
+      <li><b>但安装包分"发行版"</b>：给 Ubuntu 编的包不一定能在另一个发行版上跑。<code>CarOH</code> 是按 <b>OpenHarmony</b>（开源版）编的，<code>CarFleet</code> 是按 <b>HarmonyOS</b>（华为商用版，带一套专属 Kit）编的 —— 后者拿到板子上，系统会说"这个包我不认识"。</li>
+      <li><b>签名 = 安装包上的公章</b>。板子只认盖过章的包，所以必须用 <code>CarOH-signed.hap</code>，不能用 <code>entry-default-unsigned.hap</code>。</li>
+      <li><b>USB OTG 线 = 数据线</b>。板子有两个 Type-C，只有靠近 HDMI 的那个是"设备口"；插错口或者用了只能充电的线，电脑这边根本看不见板子 —— <b>这正是现在的状态</b>。</li>
+    </ul>
+    <div class="okbox"><b>一句话记住：</b>「烧系统」和「装 APP」是两件事；「装 APP」之前先确认「包是给哪个系统编的」；装完再确认「它要连的是哪台电脑上的哪个端口」。</div>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>项目位置</h2><span class="tag">实测状态，不是推测</span></div>
+  <div class="card">
+    <h3>今天接上线之后，查到的真实状态与安装实录</h3>
+<pre>板子 hdc 序列号  dd011a4144363141301012700805ac00
+内核            Linux 5.10.208 aarch64（RK3568 类开发板）
+系统            const.product.software.version = OpenHarmony 5.0.3.135
+API             const.ohos.apiversion = 15          ← 关键
+名称 / 型号     OpenHarmony 3.2 / ohos（与照片「关于设备」一致）
+已装应用        com.example.smart_car_oh（API 12）、com.example.kikakeyboard
+                com.ohos.arkwebcore（ArkWeb 内核，但没找到独立浏览器 APP）
+网络            eth0 / eth1 均 UP，但都还没拿到 IP（板子没插网线）
+
+hdc 列表        127.0.0.1:5555 → emulator 6.0.0.130 / API 22（虚拟模拟器）
+                dd011a41...    → 真板子
+
+签名包          CarOH-signed.hap 321122 字节，zip 14 项完好
+包内声明        module.json: minAPIVersion=20, targetAPIVersion=20
+                pack.info: apiVersion.compatible=20, target=20
+                rpcid.sc: 60422 字节，声明 API 20 的全套 syscap
+
+安装尝试 #1     hdc install -r CarOH-signed.hap
+                → 9568293 install failed due to check syscap failed
+安装尝试 #2     删 rpcid.sc + 把版本改成 12 + 用原证书重签
+                → 9568322 signature verification failed: not trusted app source
+                （两个实验包已删除，未留在工程里）
+
+已启动应用      aa start -b com.example.smart_car_oh -a EntryAbility
+                → start ability successfully
+                （截屏时板子在锁屏，需手动上滑一次才能看到界面）
+
+V3 后端         /health → 200, ai_configured=true, online=1, total=4
+                app.run(host="0.0.0.0", port=8000)，同网段可访问</pre>
+    <div class="warn"><b>照片里的「软件版本 OpenHarmony 7.0.0.33」与 <code>hdc</code> 读到的 5.0.3.135 / API 15 不一致。</b>可能是设置页读的是另一个字段，或这块板后来刷过不同镜像。<b>安装器只认 <code>const.ohos.apiversion</code>，以 15 为准</b>——这正是部署指南当年写「API 26 向后兼容」时没料到的情况。</div>
+    <div class="okbox"><b>为什么不再继续手改包：</b>就算绕过 syscap 检查，包里的字节码是 <code>ark13.0.1.0</code>（API 20 的 Ark 运行时），在 API 15 系统上大概率仍会加载失败、应用闪退。改包只能骗过安装器，骗不过运行时。正解只有「用匹配板子的 SDK 重新编译」或「把板子刷成包所要求的系统」。</div>
+  </div>
+
+  <div class="card">
+    <h3>三条真正可行的出路（按代价从大到小）</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>路线</th><th>要做什么</th><th>代价 / 前提</th></tr></thead>
+      <tbody>
+        <tr><td><b>A 正统重编译</b></td><td>装一个匹配板子的 OpenHarmony SDK（API 12/15），把 CarOH 的 <code>compatibleSdkVersion</code> 改成对应值，重新 <code>assembleHap</code> → 用现有证书重新签名 → <code>hdc install</code></td><td>本机目前只有 <b>API 20 / 22</b> 两套 SDK，需先补装；编译产物才能真正被 API 15 的 Ark 运行时加载</td></tr>
+        <tr><td><b>B 让系统匹配包</b></td><td>把板子刷成部署指南假设的 <b>OpenHarmony 7.0 / API 26</b> 镜像，然后现成的 <code>CarOH-signed.hap</code> 直接能装</td><td>需要刷机镜像与烧录工具；会清掉板子现有数据，仅在你确实要用 CarOH 时才值得</td></tr>
+        <tr><td><b>C 不装 HAP（最省事）</b></td><td>板子与 PC 同一网段后，用板子浏览器打开 <code>http://&lt;PC IP&gt;:8000/monitor/view</code>、<code>/admin/view</code>、<code>/ai/view</code></td><td>零编译、零签名。但板子 <code>eth0/eth1</code> 现在<b>没有 IP</b>（没插网线），且系统里只有 <code>com.ohos.arkwebcore</code> 内核、没找到独立浏览器 APP —— 需要先插网线并确认可用浏览器</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note"><b>眼下已经在板子上跑起来的：</b><code>com.example.smart_car_oh</code>（API 12，之前课程装的智能车应用）。我已执行 <code>aa start</code> 成功，你在板上手动上滑解锁就能看到它。如果你要装的其实就是这个，那它早就装好了、不用再装。</p>
+  </div>
+
+  <div class="card">
+    <h3>顺带回答上一问：装到"真机 / 模拟器 / 这块板"能不能语音控车</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>目标</th><th>打字控车</th><th>网页语音按钮</th><th>要做语音，正确的做法</th></tr></thead>
+      <tbody>
+        <tr><td>手机真机（装 CarFleet）</td><td><span class="pill ok">可用</span></td>
+            <td><span class="pill hot">灰的</span> 页面 <code>ai_chat.html:294</code> 检查 <code>window.isSecureContext</code>；真机访问 <code>http://&lt;PC IP&gt;:8000</code> 是普通 HTTP → 按钮被写死禁用</td>
+            <td>① <code>module.json5</code> 补 <code>ohos.permission.MICROPHONE</code> → ② 运行时申请 → ③ APP 原生 <code>AudioCapturer</code> 录音成 16k WAV → ④ POST 到已有 <code>/ai/command</code> 的 <code>audio_b64</code>；或用 Core Speech Kit 端侧出文字走 <code>text</code> 分支</td></tr>
+        <tr><td>DevEco 虚拟模拟器</td><td><span class="pill ok">可用</span></td><td><span class="pill hot">灰的</span> 同样是非安全上下文；且 ArkWeb <b>默认拒绝</b>网页 <code>getUserMedia</code></td>
+            <td>官方文档：模拟器支持把<b>电脑麦克风透传</b>给 AudioCapturer（推荐 48kHz / 2ch / 16bit PCM）；Core Speech Kit 的模拟器支持随 DevEco 版本变化，官方仍建议真机验证</td></tr>
+        <tr><td><b>DAYU200（本页主角）</b></td><td><span class="pill d">CarOH 里没有文字 AI 入口</span></td><td><span class="pill hot">不存在语音模块</span> CarOH 只有 TCP / 云端两种控车模式</td>
+            <td><b>板子只负责"采集声音"，AI 全放在 PC 后端</b>：用 OpenHarmony 的 AudioCapturer 或 USB 麦录 16k WAV → base64 → POST <code>http://&lt;PC IP&gt;:8000/ai/command</code>。OpenHarmony 没有 HarmonyOS 的 Core Speech Kit，但也不需要——模型在云端</td></tr>
+      </tbody>
+    </table></div>
+    <div class="okbox"><b>后端这一端早就准备好了。</b>今天直接用静音 WAV 打过对照：带 <code>audio_b64</code> → <code>400 没有识别到清晰的语音</code>（说明已进 ASR 转写分支）；什么都不传 → <code>400 缺少 text 或 audio_b64</code>。也就是说<b>只差一段真实人声</b>，任何设备只要能把声音送进这个接口，AI 解析、白名单校验、下发命令全都会照常工作。</div>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>文件与接口</h2><span class="tag">装哪个、连谁</span></div>
+  <div class="grid2">
+    <div class="card">
+      <h3>CarOH 装完后要连的两个服务端（二选一）</h3>
+      <div class="tblwrap"><table>
+        <thead><tr><th>模式</th><th>板子界面填</th><th>PC 上要跑</th><th>链路</th></tr></thead>
+        <tbody>
+          <tr><td>TCP 直连（默认）</td><td>端口 <code>9000</code></td><td><span class="file">E:\Harmony\Project\Car\tools\car_server.py</span></td><td>板子 ⇄ PC 模拟小车，单车</td></tr>
+          <tr><td>云端模式（开关打开）</td><td>端口 <code>9090</code></td><td><span class="file">E:\Harmony\Project\IoTDA\cloud_backend.py</span></td><td>板子 → PC 桥接 → 华为云 IoTDA → 小车</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">切换开关在 <span class="file">CarOH/entry/src/main/ets/pages/Index.ets:100-110</span>，打开会自动把端口从 9000 改成 9090。</p>
+      <div class="warn" style="margin-bottom:0"><b>注意：</b>这两个都是<b>课程第二/三阶段</b>的服务端，跟 V3 车队后端的 <code>8000</code> 不是一回事。想用多车车队 + AI，请走右边那条网页路线。</div>
+    </div>
+    <div class="card">
+      <h3>想在这块板上用 V3 车队 / AI：不用装 HAP</h3>
+      <p>因为 V3 的全部界面本来就是网页，只要板子上有浏览器、且和 PC 同一网段，直接打开：</p>
+<pre>http://&lt;PC局域网IP&gt;:8000/monitor/view    实时监控大屏
+http://&lt;PC局域网IP&gt;:8000/admin/view      管理后台（admin / admin123）
+http://&lt;PC局域网IP&gt;:8000/track/view      轨迹回放
+http://&lt;PC局域网IP&gt;:8000/ai/view         AI 文字 / 语音控车</pre>
+      <p class="note">后端已用 <code>app.run(host="0.0.0.0", port=8000)</code> 监听，同网段可访问；PC 防火墙需放行 8000。先验证浏览器有没有：<code>hdc shell bm dump -a</code> 找 browser / web 相关 bundle。</p>
+      <p class="note"><b>这条路的额外好处：</b>AI 模型调用、密钥、白名单、命令下发全在 PC 后端，板子只是个显示 + 输入终端，不需要给板子编任何新 HAP。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>逐步拆解配图</h2><span class="tag">点路线 / 点方块 / 勾选步骤</span></div>
+  <p class="lead">先切换路线看「板子到底连到 PC 上的哪一根线」，再照着下面 8 步装。每条路线的高亮不同，点图里的方块可看职责。</p>
+
+  <div class="tabs" id="routeTabs">
+    <button data-r="a" class="on">路线 A · 装 CarOH + TCP 9000</button>
+    <button data-r="b">路线 B · 装 CarOH + 云端 9090</button>
+    <button data-r="c">路线 C · 不装 HAP，浏览器开 V3 :8000</button>
+    <button data-r="d">路线 D · 在板上做语音控车</button>
+  </div>
+
+  <div class="card">
+    <svg id="topo" viewBox="0 0 1040 330" role="img" aria-label="DAYU200 与 PC 的连接路线图">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#9aa9ba"></path></marker>
+        <marker id="arG" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2f9e56"></path></marker>
+      </defs>
+      <text x="16" y="24" font-size="13" fill="#5b6b7c" font-family="Microsoft YaHei">DAYU200（OpenHarmony 7.0.0.33） ⇄ PC（Windows）· 点方块看职责</text>
+
+      <rect x="24" y="46" width="300" height="238" rx="12" fill="#f3f7fb" stroke="#c9d7e5" stroke-width="1.5"></rect>
+      <text x="40" y="68" font-size="13" font-weight="bold" fill="#20304a" font-family="Microsoft YaHei">DAYU200 开发板</text>
+      <g class="nd" data-node="board"><rect x="44" y="86" width="260" height="58" rx="9" fill="#e8f2f7" stroke="#0f8a8a"></rect>
+        <text x="174" y="110" text-anchor="middle" fill="#1f2933">📟 板子 / 屏幕</text>
+        <text class="small" x="174" y="129" text-anchor="middle" fill="#5b6b7c">USB OTG 装包 · 网线同网段</text></g>
+      <g class="nd" data-node="hap"><rect x="44" y="158" width="122" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="105" y="182" text-anchor="middle" fill="#1f2933">CarOH HAP</text>
+        <text class="small" x="105" y="201" text-anchor="middle" fill="#5b6b7c">TCP / 云端</text></g>
+      <g class="nd" data-node="browser"><rect x="182" y="158" width="122" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="243" y="182" text-anchor="middle" fill="#1f2933">浏览器</text>
+        <text class="small" x="243" y="201" text-anchor="middle" fill="#5b6b7c">V3 网页 :8000</text></g>
+      <g class="nd" data-node="audio"><rect x="44" y="230" width="260" height="40" rx="9" fill="#f7f2ff" stroke="#c4b5fd"></rect>
+        <text x="174" y="255" text-anchor="middle" fill="#1f2933">🎤 AudioCapturer / USB 麦 → WAV base64</text></g>
+
+      <rect x="416" y="46" width="600" height="238" rx="12" fill="#f7f9fc" stroke="#c9d7e5" stroke-width="1.5"></rect>
+      <text x="432" y="68" font-size="13" font-weight="bold" fill="#20304a" font-family="Microsoft YaHei">PC（Windows）</text>
+      <g class="nd" data-node="p9000"><rect x="438" y="86" width="170" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="523" y="110" text-anchor="middle" fill="#1f2933">car_server.py</text>
+        <text class="small" x="523" y="129" text-anchor="middle" fill="#5b6b7c">TCP :9000 · 单车模拟</text></g>
+      <g class="nd" data-node="p9090"><rect x="626" y="86" width="170" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="711" y="110" text-anchor="middle" fill="#1f2933">cloud_backend.py</text>
+        <text class="small" x="711" y="129" text-anchor="middle" fill="#5b6b7c">HTTP :9090 · IoTDA 桥接</text></g>
+      <g class="nd" data-node="p8000"><rect x="814" y="86" width="180" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="904" y="110" text-anchor="middle" fill="#1f2933">v3-fleet/app.py</text>
+        <text class="small" x="904" y="129" text-anchor="middle" fill="#5b6b7c">HTTP+WS :8000 · 车队/AI</text></g>
+      <g class="nd" data-node="cloud"><rect x="438" y="158" width="170" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="523" y="182" text-anchor="middle" fill="#1f2933">华为云 IoTDA</text>
+        <text class="small" x="523" y="201" text-anchor="middle" fill="#5b6b7c">设备影子 / 命令</text></g>
+      <g class="nd" data-node="ai"><rect x="626" y="158" width="170" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="711" y="182" text-anchor="middle" fill="#1f2933">/ai/command</text>
+        <text class="small" x="711" y="201" text-anchor="middle" fill="#5b6b7c">ASR + LLM 解析</text></g>
+      <g class="nd" data-node="cars"><rect x="814" y="158" width="180" height="58" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="904" y="182" text-anchor="middle" fill="#1f2933">🚗 小车模拟器</text>
+        <text class="small" x="904" y="201" text-anchor="middle" fill="#5b6b7c">MQTT 8883 → 车动</text></g>
+      <text x="438" y="248" font-size="12" fill="#5b6b7c" font-family="Microsoft YaHei">绿色 = 当前所选路线走通的链路　灰色 = 不经过　红色 = 需要先补的环节</text>
+
+      <path class="ln" data-ln="a" d="M304,187 C360,187 380,120 436,115" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path class="ln" data-ln="b" d="M304,187 C370,187 390,120 624,115" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path class="ln" data-ln="c" d="M304,187 C370,187 400,115 812,115" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path class="ln" data-ln="b2" d="M711,144 L711,156" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path class="ln" data-ln="c2" d="M904,144 L904,156" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path class="ln" data-ln="d" d="M304,250 C380,250 400,190 624,190" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <text x="18" y="310" font-size="12" fill="#5b6b7c" font-family="Microsoft YaHei">提示：三条 PC 后端端口互不相通，别把 CarOH 填成 8000，也别给 V3 网页去跑 car_server.py。</text>
+    </svg>
+    <div class="detail" id="routeDetail" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h3>8 步安装流程（接上线后照着敲）</h3>
+    <div class="steps" id="stepBtns"></div>
+    <div class="detail" id="stepDetail"></div>
+    <p class="note" style="margin-top:10px">命令框右上角可点「复制」。第 3～5 步的 <code>&lt;序列号&gt;</code> 要换成第 3 步 <code>hdc list targets</code> 实际显示的那串设备号；如果列表里只剩板子一台，也可以省略 <code>-t</code>。</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>常见坑</h2><span class="tag">按本项目真实踩过的整理</span></div>
+  <div class="card">
+    <div class="tblwrap"><table>
+      <thead><tr><th>#</th><th>现象</th><th>原因 / 处理</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>hdc list targets</code> 里有 <code>127.0.0.1:5555</code></td><td><b>那是 DevEco 虚拟模拟器（emulator 6.0.0.130 / API 22），不是板子</b>。接线前列表里只有它；接好 USB OTG 后会同时出现板子的随机序列号。<b>务必用 <code>-t &lt;板子序列号&gt;</code> 指定目标</b>，否则可能装到模拟器上</td></tr>
+        <tr><td>2</td><td><code>[Empty]</code> 看不到设备</td><td>插错 Type-C 口（要靠近 HDMI 的 OTG 口）、用了纯充电线、或没装驱动 → 换线换口</td></tr>
+        <tr><td>3</td><td>想装 <code>CarFleet</code> 的 HAP 到板子</td><td><b>订正：</b>换成 OpenHarmony 官方调试签名 + 降版本声明后<b>能装上去</b>（实测 <code>install bundle successfully</code>）；但它是 <code>runtimeOS: HarmonyOS</code> / <code>ark13.0.1.0</code> 字节码，板子 API 15 运行时加载会 <code>Cpp Crash</code>。要真正运行必须用匹配板子的 SDK 重新编译源码</td></tr>
+        <tr><td>4</td><td>拿 <code>entry-default-unsigned.hap</code> 去装</td><td>未签名包会被拒；必须用 <code>CarOH-signed.hap</code></td></tr>
+        <tr><td>5</td><td><code>9568293 check syscap failed</code></td><td>包声明 <code>minAPIVersion=20</code> 且 <code>rpcid.sc</code> 要求 API 20 的全套系统能力；板子实测 <b>API 15</b>。不是包坏了，是系统与包版本不匹配 → 换匹配 SDK 重编译，或把板子刷到 7.0</td></tr>
+        <tr><td>6</td><td>装好了但连不上 PC</td><td>板子要插网线到同一路由器；<code>hdc shell ifconfig eth0</code> 查板子 IP，PC <code>ipconfig</code> 查 PC IP，先 <code>ping</code> 通再试；Windows 防火墙放行对应端口</td></tr>
+        <tr><td>7</td><td>板子界面填了 <code>8000</code></td><td>CarOH 只认 9000 / 9090；8000 是 V3 网页后端，两边协议完全不同</td></tr>
+        <tr><td>8</td><td>把"烧录"当成装 APP</td><td>烧录 = 刷整包系统镜像（DAYU200 首次部署 OpenHarmony 时才做）。现在系统已在跑，只需 <code>hdc install</code></td></tr>
+        <tr><td>9</td><td>想用 V3 车队却去启 <code>car_server.py</code></td><td>V3 要启的是 <span class="file">v3-fleet\server\app.py</span> + <code>start_all_cars.bat</code>；<code>car_server.py</code> 是第一阶段单车旧服务端</td></tr>
+        <tr><td>10</td><td>板子浏览器打不开 <code>:8000</code></td><td>后端虽监听 <code>0.0.0.0</code>，但 PC 防火墙常拦入站；管理员执行 <code>netsh advfirewall firewall add rule name="V3 Flask 8000" dir=in action=allow protocol=TCP localport=8000</code></td></tr>
+        <tr><td>11</td><td>板子上语音按钮灰色 / 没反应</td><td>网页 <code>getUserMedia</code> 要 HTTPS 或 localhost，局域网 HTTP 访问会被禁；OpenHarmony 也没有 Core Speech Kit。改用原生 AudioCapturer 录音 → POST <code>/ai/command</code> 的 <code>audio_b64</code></td></tr>
+        <tr><td>12</td><td>应用闪退</td><td><code>hdc shell hilog | grep caroh</code> 抓日志；OpenHarmony 上部分 Kit 缺失会导致启动失败，优先确认用的是 CarOH 而不是 HarmonyOS 工程</td></tr>
+        <tr><td>13</td><td>板子 APP 显示「后端不通」</td><td>三查：PC 后端是否在跑（<code>curl 127.0.0.1:8000/health</code>）、APP 里 IP 是否是 PC <b>当前</b> IP（热点重连后会变）、两者能否互 ping。手机热点常做客户端隔离 → 用 <code>hdc rport tcp:8000 tcp:8000</code> + APP 填 <code>127.0.0.1:8000</code> 绕开</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>自测</h2><span class="tag">5 题判分 + 动手验证</span></div>
+  <div class="card">
+    <div id="quizBox"></div>
+    <div style="margin-top:10px;font-size:13.5px">得分：<b id="quizScore">尚未作答</b></div>
+    <div style="height:7px;background:#eaf0f6;border-radius:4px;margin-top:8px;overflow:hidden">
+      <div id="progBar" style="height:100%;width:0;background:var(--good);transition:width .3s"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>动手验证（不需要板子也能先跑前两条）</h3>
+<pre># ① 看当前 hdc 认到的是谁（今天结果：只有虚拟模拟器）
+"E:\Harmony\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe" list targets
+
+# ② 确认 V3 后端活着、AI 配好了
+curl http://127.0.0.1:8000/health
+
+# ③ 接上板子后，确认它的系统与 API（应为 OpenHarmony 7.0 / 26）
+hdc -t &lt;序列号&gt; shell "param get const.product.software.version"
+hdc -t &lt;序列号&gt; shell "param get const.ohos.apiversion"
+
+# ④ 装包 / 启动
+hdc -t &lt;序列号&gt; install -r E:\Harmony\Project\CarOH\CarOH-signed.hap
+hdc -t &lt;序列号&gt; shell aa start -b com.example.caroh -a EntryAbility
+
+# ⑤ 查板子 IP（走网页路线时用它和 PC 互 ping）
+hdc -t &lt;序列号&gt; shell ifconfig eth0
+hdc -t &lt;序列号&gt; shell bm dump -a | grep -i browser</pre>
+    <p class="note">把 ③④⑤ 的输出贴给我，我可以接着帮你把包真正装进去、并把板子接到正确的服务端上。</p>
+  </div>
+
+  <div class="okbox"><b>这次实际做了什么：</b>核对设备与真实系统版本 → 接上 USB OTG 后确认板子身份 → <b>真的执行了 <code>hdc install</code> 两次</b>（原包 syscap 失败、手改重签包签名不信任）→ 删除两个实验包 → 用 <code>aa start</code> 成功启动板子上已装的 <code>com.example.smart_car_oh</code> → 抓取板子屏幕 → 确认已装的 APP 就是 V3「寻检车云控」→ <b>重启了停掉的 V3 后端</b>（<code>/health</code> 恢复 200）→ <b>建立 <code>hdc rport</code> 反向端口转发</b>绕开热点客户端隔离 → 新增一键诊断/安装脚本 <span class="file">CarOH\Install-To-DAYU200.bat</span>。<b>没有烧录系统、没有改动 CarOH / CarFleet 源码、没有在板子上留下失败的应用。</b>剩下只需你在板上把后端地址改成 <code>http://127.0.0.1:8000</code> 并点一下 GET /health。</div>
+  <div class="footer">
+    项目内路径与行号按 2026-11-08 当前源码核对 · 相关文档：
+    <a href="V3-学-HAP构建签名与真机安装.html">HAP 构建、签名与真机安装</a> ·
+    <a href="V3-学-用DevEco模拟器跑APP连后端.html">用 DevEco 模拟器跑 APP 连后端</a> ·
+    <a href="V3-学-AI控车落地与验收.html">AI 控车落地与验收</a> ·
+    <a href="V3-学习导航.html">学习导航</a>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                              .replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function escCmd(s){ return esc(String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>')); }
+  function $(id){ return document.getElementById(id); }
+
+  /* ---------- 路线切换 ---------- */
+  var ROUTES = {
+    a: {
+      title:'路线 A · 装 CarOH + TCP 直连 9000（最快看到效果）',
+      desc:'<b>⚠ 今天实测这条路暂时走不通</b>（包要求 API 20、板子只有 API 15）。以下是版本匹配时的完整玩法：板子上装 <code>CarOH-signed.hap</code>，PC 跑 <code>Car/tools/car_server.py</code>，板子界面填 PC 的局域网 IP + 端口 <code>9000</code>。按方向键 → PC 服务端打印小车状态，浏览器开 <code>http://&lt;PC IP&gt;:8080</code> 看俯视图。<b>优点是链路最短、不依赖华为云；缺点是只有一台车、没有 AI。</b>',
+      on:['board','hap','p9000'], lines:['a'], need:['audio'],
+      files:'CarOH-signed.hap · CarOH/DAYU200部署指南.md · Car/tools/car_server.py'
+    },
+    b: {
+      title:'路线 B · 装 CarOH + 云端模式 9090',
+      desc:'板子上打开「云端模式」开关（端口自动从 9000 变 9090），PC 跑 <code>IoTDA/cloud_backend.py</code>。链路变成 <b>板子 → PC 桥接 → 华为云 IoTDA → 小车</b>，也就是课程第三阶段。<b>需要云端设备在线、AK/SK 配置正确、物联网平台能连通</b>，排错面比路线 A 大。',
+      on:['board','hap','p9090','cloud','cars'], lines:['b','b2'], need:['audio'],
+      files:'CarOH/Index.ets:100-110 · CarOH/net/CloudClient.ets · IoTDA/cloud_backend.py'
+    },
+    c: {
+      title:'路线 C · 不装 HAP，板子浏览器直接开 V3 网页 :8000（推荐玩车队/AI）',
+      desc:'V3 的界面本来就是网页，<b>不需要给板子编任何包</b>。PC 上跑 <code>v3-fleet/server/app.py</code> + <code>start_all_cars.bat</code>，板子和 PC 同一网段，浏览器打开 <code>http://&lt;PC IP&gt;:8000/monitor/view</code>、<code>/admin/view</code>、<code>/ai/view</code> 即可。大屏、后台、轨迹、AI 文字控车全都能用。前提：板子系统带浏览器、PC 防火墙放行 8000。',
+      on:['board','browser','p8000','ai','cars'], lines:['c','c2'], need:['audio'],
+      files:'v3-fleet/server/app.py（host=0.0.0.0:8000） · web/*.html'
+    },
+    d: {
+      title:'路线 D · 在这块板上做语音控车',
+      desc:'<b>板子只负责采集，AI 全在 PC 后端。</b>CarOH 里没有语音模块，OpenHarmony 也没有 HarmonyOS 的 Core Speech Kit，但都不需要：用 OpenHarmony 的 <code>AudioCapturer</code> 或 USB 麦克风录一段 <b>16k 单声道 WAV</b> → base64 → <code>POST http://&lt;PC IP&gt;:8000/ai/command</code> 带上 <code>audio_b64</code> + <code>mime:"audio/wav"</code>。后端会完成转写、Function Calling 解析、白名单校验、下发命令，返回的 <code>transcript</code> 就是逐字稿。<b>后端一行都不用改</b>，只需要板子侧新增录音 + HTTP 两小块代码，并声明 <code>ohos.permission.MICROPHONE</code>。',
+      on:['board','audio','p8000','ai','cars'], lines:['d','c2'], need:['browser'],
+      files:'server/app.py:668-698（音频入口） · server/ai_agent.py（transcribe） · web/ai_chat.html:311-345（WAV 编码可照抄思路）'
+    }
+  };
+  var NODEINFO = {
+    board:'DAYU200 本体：RK3568，OpenHarmony 7.0.0.33（API 26）。装包走 USB OTG，联网走以太网口。',
+    hap:'CarOH-signed.hap：按 OpenHarmony API 20 编译、已签名，bundleName=com.example.caroh，能在 API 26 板子上向后兼容运行。',
+    browser:'板子自带浏览器（若有）：打开 PC 后端的网页，就获得整套 V3 车队与 AI 界面，无需安装 HAP。',
+    audio:'声音采集：AudioCapturer / USB 麦 → 16k 单声道 PCM → 加 44 字节 WAV 头 → base64。这是路线 D 唯一要新增的板子侧代码。',
+    p9000:'car_server.py：第一阶段单车 TCP 服务端，端口 9000。板子 CarOH 默认连它。',
+    p9090:'cloud_backend.py：第三阶段 IoTDA 应用侧桥接，端口 9090。板子 CarOH 打开「云端模式」后连它。',
+    p8000:'v3-fleet/server/app.py：V3 车队后端，0.0.0.0:8000，提供网页、REST、WebSocket 和 /ai/command。',
+    cloud:'华为云 IoTDA：设备影子存状态、CreateCommand 下发命令；车与平台之间是 MQTT 8883/TLS。',
+    ai:'/ai/command：第⑦步已落地。接收 text 或 audio_b64，两次模型调用完成转写与解析，再走白名单与排程。',
+    cars:'小车模拟器：car_mqtt_client.py --device car_00N，MQTT 长连接挂在华为云；命令到达后车才真正动。'
+  };
+  var curRoute = 'a';
+  function drawRoute(r){
+    var d = ROUTES[r]; if(!d) return;
+    curRoute = r;
+    Array.prototype.forEach.call(document.querySelectorAll('#routeTabs button'), function(b){
+      b.className = (b.getAttribute('data-r')===r ? 'on' : '');
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#topo .nd'), function(g){
+      var k = g.getAttribute('data-node');
+      var rect = g.querySelector('rect');
+      var on = d.on.indexOf(k) >= 0, need = d.need.indexOf(k) >= 0;
+      rect.setAttribute('fill', on ? '#e5f5e9' : (need ? '#fdecea' : '#eef3f9'));
+      rect.setAttribute('stroke', on ? '#2f9e56' : (need ? '#b23b2e' : '#9aa9ba'));
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#topo .ln'), function(p){
+      var k = p.getAttribute('data-ln'), on = d.lines.indexOf(k) >= 0;
+      p.setAttribute('stroke', on ? '#2f9e56' : '#d5dee8');
+      p.setAttribute('stroke-width', on ? '3.2' : '2');
+      p.setAttribute('marker-end', on ? 'url(#arG)' : 'url(#ar)');
+    });
+    $('routeDetail').innerHTML =
+      '<h3>' + esc(d.title) + '</h3><p>' + d.desc + '</p>' +
+      '<div class="meta"><b>经过</b><span>' + esc(d.on.join(' → ')) + '</span>' +
+      '<b>关键文件</b><span>' + esc(d.files) + '</span></div>' +
+      '<p class="note">点图上任意方块看该模块职责；红色块表示这条路线下"当前还缺、需要补"的环节。</p>';
+  }
+  $('routeTabs').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(b) drawRoute(b.getAttribute('data-r'));
+  });
+  document.querySelectorAll('#topo .nd').forEach(function(g){
+    g.addEventListener('click', function(){
+      var k = g.getAttribute('data-node');
+      $('routeDetail').innerHTML = '<h3>' + esc(k) + '</h3><p>' + esc(NODEINFO[k] || '') + '</p>' +
+        '<p class="note"><a href="#" id="backRoute">← 返回路线说明</a></p>';
+      $('backRoute').addEventListener('click', function(ev){ ev.preventDefault(); drawRoute(curRoute); });
+    });
+  });
+  drawRoute('a');
+
+  /* ---------- 8 步流程 ---------- */
+  var STEPS = [
+    {n:'确认安装包', body:'要装的是已经签好名的 <code>CarOH-signed.hap</code>，不是 <code>CarFleet</code>，也不是未签名的 <code>entry-default-unsigned.hap</code>。今天核对：文件存在、321122 字节、zip 可读，含 <code>module.json</code> / <code>pack.info</code>。',
+     cmd:'dir E:\\Harmony\\Project\\CarOH\\CarOH-signed.hap', exp:'看到 321122 字节的文件，日期 2026-11-01。'},
+    {n:'给板子通电开机', body:'12V 电源适配器接 DAYU200，等屏幕进桌面。照片里板子已经在运行（显示 11% 电量、05:02），所以这一步你已经做到了。',
+     cmd:'（无需命令）', exp:'屏幕显示 OpenHarmony 桌面，能进「设置 → 关于设备」。'},
+    {n:'接 USB OTG 数据线', body:'用<b>能传数据</b>的 USB Type-C 线，连接板子<b>靠近 HDMI 的那个 Type-C（OTG/设备口）</b>和电脑 USB 口。板子有两个 Type-C，插错就看不见设备。Windows 首次连接可能需要装润和提供的 USB 驱动。',
+     cmd:'"E:\\Harmony\\DevEco Studio\\sdk\\default\\openharmony\\toolchains\\hdc.exe" list targets', exp:'出现一串随机设备序列号（例如 2f011130...）。<b>如果还是 127.0.0.1:5555，说明仍是虚拟模拟器，板子没接上。</b>'},
+    {n:'确认认到的是板子', body:'把上一步的序列号填进 <code>-t</code>，读一下系统版本与 API，避免把包误装到虚拟模拟器上。',
+     cmd:'hdc -t &lt;序列号&gt; shell "param get const.product.software.version"\nhdc -t &lt;序列号&gt; shell "param get const.ohos.apiversion"', exp:'版本含 OpenHarmony 7.0，API 26（不是 emulator / API 22）。'},
+    {n:'安装 HAP', body:'<code>-r</code> 表示已存在则覆盖安装。签名包是 OpenHarmony API 20 编译，板子 API 26 向后兼容。',
+     cmd:'hdc -t &lt;序列号&gt; install -r E:\\Harmony\\Project\\CarOH\\CarOH-signed.hap', exp:'<b>实测这一步会被拒绝</b>：<code>code:9568293 check syscap failed</code>。原因与三条出路见第 3 段；一键脚本已改成如实打印 [FAIL]，不会假装成功。'},
+    {n:'启动应用', body:'bundleName 是 <code>com.example.caroh</code>，Ability 是 <code>EntryAbility</code>。',
+     cmd:'hdc -t &lt;序列号&gt; shell aa start -b com.example.caroh -a EntryAbility', exp:'板子屏幕出现操控页：连接面板 + 方向键盘 + 角度输入 + 状态日志。'},
+    {n:'组网：插网线、查两端 IP', body:'板子插网线到与 PC 同一路由器/交换机（DAYU200 自带以太网口，比 WiFi 稳）。PC 防火墙放行对应端口。',
+     cmd:'hdc -t &lt;序列号&gt; shell ifconfig eth0\nipconfig\nnetsh advfirewall firewall add rule name="V3 8000" dir=in action=allow protocol=TCP localport=8000', exp:'拿到板子 IP 与 PC IPv4，两者同网段，能互相 ping 通。若走路线 A/B，把防火墙端口换成 9000 / 9090。'},
+    {n:'起对应服务端并验收', body:'<b>三选一，别混：</b>路线 A 起 <code>Car/tools/car_server.py</code>（板子填 9000）；路线 B 起 <code>IoTDA/cloud_backend.py</code>（板子开云端模式、9090）；路线 C 起 <code>v3-fleet/server/app.py</code> + <code>start_all_cars.bat</code>，板子浏览器开 <code>http://&lt;PC IP&gt;:8000/monitor/view</code>。',
+     cmd:'cd /d E:\\Harmony\\Project\\Car\\tools && python car_server.py\n:: 或：cd /d E:\\Harmony\\Project\\v3-fleet && python server\\app.py', exp:'路线 A：按方向键后 PC 服务端打印小车状态、板子数值更新；路线 C：板子浏览器出现多车大屏，车在动，<code>/ai/view</code> 能打字控车。'}
+  ];
+  var curStep = 0;
+  function drawStep(i){
+    curStep = Math.max(0, Math.min(STEPS.length-1, i));
+    Array.prototype.forEach.call(document.querySelectorAll('#stepBtns button'), function(b,idx){
+      b.className = (idx===curStep ? 'on' : '');
+    });
+    var s = STEPS[curStep];
+    $('stepDetail').innerHTML =
+      '<div class="step"><h4><span class="no">' + (curStep+1) + '</span>' + esc(s.n) + '</h4>' +
+      '<p>' + s.body + '</p>' +
+      '<div class="cmd"><button class="copy" data-c="' + escCmd(s.cmd) + '">复制命令</button>' +
+      '<pre>' + escCmd(s.cmd) + '</pre></div>' +
+      '<div class="exp"><b>✅ 该看到的画面：</b>' + s.exp + '</div></div>' +
+      '<div style="margin-top:10px"><button class="btn" id="prevStep">← 上一步</button>' +
+      '<button class="btn" id="nextStep" style="margin-right:8px">下一步 →</button>' +
+      '<span class="note">第 ' + (curStep+1) + ' / ' + STEPS.length + ' 步 · 键盘 ← → 也可切换</span></div>';
+    $('prevStep').onclick = function(){ drawStep(curStep-1); };
+    $('nextStep').onclick = function(){ drawStep(curStep+1); };
+    Array.prototype.forEach.call($('stepDetail').querySelectorAll('.copy'), function(b){
+      b.onclick = function(){
+        var t = b.getAttribute('data-c');
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(t).then(function(){ b.textContent='已复制'; });
+        } else { b.textContent='请手动选中'; }
+      };
+    });
+  }
+  STEPS.forEach(function(s,i){
+    var b = document.createElement('button');
+    b.textContent = (i+1) + '. ' + s.n;
+    b.onclick = function(){ drawStep(i); };
+    $('stepBtns').appendChild(b);
+  });
+  drawStep(0);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight') drawStep(curStep+1);
+    else if (e.key === 'ArrowLeft') drawStep(curStep-1);
+  });
+
+  /* ---------- 自测 ---------- */
+  var QUIZ = [
+    {q:'这块 DAYU200 现在需要"烧录系统"吗？', a:['需要，先刷 OpenHarmony 镜像','不需要，系统已在跑，只需 hdc install 装 HAP'], r:1,
+     why:'屏幕显示 OpenHarmony 7.0.0.33 且能进桌面，系统已就位；烧录只在换系统/救砖时做。'},
+    {q:'今天把 CarOH-signed.hap 装到这块板，结果是什么？', a:['成功装上、桌面出现图标','被拒绝：code 9568293 check syscap failed'], r:1,
+     why:'包声明 minAPIVersion=20 且 rpcid.sc 要求 API 20 的 syscap，板子实测只有 API 15，安装器在系统能力校验阶段直接拒绝。CarFleet 更是从一开始就装不上（HarmonyOS 专用）。'},
+    {q:'接好线后，hdc 里怎么区分板子和虚拟模拟器？', a:['看谁在 127.0.0.1:5555，那就是板子','随机序列号（如 dd011a41...）是板子；127.0.0.1:5555 是 DevEco 模拟器'], r:1,
+     why:'今天实测：127.0.0.1:5555 → emulator 6.0.0.130 / API 22；dd011a4144363141301012700805ac00 → Linux 5.10 aarch64 / OpenHarmony 5.0.3.135 / API 15。装包时要用 -t 指定板子。'},
+    {q:'CarOH 装好后，界面端口应该填？', a:['9000（TCP 直连）或 9090（云端模式）','8000（V3 后端）'], r:0,
+     why:'9000 对应 car_server.py，9090 对应 cloud_backend.py；8000 是 V3 网页后端，协议不同，填了连不上。'},
+    {q:'想在这块板上用 V3 车队和 AI 语音，最省事的做法是？', a:['重新把 CarFleet 编译成 OpenHarmony 版 HAP','用板子浏览器打开 PC 的 http://&lt;PC IP&gt;:8000/... 网页；语音则由板子录音 POST 到 /ai/command'], r:1,
+     why:'V3 界面全是网页；/ai/command 已支持 audio_b64，AI 在云端跑，板子只负责采集与显示，不必给板子编新 HAP。'}
+  ];
+  var box = $('quizBox'), answered = {}, right = 0;
+  QUIZ.forEach(function(item, qi){
+    var d = document.createElement('div'); d.className = 'q';
+    var html = '<p>' + (qi+1) + '. ' + item.q + '</p>';
+    item.a.forEach(function(txt, ai){
+      html += '<label><input type="radio" name="q'+qi+'" value="'+ai+'"> ' + txt + '</label>';
+    });
+    html += '<div class="fb" id="fb'+qi+'"></div>';
+    d.innerHTML = html; box.appendChild(d);
+    d.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var pick = parseInt(inp.value,10), ok = (pick === item.r);
+        if (answered[qi] === undefined && ok) right++;
+        answered[qi] = ok;
+        var fb = $('fb'+qi);
+        fb.className = 'fb ' + (ok ? 'y' : 'n');
+        fb.innerHTML = (ok ? '✅ 对了。' : '❌ 再想想。') + ' ' + item.why;
+        $('progBar').style.width = (right/QUIZ.length*100) + '%';
+        $('quizScore').textContent = '答对 ' + right + ' / ' + QUIZ.length + '（改答案不重复计分）';
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

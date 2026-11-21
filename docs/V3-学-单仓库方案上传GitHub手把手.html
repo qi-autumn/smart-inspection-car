@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V3 学习 · 单仓库方案上传 GitHub（手把手）</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1f2937; --sub:#5b6675; --line:#e3e9f2;
+    --blue:#2563eb; --blue-l:#eaf1ff; --green:#15803d; --green-l:#e8f7ee;
+    --red:#c62828; --red-l:#fdecec; --amber:#a16207; --amber-l:#fff6e0;
+    --code:#0f2233; --code-ink:#dbeafe;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,-apple-system,sans-serif;
+    line-height:1.85;font-size:16px}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 80px}
+  header{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;border-radius:18px;
+    padding:30px 32px;box-shadow:0 10px 30px rgba(37,99,235,.18)}
+  header .kicker{font-size:13px;letter-spacing:2px;opacity:.85}
+  header h1{margin:8px 0 10px;font-size:30px;line-height:1.35}
+  header p{margin:0;opacity:.94;font-size:15px}
+  .badges{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+    border-radius:999px;padding:3px 12px;font-size:13px}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 22px;margin:20px 0 26px;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px}
+  nav.toc a{color:var(--blue);text-decoration:none}
+  nav.toc a:hover{text-decoration:underline}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:24px 28px;margin:0 0 22px;box-shadow:0 3px 14px rgba(20,40,80,.04)}
+  h2{font-size:22px;margin:0 0 14px;padding-bottom:10px;border-bottom:2px solid var(--blue-l);
+    display:flex;align-items:center;gap:10px}
+  h2 .n{background:var(--blue);color:#fff;width:30px;height:30px;border-radius:9px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+  h3{font-size:18px;margin:22px 0 8px;color:#163c8c}
+  p{margin:10px 0}
+  ul,ol{padding-left:22px;margin:10px 0}
+  li{margin:6px 0}
+  .lead{background:var(--blue-l);border-left:5px solid var(--blue);border-radius:10px;
+    padding:14px 18px;font-size:17px;font-weight:600;margin:0 0 14px}
+  .danger{background:var(--red-l);border:1px solid #f3b9b9;border-left:5px solid var(--red);
+    border-radius:10px;padding:14px 18px;margin:14px 0}
+  .danger b{color:var(--red)}
+  .tip{background:var(--green-l);border-left:5px solid var(--green);border-radius:10px;
+    padding:12px 18px;margin:14px 0}
+  .warn{background:var(--amber-l);border-left:5px solid var(--amber);border-radius:10px;
+    padding:12px 18px;margin:14px 0}
+  .muted{color:var(--sub);font-size:14px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px}
+  .scroll{overflow-x:auto}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#f0f5fd;color:#173d86;font-weight:600}
+  tr:nth-child(even) td{background:#fafbfe}
+  code{background:#eef2f8;border-radius:5px;padding:1px 6px;font-size:14px;
+    font-family:Consolas,"Courier New",monospace;color:#123a7a}
+  .cmd{position:relative;margin:12px 0 6px;border-radius:12px;overflow:hidden;background:var(--code)}
+  .cmd pre{margin:0;padding:16px 18px;color:var(--code-ink);font-size:14px;line-height:1.75;
+    font-family:Consolas,"Courier New",monospace;white-space:pre;overflow-x:auto}
+  .cmd button{position:absolute;top:9px;right:10px;background:#2d4a6b;color:#eaf2ff;
+    border:1px solid #52749b;border-radius:7px;padding:3px 11px;font-size:12px;cursor:pointer}
+  .cmd button:hover{background:#3b6394}
+  .cmd .label{position:absolute;top:10px;left:14px;color:#7fa8d8;font-size:12px;
+    font-family:Consolas,monospace;pointer-events:none}
+  .cmd.with-label pre{padding-top:34px}
+  .step{display:flex;gap:16px;margin:22px 0 0;align-items:flex-start}
+  .step .num{width:38px;height:38px;border-radius:50%;background:var(--blue-l);color:var(--blue);
+    border:2px solid #bcd3ff;display:flex;align-items:center;justify-content:center;
+    font-weight:700;flex:none;font-size:16px}
+  .step .body{flex:1;min-width:0}
+  .step h3{margin:4px 0 6px;font-size:18px}
+  .expect{background:var(--green-l);border-radius:8px;padding:8px 14px;font-size:14px;margin:8px 0}
+  .expect b{color:var(--green)}
+  .fail{background:var(--amber-l);border-radius:8px;padding:8px 14px;font-size:14px;margin:8px 0}
+  .fail b{color:var(--amber)}
+  .figure{background:#fbfdff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0;text-align:center}
+  .figure svg{width:100%;height:auto;max-width:900px}
+  .figure .cap{font-size:13px;color:var(--sub);margin-top:6px}
+  details{background:#f8fafd;border:1px solid var(--line);border-radius:10px;
+    padding:10px 16px;margin:10px 0}
+  summary{cursor:pointer;font-weight:600;color:#173d86}
+  details p{margin:8px 0 2px;font-size:15px}
+  .chk{list-style:none;padding-left:0}
+  .chk li{padding-left:28px;position:relative}
+  .chk li:before{content:"☐";position:absolute;left:0;color:var(--blue);font-size:18px}
+  footer{text-align:center;color:var(--sub);font-size:13px;margin-top:30px}
+  @media(max-width:720px){
+    .wrap{padding:14px 12px 50px}
+    header{padding:22px 20px} header h1{font-size:23px}
+    section{padding:18px 16px} h2{font-size:19px}
+    .step{gap:10px} .step .num{width:32px;height:32px;font-size:14px}
+    body{font-size:15px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">V3 学习资料 · 交付流程篇</div>
+  <h1>单仓库方案上传 GitHub · 手把手</h1>
+  <p>三代源码放进<b>一个仓库</b>，一次 init / commit / push；版本用 tag 区分，成品放 Release 附件。每一步都有命令、预期结果和出错怎么办，全程由你自己敲。</p>
+  <div class="badges">
+    <span class="badge">Git 2.55 已装</span>
+    <span class="badge">SSH 已通过 GitHub 认证</span>
+    <span class="badge">提交身份已配好</span>
+    <span class="badge">217 个文件 · 复检 PASS</span>
+    <span class="badge">目录尚未初始化</span>
+    <span class="badge">可离线双击打开</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <b style="color:#173d86">跳到：</b>
+  <a href="#s1">① 一句话结论</a>
+  <a href="#s2">② 生活比喻</a>
+  <a href="#s3">③ 在项目里的位置</a>
+  <a href="#s4">④ 文件与接口</a>
+  <a href="#s5">⑤ 逐步拆解</a>
+  <a href="#s6">⑥ 上传后验收</a>
+  <a href="#s7">⑦ 常见坑</a>
+  <a href="#s8">⑧ 前后知识连接</a>
+  <a href="#s9">⑨ 自测题</a>
+  <a href="#s10">⑩ 命令速查</a>
+</nav>
+
+<section id="s1">
+  <h2><span class="n">1</span>一句话结论</h2>
+  <div class="lead">只在 <code>E:\Harmony\GitHub-OneRepo</code> 里操作：<b>一次 git init → 一次 commit → 一次 push</b>，把 V1/V2/V3 三个子目录一起送进一个叫 <code>smart-inspection-car</code> 的空仓库；然后打 3 个 tag、建 3 个 Release 挂附件。认证直接用本机已配好的 SSH，不用新建 Token。</div>
+  <p>这套方案里<b>只有源码、文档、配置模板进 Git</b>，成品（源码快照 zip、截图包）走 Release 附件，私钥和真实配置一律不碰。</p>
+  <div class="danger"><b>红线：</b>绝对不要在 <code>E:\Harmony\Project\</code> 或 <code>E:\Harmony\CompleteProject\</code> 里执行 <code>git add .</code> —— 那两个目录含真实密钥和带密钥的完整包 zip。你的操作目录只有 <code>E:\Harmony\GitHub-OneRepo</code> 这一个。</div>
+  <div class="tip"><b>当前状态：</b>我没有执行任何 <code>git init</code> / <code>commit</code> / <code>push</code>，目录仍然是干净的、未初始化的。下面所有命令都留给你亲手敲。</div>
+</section>
+
+<section id="s2">
+  <h2><span class="n">2</span>生活比喻：一个箱子，三本相册，三张标签</h2>
+  <p>上一版「三个仓库」相当于寄三个快递：三个箱子、三张单、三次签收，还容易把地址贴串。你现在选的单仓库是：</p>
+  <ul>
+    <li><b>一个箱子</b>＝ 一个 Git 仓库，里面放三本相册（<code>01-TCP-V1</code> / <code>02-Cloud-V2</code> / <code>03-Fleet-V3</code>）。</li>
+    <li><b>一次寄出</b>＝ 一次 <code>git push</code>，别人 <code>clone</code> 一次就全拿到。</li>
+    <li><b>三张标签</b>＝ <code>v1.0.0</code> / <code>v2.0.0</code> / <code>v3.0.0</code> 三个 tag，贴在箱子历史的三个时间点上，方便别人「只看 V1 那一版」。</li>
+    <li><b>随箱附赠的样品</b>＝ Release 附件。样品不放进箱子本体（不进 Git 历史），单独挂在标签旁边，谁想要谁下载。</li>
+  </ul>
+  <p>关键差别：仓库只有<b>一条 Releases 列表</b>，所以三个版本的附件必须靠<b>命名前缀</b>区分，不能只叫 <code>source.zip</code>。</p>
+  <div class="figure">
+    <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="单仓库与三仓库方案对比">
+      <rect x="0" y="0" width="900" height="260" fill="#fbfdff"/>
+      <text x="20" y="28" font-size="16" font-weight="bold" fill="#173d86">三仓库方案（上一版）</text>
+      <rect x="20" y="42" width="190" height="60" rx="10" fill="#fdecec" stroke="#f3b9b9"/>
+      <text x="115" y="68" text-anchor="middle" font-size="14" fill="#c62828">仓库 A · V1</text><text x="115" y="88" text-anchor="middle" font-size="12" fill="#5b6675">init / commit / push</text>
+      <rect x="225" y="42" width="190" height="60" rx="10" fill="#fdecec" stroke="#f3b9b9"/>
+      <text x="320" y="68" text-anchor="middle" font-size="14" fill="#c62828">仓库 B · V2</text><text x="320" y="88" text-anchor="middle" font-size="12" fill="#5b6675">init / commit / push</text>
+      <rect x="430" y="42" width="190" height="60" rx="10" fill="#fdecec" stroke="#f3b9b9"/>
+      <text x="525" y="68" text-anchor="middle" font-size="14" fill="#c62828">仓库 C · V3</text><text x="525" y="88" text-anchor="middle" font-size="12" fill="#5b6675">init / commit / push</text>
+      <text x="640" y="78" font-size="13" fill="#5b6675">× 3 套操作，clone 也要 3 次</text>
+      <line x1="20" y1="120" x2="880" y2="120" stroke="#e3e9f2" stroke-width="2"/>
+      <text x="20" y="150" font-size="16" font-weight="bold" fill="#15803d">单仓库方案（本教程）</text>
+      <rect x="20" y="164" width="300" height="76" rx="12" fill="#e8f7ee" stroke="#9cd6b0"/>
+      <text x="170" y="190" text-anchor="middle" font-size="15" font-weight="bold" fill="#15803d">smart-inspection-car</text>
+      <text x="170" y="212" text-anchor="middle" font-size="12" fill="#5b6675">01-TCP-V1 / 02-Cloud-V2 / 03-Fleet-V3</text>
+      <text x="170" y="230" text-anchor="middle" font-size="12" fill="#5b6675">一次 push</text>
+      <path d="M320 202 L390 202" stroke="#2563eb" stroke-width="2" marker-end="url(#ar)"/>
+      <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#2563eb"/></marker></defs>
+      <rect x="400" y="164" width="150" height="34" rx="8" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="475" y="186" text-anchor="middle" font-size="13" fill="#173d86">tag v1.0.0</text>
+      <rect x="400" y="204" width="150" height="34" rx="8" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="475" y="226" text-anchor="middle" font-size="13" fill="#173d86">tag v2.0.0</text>
+      <rect x="570" y="184" width="150" height="34" rx="8" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="645" y="206" text-anchor="middle" font-size="13" fill="#173d86">tag v3.0.0</text>
+      <path d="M550 181 L565 200" stroke="#2563eb" stroke-width="2" fill="none"/>
+      <path d="M550 221 L565 202" stroke="#2563eb" stroke-width="2" fill="none"/>
+      <rect x="740" y="170" width="140" height="66" rx="10" fill="#fff6e0" stroke="#e8cd8a"/>
+      <text x="810" y="196" text-anchor="middle" font-size="13" fill="#a16207">一条 Releases 列表</text>
+      <text x="810" y="216" text-anchor="middle" font-size="12" fill="#5b6675">附件靠前缀区分</text>
+    </svg>
+    <div class="cap">图 1 · 一个仓库、一条 Release 列表，靠 tag 与附件命名区分三代</div>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="n">3</span>在项目里的位置：它不属于运行时的四层架构</h2>
+  <p>项目的四层架构（设备层 → 云端/后端层 → 客户端层 → 展示层）讲的是<b>小车怎么跑起来</b>。而 Git / GitHub 属于<b>交付层</b>：它不参与任何一次控车，只负责「把源码交出去、把版本标清楚」。</p>
+  <div class="scroll"><table>
+    <tr><th>目录</th><th>角色</th><th>能不能 git add</th></tr>
+    <tr><td><code>E:\Harmony\Project\</code></td><td>开发现场，含真实密钥、全部历史版本与构建缓存</td><td><b style="color:#c62828">❌ 绝对不能</b></td></tr>
+    <tr><td><code>E:\Harmony\CompleteProject\</code></td><td>11-14 打的完整包，含密钥与 zip</td><td><b style="color:#c62828">❌ 绝对不能</b></td></tr>
+    <tr><td><code>E:\Harmony\GitHub-Ready\</code></td><td>上一版「三仓库」方案，保留着没动</td><td>⚠️ 二选一，别两套都推</td></tr>
+    <tr><td><code>E:\Harmony\GitHub-OneRepo\</code></td><td><b>本教程的操作对象</b>：已脱敏的单仓库</td><td><b style="color:#15803d">✅ 就是这里</b></td></tr>
+  </table></div>
+  <p>两套方案是<b>平行备选</b>，不是先后步骤：在哪个目录里 <code>git init</code>，就推哪个；另一个留着当备份即可。</p>
+</section>
+
+<section id="s4">
+  <h2><span class="n">4</span>涉及的文件与「接口」</h2>
+  <h3>本地目录（217 个文件 / 约 2.2 MB）</h3>
+  <div class="cmd with-label"><span class="label">E:\Harmony\GitHub-OneRepo</span><button onclick="cp(this)">复制</button><pre>README.md                 总首页：三代对照、目录地图、各版启动
+.gitignore                 根目录一份统一忽略规则
+verify_before_push.py      上传前静态复检（跳过 .git）
+docs/                      跨版本公共讲解 HTML
+01-TCP-V1/                 simulator/ · app/ · docs/ · README.md
+02-Cloud-V2/                backend/ · web/ · profile/ · app/ · set_env.example.bat
+03-Fleet-V3/                server/ · device/ · web/ · docs/ · app/ · setup.py</pre></div>
+  <h3>要打交道的「接口」</h3>
+  <div class="scroll"><table>
+    <tr><th>接口</th><th>作用</th><th>在哪操作</th></tr>
+    <tr><td><code>git init / add / commit / push</code></td><td>本地四区流转 + 推到远端</td><td>PowerShell / Git Bash</td></tr>
+    <tr><td><code>git remote add origin</code></td><td>把本地仓库和网页仓库绑起来</td><td>命令行</td></tr>
+    <tr><td><code>git tag / push --tags</code></td><td>给历史打版本标记并单独推送</td><td>命令行</td></tr>
+    <tr><td>GitHub → New repository</td><td>创建空仓库（<b>必须先做</b>）</td><td>网页</td></tr>
+    <tr><td>GitHub → Releases → Draft a new release</td><td>选 tag、传附件、写说明</td><td>网页</td></tr>
+    <tr><td><code>verify_before_push.py</code></td><td>检查凭据、本机路径、禁止产物</td><td>本地</td></tr>
+  </table></div>
+  <div class="figure">
+    <svg viewBox="0 0 900 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Git 四区数据流">
+      <rect x="0" y="0" width="900" height="180" fill="#fbfdff"/>
+      <rect x="20" y="55" width="170" height="66" rx="10" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="105" y="83" text-anchor="middle" font-size="14" font-weight="bold" fill="#173d86">工作区</text><text x="105" y="104" text-anchor="middle" font-size="12" fill="#5b6675">你磁盘上的文件</text>
+      <rect x="230" y="55" width="170" height="66" rx="10" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="315" y="83" text-anchor="middle" font-size="14" font-weight="bold" fill="#173d86">暂存区</text><text x="315" y="104" text-anchor="middle" font-size="12" fill="#5b6675">git add .</text>
+      <rect x="440" y="55" width="170" height="66" rx="10" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="525" y="83" text-anchor="middle" font-size="14" font-weight="bold" fill="#173d86">本地仓库</text><text x="525" y="104" text-anchor="middle" font-size="12" fill="#5b6675">git commit</text>
+      <rect x="650" y="55" width="220" height="66" rx="10" fill="#e8f7ee" stroke="#9cd6b0"/>
+      <text x="760" y="83" text-anchor="middle" font-size="14" font-weight="bold" fill="#15803d">GitHub 远端</text><text x="760" y="104" text-anchor="middle" font-size="12" fill="#5b6675">git push -u origin main</text>
+      <path d="M190 88 L226 88" stroke="#2563eb" stroke-width="2" marker-end="url(#a2)"/>
+      <path d="M400 88 L436 88" stroke="#2563eb" stroke-width="2" marker-end="url(#a2)"/>
+      <path d="M610 88 L646 88" stroke="#2563eb" stroke-width="2" marker-end="url(#a2)"/>
+      <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#2563eb"/></marker></defs>
+      <text x="105" y="148" text-anchor="middle" font-size="12" fill="#5b6675">可随时改</text>
+      <text x="315" y="148" text-anchor="middle" font-size="12" fill="#5b6675">status 核对点</text>
+      <text x="525" y="148" text-anchor="middle" font-size="12" fill="#5b6675">本机，可反悔</text>
+      <text x="760" y="148" text-anchor="middle" font-size="12" fill="#c62828">公开，不可轻易反悔</text>
+    </svg>
+    <div class="cap">图 2 · 前三个区都在本机，只有最后一步 push 会把东西送出去</div>
+  </div>
+  <p>记住这条：<b><code>add</code> / <code>commit</code> 随便试、随便撤；<code>push</code> 之前停三秒</b>。</p>
+</section>
+
+<section id="s5">
+  <h2><span class="n">5</span>逐步拆解（照着做就行）</h2>
+
+  <div class="warn"><b>先说本机实测结果（省掉你两步准备）：</b>我用只读命令查过，下面这张表里的都<b>已经就绪</b>，不用再装、再配、再生成 Token。</div>
+  <div class="scroll"><table>
+    <tr><th>检查项</th><th>实测结果</th><th>对你的影响</th></tr>
+    <tr><td>Git</td><td>2.55.0.windows.3</td><td>够用</td></tr>
+    <tr><td>提交身份</td><td><code>qi-autumn</code> / <code>2472939904@qq.com</code></td><td>跳过 <code>git config</code> 那步</td></tr>
+    <tr><td>SSH 认证</td><td><code>ssh -T git@github.com</code> → <code>Hi qi-autumn! You've successfully authenticated...</code></td><td><b>推荐走 SSH，不用 PAT、不弹窗</b></td></tr>
+    <tr><td>HTTPS 凭据</td><td>凭据管理器有 <code>git:https://qi-autumn@github.com</code>，GCM 2.9.0 能取到已存密码</td><td>HTTPS 也能自动认证（备选）</td></tr>
+    <tr><td>网络</td><td><code>github.com</code> 主站 10 秒超时，<code>api.github.com</code> 返回 200；SSH 22 端口正常</td><td>网页偶尔慢属正常，<b>SSH 推送更稳</b></td></tr>
+    <tr><td>目标目录</td><td>217 个文件，未初始化、无 remote，复检 <b>[PASS]</b></td><td>可以直接开始</td></tr>
+  </table></div>
+  <div class="tip"><b>一个容易误解的点：</b>SSH 认证成功只证明「这把钥匙属于 qi-autumn 账号」，GitHub <b>不允许</b>通过 SSH 创建仓库。所以网页上那个「新建空仓库」这一步仍然必须你亲手点。</div>
+
+  <div class="step"><div class="num">0</div><div class="body">
+    <h3>上传前复检（必须看到 PASS）</h3>
+    <p>打开 <b>PowerShell</b>，任意目录都行，脚本用自身路径定位：</p>
+    <div class="cmd with-label"><span class="label">PowerShell · 任意目录</span><button onclick="cp(this)">复制</button><pre>python E:\Harmony\GitHub-OneRepo\verify_before_push.py</pre></div>
+    <div class="expect"><b>预期：</b>列出三个版本的文件数，最后一行 <code>[PASS] 未发现真实凭据、本机路径或不应上传的产物</code>。</div>
+    <div class="fail"><b>若 FAIL：</b>按提示的文件名处理后再跑。不要跳过这一步。</div>
+  </div></div>
+
+  <div class="step"><div class="num">1</div><div class="body">
+    <h3>确认认证路线（10 秒，只需看一眼）</h3>
+    <div class="cmd with-label"><span class="label">PowerShell · 验证 SSH</span><button onclick="cp(this)">复制</button><pre>ssh -T git@github.com</pre></div>
+    <div class="expect"><b>预期：</b><code>Hi qi-autumn! You've successfully authenticated, but GitHub does not provide shell access.</code> —— 看到 <code>successfully authenticated</code> 就够了，后面那句「不提供 shell」是正常提示，不是报错。</div>
+    <div class="fail"><b>若报 Permission denied：</b>改走 HTTPS 路线（第 5 步用 <code>https://</code> 地址），凭据管理器里已有可用密码；或把 <code>~\.ssh\id_rsa.pub</code> 的内容加到 GitHub → Settings → SSH and GPG keys。</div>
+  </div></div>
+
+  <div class="step"><div class="num">2</div><div class="body">
+    <h3>网页新建「空仓库」</h3>
+    <ol>
+      <li>浏览器打开 <code>github.com</code>，登录你的账号（主站若慢，多刷一次；接口是通的）。</li>
+      <li>右上角 <b>+</b> → <b>New repository</b>。</li>
+      <li>Repository name 填 <code>smart-inspection-car</code>；描述随意，例如 <code>智能巡检车 V1/V2/V3 教学项目（源码与文档）</code>。</li>
+      <li>选 Public 或 Private 都行（教学展示建议 Public）。</li>
+      <li><b>三个初始化选项一个都别勾</b>：❌ Add a README、❌ Add .gitignore、❌ Choose a license。</li>
+      <li>点 <b>Create repository</b>。</li>
+    </ol>
+    <div class="danger"><b>为什么必须空？</b>勾了 README 会让远端多一个本地没有的提交，第一次 <code>push</code> 会被 <code>non-fast-forward</code> 拒绝。真勾了，最省事是删掉仓库重建一个空的（仓库 → Settings → 最底部 Delete this repository）。</div>
+    <p>建好后 GitHub 会显示一个「Quick setup」页面，把 <code>SSH</code> 切换按钮点开，记下这个地址（下面要用）：</p>
+    <div class="cmd"><button onclick="cp(this)">复制</button><pre>git@github.com:qi-autumn/smart-inspection-car.git</pre></div>
+  </div></div>
+
+  <div class="step"><div class="num">3</div><div class="body">
+    <h3>本地初始化 + 暂存 + <b>最关键的 10 秒核对</b></h3>
+    <div class="cmd with-label"><span class="label">PowerShell</span><button onclick="cp(this)">复制</button><pre>cd E:\Harmony\GitHub-OneRepo
+git init
+git add .
+git status --short</pre></div>
+    <div class="expect"><b>预期：</b><code>git status --short</code> 输出约 217 行，每行以 <code>A </code> 开头，都是 <code>.md</code> / <code>.html</code> / <code>.py</code> / <code>.ets</code> / <code>.json5</code> / <code>.bat</code> 这类文本。</div>
+    <p>接着跑这条「找坏东西」的命令 —— <b>它应该没有任何输出</b>：</p>
+    <div class="cmd with-label"><span class="label">PowerShell · 应无输出</span><button onclick="cp(this)">复制</button><pre>git ls-files | Select-String -Pattern 'ai_config.json|cloud_config.json|devices.json|\.hap|\.p12|\.pem|\.db|__pycache__|\.jar'</pre></div>
+    <div class="fail"><b>只要有输出就停下来</b>，先搞清楚那是什么文件再说。<code>.gitignore</code> 已经排除了这些后缀，但肉眼确认是最保险的一道闸。</div>
+    <div class="tip"><b>顺手练一下「撤销」：</b>如果 add 错了，<code>git reset</code> 可以全部撤出暂存区（不会删文件）。这就是「前三个区随便试」的意思。</div>
+  </div></div>
+
+  <div class="step"><div class="num">4</div><div class="body">
+    <h3>提交到本地仓库（还没出网）</h3>
+    <div class="cmd with-label"><span class="label">PowerShell</span><button onclick="cp(this)">复制</button><pre>git commit -m "feat: 智能巡检车 V1/V2/V3 三代源码与文档（脱敏整理）"
+git branch -M main
+git log --oneline -1</pre></div>
+    <div class="expect"><b>预期：</b>形如 <code>217 files changed, ... insertions(+)</code>；<code>git log</code> 显示一条提交，前面是 7 位短哈希。</div>
+    <div class="fail"><b>若报 <code>Author identity unknown</code>：</b>本机已配好，正常不会出现。真出现就补 <code>git config --global user.name "qi-autumn"</code> 和 <code>git config --global user.email "你的邮箱"</code>。</div>
+  </div></div>
+
+  <div class="step"><div class="num">5</div><div class="body">
+    <h3>绑定远端地址</h3>
+    <p><b>SSH 路线（推荐）</b>：</p>
+    <div class="cmd with-label"><span class="label">PowerShell · SSH</span><button onclick="cp(this)">复制</button><pre>git remote add origin git@github.com:qi-autumn/smart-inspection-car.git
+git remote -v</pre></div>
+    <p><b>HTTPS 备选</b>（若第 1 步 SSH 不通，把上一行换成这两行）：</p>
+    <div class="cmd with-label"><span class="label">PowerShell · HTTPS 备选</span><button onclick="cp(this)">复制</button><pre>git remote set-url origin https://github.com/qi-autumn/smart-inspection-car.git
+git remote -v</pre></div>
+    <div class="expect"><b>预期：</b>两行，分别是 <code>origin  ... (fetch)</code> 和 <code>origin  ... (push)</code>，地址里的用户名和仓库名<b>必须</b>是 <code>qi-autumn/smart-inspection-car</code>。</div>
+    <div class="fail"><b>若报 <code>remote origin already exists</code>：</b>用 <code>git remote set-url origin &lt;地址&gt;</code> 覆盖，别重复 add。</div>
+  </div></div>
+
+  <div class="step"><div class="num">6</div><div class="body">
+    <h3>推送（真正把东西送出去的那一步）</h3>
+    <div class="cmd with-label"><span class="label">PowerShell</span><button onclick="cp(this)">复制</button><pre>git push -u origin main</pre></div>
+    <div class="expect"><b>SSH 预期：</b>不弹任何账号密码框，直接出现 <code>Enumerating objects ... Writing objects ... To github.com:qi-autumn/smart-inspection-car.git * [new branch] main -&gt; main</code>。</div>
+    <div class="expect"><b>HTTPS 预期：</b>可能弹出 Git Credential Manager 窗口；用户名填 <code>qi-autumn</code>，密码框<b>不能填账号密码</b>（2021 年起已禁用），要用 Personal Access Token。本机凭据管理器里已有可用凭据，通常会自动带上。</div>
+    <div class="fail"><b>若卡住 / 报 <code>Repository not found</code>：</b>① 仓库没建或名字拼错；② SSH 有代理时 22 端口被挡，可改 HTTPS；③ 主站超时就等几秒重试，别连着狂推。</div>
+    <div class="tip"><b>熟悉流程的小技巧：</b>push 完紧接着敲 <code>git status</code>，会看到 <code>Your branch is up to date with 'origin/main'</code> —— 这句话就是「本地与远端已同步」的凭证。</div>
+  </div></div>
+
+  <div class="step"><div class="num">7</div><div class="body">
+    <h3>网页验收（别敲命令，用眼睛看）</h3>
+    <ul class="chk">
+      <li>刷新仓库首页，能看到 <code>01-TCP-V1</code> / <code>02-Cloud-V2</code> / <code>03-Fleet-V3</code> / <code>docs</code> 四个目录和根 README 渲染出的表格。</li>
+      <li>Commits 显示 <b>1</b> 条提交。</li>
+      <li>用仓库里的搜索框（或按 <code>t</code> 键的文件查找）搜 <code>ai_config.json</code>、<code>cloud_config.json</code>、<code>devices.json</code> —— <b>搜不到才是正常</b>；能搜到 <code>*.example.json</code> 三个模板。</li>
+      <li>搜 <code>.hap</code> / <code>.p12</code> —— 一个都不该有。</li>
+      <li>点进任一 <code>.py</code>，确认中文注释没有乱码（文件都是 UTF-8）。</li>
+    </ul>
+    <div class="danger"><b>如果搜到了真实配置文件：</b>第一优先去华为云 / 模型平台<b>轮换作废密钥</b>，再清 Git 历史。单纯删文件救不回已经公开的凭据。</div>
+  </div></div>
+
+  <div class="step"><div class="num">8</div><div class="body">
+    <h3>打 3 个 tag，并单独推送</h3>
+    <div class="cmd with-label"><span class="label">PowerShell</span><button onclick="cp(this)">复制</button><pre>git tag -a v1.0.0 -m "V1 TCP 直连单车版 · 定版归档"
+git tag -a v2.0.0 -m "V2 IoTDA 云控版 · 冻结基准"
+git tag -a v3.0.0 -m "V3 巡检车队平台 · 当前版本"
+git tag -l
+git push origin --tags</pre></div>
+    <div class="expect"><b>预期：</b><code>git tag -l</code> 列出三行；push 后每个 tag 一行 <code>* [new tag] v1.0.0 -&gt; v1.0.0</code>。</div>
+    <div class="danger"><b>最常见的漏步：</b><code>git push</code> <b>默认不带 tag</b>。忘了 <code>git push origin --tags</code>，网页上就看不到任何 tag，Release 也选不到。</div>
+    <div class="figure">
+      <svg viewBox="0 0 900 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="一次 push 与 tag 的关系">
+        <rect x="0" y="0" width="900" height="150" fill="#fbfdff"/>
+        <line x1="60" y1="80" x2="840" y2="80" stroke="#2563eb" stroke-width="3"/>
+        <circle cx="150" cy="80" r="12" fill="#eaf1ff" stroke="#2563eb" stroke-width="3"/>
+        <circle cx="420" cy="80" r="12" fill="#2563eb"/>
+        <circle cx="700" cy="80" r="12" fill="#eaf1ff" stroke="#2563eb" stroke-width="3"/>
+        <text x="150" y="112" text-anchor="middle" font-size="12" fill="#5b6675">初始状态</text>
+        <text x="420" y="112" text-anchor="middle" font-size="12" fill="#173d86">commit (main)</text>
+        <text x="700" y="112" text-anchor="middle" font-size="12" fill="#5b6675">后续提交</text>
+        <rect x="360" y="24" width="120" height="28" rx="7" fill="#fff6e0" stroke="#e8cd8a"/>
+        <text x="420" y="43" text-anchor="middle" font-size="12" fill="#a16207">v1 / v2 / v3</text>
+        <path d="M420 52 L420 66" stroke="#a16207" stroke-width="2" marker-end="url(#a3)"/>
+        <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#a16207"/></marker></defs>
+        <text x="840" y="43" text-anchor="end" font-size="12" fill="#5b6675">三个 tag 都贴在同一个提交上（允许）</text>
+      </svg>
+      <div class="cap">图 3 · tag 是贴在某次提交上的标签，不是复制一份代码</div>
+    </div>
+  </div></div>
+
+  <div class="step"><div class="num">9</div><div class="body">
+    <h3>做 Release 附件（成品走这里，不进 Git）</h3>
+    <p><b>9.1 先在本机生成安全的附件</b>。建议放到仓库目录<b>之外</b>，避免被 <code>git status</code> 看见：</p>
+    <div class="cmd with-label"><span class="label">PowerShell · 生成源码快照</span><button onclick="cp(this)">复制</button><pre>New-Item -ItemType Directory -Force E:\Harmony\release-assets | Out-Null
+Compress-Archive -Path E:\Harmony\GitHub-OneRepo\01-TCP-V1 -DestinationPath E:\Harmony\release-assets\v1-tcp_source.zip -Force
+Compress-Archive -Path E:\Harmony\GitHub-OneRepo\02-Cloud-V2 -DestinationPath E:\Harmony\release-assets\v2-iotda_source.zip -Force
+Compress-Archive -Path E:\Harmony\GitHub-OneRepo\03-Fleet-V3 -DestinationPath E:\Harmony\release-assets\v3-fleet_source.zip -Force
+Get-ChildItem E:\Harmony\release-assets | Select-Object Name,Length
+Get-FileHash E:\Harmony\release-assets\v3-fleet_source.zip -Algorithm SHA256</pre></div>
+    <p><b>9.2 网页建 Release</b>：仓库首页右侧 <b>Releases</b> → <b>Draft a new release</b> → Choose a tag 选 <code>v3.0.0</code> → 标题写 <code>V3 巡检车队平台 · 当前版本</code> → 把 <code>v3-fleet_source.zip</code> 拖进附件区 → 把上一步的 SHA256 粘进说明 → <b>Publish release</b>。V1、V2 同样各建一条，选各自的 tag 和附件。</p>
+    <div class="scroll"><table>
+      <tr><th>附件</th><th>能不能发</th><th>原因</th></tr>
+      <tr><td><code>v1-tcp_source.zip</code> / <code>v2-iotda_source.zip</code> / <code>v3-fleet_source.zip</code></td><td><b style="color:#15803d">✅ 推荐</b></td><td>纯文本源码快照，可校验 SHA256</td></tr>
+      <tr><td>实拍截图包、讲解 HTML 合集</td><td><b style="color:#15803d">✅ 可以</b></td><td>教学展示价值高、体积小</td></tr>
+      <tr><td>未签名 <code>unsigned.hap</code></td><td>⚠️ 可发但要注明</td><td>别人得自己签名，且需说明 API 版本</td></tr>
+      <tr><td>已签名 <code>*-signed.hap</code></td><td><b style="color:#c62828">❌ 别发</b></td><td>绑定本机板子 UDID，换设备装不上；且在 API 15 板子上启动崩溃</td></tr>
+      <tr><td><code>*.p12</code>、debug profile、真实配置、<code>V3-Fleet-Complete.zip</code></td><td><b style="color:#c62828">❌ 绝对不传</b></td><td>含私钥 / 真实密钥；公开 Release 附件同样是公开的</td></tr>
+      <tr><td><code>hdc.exe</code>、<code>hap-sign-tool.jar</code>、DevEco SDK、系统镜像</td><td><b style="color:#c62828">❌ 不传</b></td><td>第三方大件，README 写官方下载方式即可</td></tr>
+    </table></div>
+  </div></div>
+
+  <div class="step"><div class="num">10</div><div class="body">
+    <h3>（可选）练一次「增量提交」，把流程走完整</h3>
+    <p>比如给根 README 补一句仓库描述，然后体会第二次推送有多短：</p>
+    <div class="cmd with-label"><span class="label">PowerShell</span><button onclick="cp(this)">复制</button><pre>git status --short
+git add README.md
+git commit -m "docs: 补充仓库说明"
+git push
+git log --oneline -3</pre></div>
+    <div class="expect"><b>预期：</b>这次不用 <code>-u</code>（上游已绑定），一条 <code>git push</code> 就够；<code>git log</code> 能看到两条提交。</div>
+    <p>这一步做完，你就完整走过：<b>初始化 → 暂存 → 提交 → 绑定 → 推送 → 打标签 → 发附件 → 增量更新</b>，后面任何项目都能照搬。</p>
+  </div></div>
+</section>
+
+<section id="s6">
+  <h2><span class="n">6</span>上传后验收清单</h2>
+  <ul class="chk">
+    <li>仓库首页四个目录齐全，README 渲染正常</li>
+    <li>Commits 数量与本地 <code>git log</code> 一致</li>
+    <li>Tags 页面有 <code>v1.0.0</code> / <code>v2.0.0</code> / <code>v3.0.0</code> 三条</li>
+    <li>Releases 有三条，每条附件前缀与 tag 对得上（<code>v1-</code> / <code>v2-</code> / <code>v3-</code>）</li>
+    <li>Release 说明里写了 SHA256，下载后可用 <code>Get-FileHash</code> 复核</li>
+    <li>全仓库搜不到真实配置文件、私钥、HAP、数据库</li>
+    <li>本地 <code>git status</code> 干净，<code>git remote -v</code> 指向正确仓库</li>
+  </ul>
+</section>
+
+<section id="s7">
+  <h2><span class="n">7</span>常见坑（按出现频率排序）</h2>
+  <div class="scroll"><table>
+    <tr><th>#</th><th>现象</th><th>原因 / 怎么办</th></tr>
+    <tr><td>1</td><td>忘了推 tag，网页选不到版本</td><td><code>git push</code> 不带 tag，补一句 <code>git push origin --tags</code></td></tr>
+    <tr><td>2</td><td>新建仓库勾了 README → <code>non-fast-forward</code></td><td>删掉重建空仓库，比 <code>pull --rebase</code> 更省心</td></tr>
+    <tr><td>3</td><td>github.com 网页打不开 / 超时</td><td>本机实测主站超时但 <code>api.github.com</code> 返回 200、SSH 正常；刷新或稍等，别当成「没网」</td></tr>
+    <tr><td>4</td><td>HTTPS 推送弹窗要密码</td><td>账号密码已被 GitHub 停用；本机凭据管理器里已有可用凭据，或改用已认证的 SSH 地址</td></tr>
+    <tr><td>5</td><td>一条 Releases 列表分不清三代</td><td>tag 前缀 + 附件名前缀 + 发布说明三件套，别只叫 <code>source.zip</code></td></tr>
+    <tr><td>6</td><td>把签名 HAP 当附件传</td><td>绑定 UDID、跨设备装不上，且板子 API 不兼容；改传源码快照</td></tr>
+    <tr><td>7</td><td>误在 <code>E:\Harmony\Project</code> 里 <code>git add .</code></td><td>那里有真实密钥。永远先 <code>cd E:\Harmony\GitHub-OneRepo</code> 再操作</td></tr>
+    <tr><td>8</td><td>Release 附件以为「不进 Git 就保密」</td><td>公开仓库的 Release 附件同样是公开的，私钥一律不传</td></tr>
+    <tr><td>9</td><td>生成的 zip 放进了仓库目录，被 add 进去</td><td>放 <code>E:\Harmony\release-assets</code>，或确认 <code>.gitignore</code> 已排除</td></tr>
+    <tr><td>10</td><td>复检脚本在 <code>git init</code> 后误报</td><td>已修：脚本遍历时跳过 <code>.git</code> 目录，两个方案的脚本都补了</td></tr>
+    <tr><td>11</td><td>想用 <code>git push</code> 自动创建仓库</td><td>GitHub 不支持，SSH 也不行；必须先在网页建空仓库</td></tr>
+    <tr><td>12</td><td>push 后才发现密钥进去了</td><td>先<b>轮换作废密钥</b>，再清历史；删文件、删仓库都救不回已公开的凭据</td></tr>
+  </table></div>
+</section>
+
+<section id="s8">
+  <h2><span class="n">8</span>与前后知识点的连接</h2>
+  <div class="figure">
+    <svg viewBox="0 0 900 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="知识链路">
+      <rect x="0" y="0" width="900" height="210" fill="#fbfdff"/>
+      <rect x="20" y="40" width="160" height="58" rx="10" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="100" y="66" text-anchor="middle" font-size="13" fill="#173d86">版本全景盘点</text><text x="100" y="86" text-anchor="middle" font-size="11" fill="#5b6675">先搞清有几个版本</text>
+      <rect x="205" y="40" width="160" height="58" rx="10" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="285" y="66" text-anchor="middle" font-size="13" fill="#173d86">脱敏整理</text><text x="285" y="86" text-anchor="middle" font-size="11" fill="#5b6675">源码 + 模板</text>
+      <rect x="390" y="40" width="160" height="58" rx="10" fill="#eaf1ff" stroke="#bcd3ff"/>
+      <text x="470" y="66" text-anchor="middle" font-size="13" fill="#173d86">单仓库方案</text><text x="470" y="86" text-anchor="middle" font-size="11" fill="#5b6675">一个仓库 + tag</text>
+      <rect x="575" y="40" width="160" height="58" rx="10" fill="#e8f7ee" stroke="#9cd6b0"/>
+      <text x="655" y="66" text-anchor="middle" font-size="13" font-weight="bold" fill="#15803d">本教程：推送</text><text x="655" y="86" text-anchor="middle" font-size="11" fill="#5b6675">init → push → tag</text>
+      <rect x="760" y="40" width="120" height="58" rx="10" fill="#fff6e0" stroke="#e8cd8a"/>
+      <text x="820" y="66" text-anchor="middle" font-size="13" fill="#a16207">固件发布边界</text><text x="820" y="86" text-anchor="middle" font-size="11" fill="#5b6675">附件放什么</text>
+      <path d="M180 69 L201 69" stroke="#2563eb" stroke-width="2" marker-end="url(#a4)"/>
+      <path d="M365 69 L386 69" stroke="#2563eb" stroke-width="2" marker-end="url(#a4)"/>
+      <path d="M550 69 L571 69" stroke="#2563eb" stroke-width="2" marker-end="url(#a4)"/>
+      <path d="M735 69 L756 69" stroke="#2563eb" stroke-width="2" marker-end="url(#a4)"/>
+      <defs><marker id="a4" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#2563eb"/></marker></defs>
+      <text x="450" y="150" text-anchor="middle" font-size="13" fill="#5b6675">再往前可接：上板实录（DAYU200 为什么装得上却跑不起来）</text>
+      <text x="450" y="175" text-anchor="middle" font-size="13" fill="#5b6675">往后可接：四层架构与协议全景（回到小车本身怎么跑）</text>
+    </svg>
+    <div class="cap">图 4 · 交付流程在整套学习资料中的位置</div>
+  </div>
+  <p>之前那份《把项目上传到 GitHub · 手把手》讲的是<b>三仓库</b>方案，命令要重复三遍；本教程的命令只跑一套。两份的 Git 原理完全相同，看一份就够。</p>
+</section>
+
+<section id="s9">
+  <h2><span class="n">9</span>自测小问题（点开看答案）</h2>
+  <details><summary>① 为什么 SSH 认证成功了，还得去网页手动建仓库？</summary><p>SSH 只负责「证明你是谁」，GitHub 不提供用 SSH 创建仓库的接口。创建仓库是账号级操作，必须在网页（或调用带 Token 的 API）完成。</p></details>
+  <details><summary>② <code>git push -u origin main</code> 里的 <code>-u</code> 有什么用？</summary><p>把本地 <code>main</code> 和远端 <code>origin/main</code> 建立上游关联。之后第二次推送只写 <code>git push</code> 就行，不用再写分支名。</p></details>
+  <details><summary>③ 打了 tag 就能在网页 Releases 里选到吗？</summary><p>不能，还得 <code>git push origin --tags</code>。<code>git push</code> 默认只推分支。</p></details>
+  <details><summary>④ 三个版本放在一个仓库，为什么附件名还要加前缀？</summary><p>因为一个仓库只有一条 Releases 列表，附件都平铺在同一处。不加 <code>v1-</code>/<code>v2-</code>/<code>v3-</code>，下载的人分不清哪个对应哪一代。</p></details>
+  <details><summary>⑤ 源码快照 zip 为什么不放进 Git 仓库？</summary><p>它是可由源码重新生成的二进制产物，进 Git 会让每次改动都多存一份全量副本、历史膨胀。Release 附件正是为「成品」准备的。</p></details>
+  <details><summary>⑥ 签名过的 HAP 为什么不建议发？</summary><p>调试 profile 绑定了本机板子的 UDID，别人装会报 <code>not trusted app source</code>；而且实测 API 22 字节码在 API 15 板子上启动崩溃。发出去只会让人误以为能用。</p></details>
+  <details><summary>⑦ 如果 push 完发现真实 <code>ai_config.json</code> 被传上去了，第一件事做什么？</summary><p>去模型平台<b>轮换作废那把 API Key</b>。删文件、删提交、甚至删仓库都救不回已经公开的凭据，只有作废才真正止损，之后再处理 Git 历史。</p></details>
+</section>
+
+<section id="s10">
+  <h2><span class="n">10</span>命令速查（可撕下来贴显示器）</h2>
+  <div class="cmd with-label"><span class="label">PowerShell · 完整主流程</span><button onclick="cp(this)">复制</button><pre>python E:\Harmony\GitHub-OneRepo\verify_before_push.py
+ssh -T git@github.com
+cd E:\Harmony\GitHub-OneRepo
+git init
+git add .
+git status --short
+git ls-files | Select-String -Pattern '\.hap|\.p12|\.db|ai_config.json'
+git commit -m "feat: 智能巡检车 V1/V2/V3 三代源码与文档（脱敏整理）"
+git branch -M main
+git remote add origin git@github.com:qi-autumn/smart-inspection-car.git
+git remote -v
+git push -u origin main
+git tag -a v1.0.0 -m "V1 TCP 直连单车版 · 定版归档"
+git tag -a v2.0.0 -m "V2 IoTDA 云控版 · 冻结基准"
+git tag -a v3.0.0 -m "V3 巡检车队平台 · 当前版本"
+git push origin --tags</pre></div>
+  <div class="scroll"><table>
+    <tr><th>想干什么</th><th>命令</th></tr>
+    <tr><td>看当前状态</td><td><code>git status</code></td></tr>
+    <tr><td>看提交历史</td><td><code>git log --oneline -5</code></td></tr>
+    <tr><td>撤销暂存（不删文件）</td><td><code>git reset</code></td></tr>
+    <tr><td>改远端地址</td><td><code>git remote set-url origin &lt;地址&gt;</code></td></tr>
+    <tr><td>看所有 tag</td><td><code>git tag -l</code></td></tr>
+    <tr><td>推后续改动</td><td><code>git add . &amp;&amp; git commit -m "..." &amp;&amp; git push</code></td></tr>
+    <tr><td>生成附件校验值</td><td><code>Get-FileHash &lt;文件&gt; -Algorithm SHA256</code></td></tr>
+  </table></div>
+  <div class="tip"><b>最后一句：</b>不确定时先别 <code>push</code>。<code>add</code> / <code>commit</code> 都在本机，随便试、随便撤；<code>push</code> 之前停三秒，看一眼 <code>git status --short</code> 和 <code>git remote -v</code>，这个习惯比记住所有命令都值钱。</div>
+</section>
+
+<footer>V3 学习资料 · 生成于 2026-11-21 · 双击即可离线阅读 · 命令基于本机 Git 2.55 / SSH 已认证 / Windows PowerShell 实测环境</footer>
+</div>
+<script>
+function cp(btn){
+  var pre=btn.parentElement.querySelector('pre');
+  var txt=pre.innerText;
+  var ta=document.createElement('textarea');
+  ta.value=txt; ta.style.position='fixed'; ta.style.left='-9999px';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  var ok=false;
+  try{ ok=document.execCommand('copy'); }catch(e){ ok=false; }
+  document.body.removeChild(ta);
+  btn.textContent=ok?'已复制':'请手动选中';
+  setTimeout(function(){ btn.textContent='复制'; },1800);
+}
+</script>
+</body>
+</html>

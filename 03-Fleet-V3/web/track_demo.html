@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 轨迹回放 · 第③步验收展示</title>
+<style>
+  :root { --bg:#f7f9fb; --panel:#ffffff; --line:#dfe7ee; --txt:#2c3e50; --sub:#7a8a99; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 14px/1.6 "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--txt); }
+  header { padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; }
+  header h1 { font-size: 16px; margin-right: 8px; }
+  .cars label { margin-right: 14px; cursor: pointer; white-space: nowrap; }
+  .cars input { vertical-align: -2px; margin-right: 4px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  select, button, input[type=text] { font: inherit; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+  button { cursor: pointer; } button:hover { background: #eef3f8; }
+  button.primary { background: #2f6fed; color: #fff; border-color: #2f6fed; }
+  button.primary:hover { background: #2358c8; }
+  #status { padding: 6px 20px; color: var(--sub); font-size: 12px; }
+  #canvasWrap { padding: 0 20px 20px; }
+  canvas { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; width: 100%; }
+  #msg { padding: 4px 20px 16px; color: #c0392b; font-size: 13px; min-height: 20px; }
+  /* 窄屏自适应 */
+  @media (max-width: 760px) {
+    header { padding: 10px 12px; gap: 8px 14px; }
+    header h1 { font-size: 15px; }
+    #status { padding: 6px 12px; }
+    #canvasWrap { padding: 0 10px 14px; }
+    #msg { padding: 4px 12px 12px; }
+    canvas { border-radius: 4px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>V3 轨迹回放</h1>
+  <span class="cars" id="carBox">车辆加载中…</span>
+  <span>
+    时间窗
+    <select id="range">
+      <option value="600">最近 10 分钟</option>
+      <option value="1800" selected>最近 30 分钟</option>
+      <option value="3600">最近 1 小时</option>
+      <option value="86400">最近 24 小时</option>
+    </select>
+  </span>
+  <span><input type="checkbox" id="auto"> 每 5 秒自动刷新</span>
+  <button class="primary" onclick="refresh()">刷新</button>
+</header>
+<div id="status"></div>
+<div id="canvasWrap"><canvas id="cv" width="1200" height="640"></canvas></div>
+<div id="msg"></div>
+
+<script>
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let CARS = [];   // [{device_id, name, color, show}]
+let LAST = [];   // 最近一次绘制的轨迹（窗口尺寸变化时重绘）
+
+/* 画布自适应：跟随容器宽度重设内部分辨率，避免固定 1200x640 在窄屏被压扁 */
+function fitCanvas() {
+  const wrap = document.getElementById('canvasWrap');
+  const w = Math.max(280, wrap.clientWidth - 2);
+  const h = Math.max(260, Math.min(window.innerHeight * 0.66, Math.round(w * 0.62)));
+  if (cv.width !== w || cv.height !== h) {
+    cv.width = w; cv.height = h;
+    if (LAST.length) draw(LAST);   // 尺寸变了立即按新分辨率重绘
+  }
+}
+window.addEventListener('resize', fitCanvas);
+
+async function loadCars() {
+  const r = await (await fetch('/fleet/status')).json();
+  CARS = (r.cars || []).map(c => ({ ...c, show: true }));
+  const box = document.getElementById('carBox');
+  box.innerHTML = '';
+  CARS.forEach((c, i) => {
+    const lb = document.createElement('label');
+    lb.innerHTML = `<input type="checkbox" checked> <span class="dot" style="background:${c.color}"></span>${c.name}`;
+    lb.querySelector('input').onchange = e => { CARS[i].show = e.target.checked; refresh(); };
+    box.appendChild(lb);
+  });
+}
+
+async function refresh() {
+  const msg = document.getElementById('msg');
+  msg.textContent = '';
+  const sec = +document.getElementById('range').value;
+  const to = Math.floor(Date.now() / 1000), from = to - sec;
+  let total = 0, tmin = null, tmax = null;
+  const tracks = [];
+  for (const c of CARS.filter(c => c.show)) {
+    try {
+      const r = await (await fetch(`/track?device_id=${encodeURIComponent(c.device_id)}&from=${from}&to=${to}`)).json();
+      if (!r.ok) { msg.textContent += `${c.name}: ${r.error}；`; continue; }
+      tracks.push({ ...c, points: r.points });
+      total += r.count;
+      if (r.points.length) {
+        tmin = tmin === null ? r.points[0].t : tmin;
+        tmax = r.points[r.points.length - 1].t;
+      }
+    } catch (e) { msg.textContent += `${c.name}: ${e}；`; }
+  }
+  document.getElementById('status').textContent =
+    `共 ${total} 个轨迹点` + (tmin ? `（${tmin} ~ ${tmax}）` : '（时间窗内暂无数据：先运行 python server\\drive_cars.py --minutes 10 让车跑起来）');
+  draw(tracks);
+}
+
+function draw(tracks) {
+  fitCanvas();
+  LAST = tracks;
+  const W = cv.width, H = cv.height, pad = Math.min(60, W * 0.12);
+  ctx.clearRect(0, 0, W, H);
+  // 网格
+  ctx.strokeStyle = '#eef2f6'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 80) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 80) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  const pts = tracks.flatMap(t => t.points);
+  if (!pts.length) {
+    ctx.fillStyle = '#9aa7b3'; ctx.textAlign = 'center';
+    const fs = W < 520 ? '12px' : '16px';
+    ctx.font = fs + ' sans-serif';
+    ctx.fillText('时间窗内没有轨迹点', W / 2, H / 2 - 10);
+    ctx.fillText('运行 drive_cars.py 让车跑起来后点「刷新」', W / 2, H / 2 + 14);
+    return;
+  }
+  let minX = Math.min(...pts.map(p => p.x)), maxX = Math.max(...pts.map(p => p.x));
+  let minY = Math.min(...pts.map(p => p.y)), maxY = Math.max(...pts.map(p => p.y));
+  if (maxX - minX < 2) { minX -= 1; maxX += 1; }
+  if (maxY - minY < 2) { minY -= 1; maxY += 1; }
+  const m = Math.max(maxX - minX, maxY - minY) * 1.1;
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  const scale = Math.min(W - 2 * pad, H - 2 * pad) / m;
+  const X = x => W / 2 + (x - cx) * scale;           // 世界 x 向右
+  const Y = y => H / 2 - (y - cy) * scale;           // 世界 y 向上（与车端一致，北上）
+  // 比例尺与原点
+  ctx.fillStyle = '#7a8a99'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(`比例尺 1 格 ≈ ${ (80 / scale).toFixed(1) } m`, 12, H - 12);
+  ctx.strokeStyle = '#b8c4cf';
+  ctx.beginPath(); ctx.moveTo(X(0) - 6, Y(0)); ctx.lineTo(X(0) + 6, Y(0));
+  ctx.moveTo(X(0), Y(0) - 6); ctx.lineTo(X(0), Y(0) + 6); ctx.stroke();
+  ctx.fillText('○ 世界原点(0,0)', X(0) + 9, Y(0) - 8);
+  // 每车轨迹
+  for (const t of tracks) {
+    if (!t.points.length) continue;
+    ctx.strokeStyle = t.color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    t.points.forEach((p, i) => i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)));
+    ctx.stroke();
+    const a = t.points[0], b = t.points[t.points.length - 1];
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = '#fff';                                   // 起点：空心圈
+    ctx.beginPath(); ctx.arc(X(a.x), Y(a.y), 5, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = t.color;                                  // 终点：实心点
+    ctx.beginPath(); ctx.arc(X(b.x), Y(b.y), 5, 0, 7); ctx.fill();
+    ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(`${t.name}（${t.points.length}点）`, X(b.x) + 10, Y(b.y) - 8);
+  }
+}
+
+setInterval(() => { if (document.getElementById('auto').checked) refresh(); }, 5000);
+loadCars().then(refresh);
+</script>
+</body>
+</html>

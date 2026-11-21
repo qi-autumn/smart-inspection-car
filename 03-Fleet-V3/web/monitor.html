@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 车队实时监控大屏（第④步）</title>
+<style>
+  :root{
+    --bg:#0d1420; --panel:#151f30; --panel2:#1b2740; --line:#2a3a55;
+    --text:#dfe7f2; --dim:#8fa3bf; --accent:#37c2a0; --warn:#e2b13c; --bad:#e25b5b;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text);
+       font-family:"Microsoft YaHei",system-ui,sans-serif; padding:14px 18px;}
+  header{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:12px;}
+  header h1{font-size:20px; font-weight:600;}
+  .badge{font-size:12px; padding:3px 10px; border-radius:10px; border:1px solid var(--line);}
+  .badge.on{color:var(--accent); border-color:var(--accent);}
+  .badge.off{color:var(--bad); border-color:var(--bad);}
+  .badge.reconnect{color:var(--warn); border-color:var(--warn);}
+  #latency{color:var(--dim); font-size:12px;}
+  .spacer{flex:1;}
+  button{cursor:pointer; border:1px solid var(--line); background:var(--panel2);
+         color:var(--text); border-radius:6px; padding:6px 14px; font-size:13px;}
+  button:hover{border-color:var(--accent);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+  a{color:var(--accent); text-decoration:none; font-size:13px;}
+  a:hover{text-decoration:underline;}
+
+  .layout{display:grid; grid-template-columns:1fr 300px; gap:14px; align-items:start;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px;}
+  .mapwrap{position:relative;}
+  canvas{display:block; width:100%; border-radius:10px;}
+  .mapfoot{display:flex; gap:16px; padding:8px 14px; font-size:12px; color:var(--dim);
+           border-top:1px solid var(--line); flex-wrap:wrap;}
+
+  aside{display:flex; flex-direction:column; gap:12px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px;}
+  .card h2{font-size:14px; font-weight:600; color:var(--dim); margin-bottom:8px;}
+  .carrow{display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px;
+          cursor:pointer; border:1px solid transparent;}
+  .carrow:hover{background:var(--panel2);}
+  .carrow.sel{border-color:var(--accent); background:var(--panel2);}
+  .dot{width:10px; height:10px; border-radius:50%; flex:none;}
+  .dot.off{background:#555 !important;}
+  .carname{font-size:14px; flex:1;}
+  .carsub{font-size:11px; color:var(--dim); text-align:right; line-height:1.5;}
+  .ctrl .stop{width:100%; background:#5b2020; border-color:#a04040; padding:10px 0;
+              font-size:15px; font-weight:600;}
+  .ctrl .stop:hover{border-color:var(--bad);}
+  #resp{font-size:12px; color:var(--dim); margin-top:8px; min-height:16px; word-break:break-all;}
+  #resp.bad{color:var(--bad);}
+  #resp.good{color:var(--accent);}
+  /* ---- V2 同款摇杆 ---- */
+  .joyrow{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  #joy{width:140px; height:140px; border-radius:50%; position:relative; flex:none;
+       background:radial-gradient(circle at 50% 42%, #223452 0%, #16223a 68%, #12192b 100%);
+       border:2px solid var(--line); touch-action:none; cursor:grab; user-select:none;}
+  #joy.drag{cursor:grabbing; border-color:var(--accent);}
+  #knob{position:absolute; left:50%; top:50%; width:52px; height:52px; border-radius:50%;
+        background:linear-gradient(160deg,#3a5a86,#24395c); border:2px solid #4a6a96;
+        transform:translate(-50%,-50%); box-shadow:0 2px 8px rgba(0,0,0,.5);
+        display:flex; align-items:center; justify-content:center; color:#bcd2ee; font-size:18px;}
+  #joyHint{font-size:11px; color:var(--dim); line-height:1.7;}
+  #joyHint b{color:var(--text); font-size:12px;}
+
+  /* ---- 窄屏自适应：单列布局，地图在上、车队和控制在下 ---- */
+  @media (max-width: 760px){
+    body{padding:10px;}
+    header{gap:8px;}
+    header h1{font-size:17px;}
+    .layout{grid-template-columns:1fr;}
+    .mapfoot{gap:8px; font-size:11px;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>V3 车队实时监控大屏</h1>
+  <span id="wsbadge" class="badge off">WS 未连接</span>
+  <span id="latency"></span>
+  <span class="spacer"></span>
+  <a href="/track/view" target="_blank">轨迹回放页 ↗</a>
+  <a href="/console/view" target="_blank">车队控制台 ↗</a>
+  <a href="/ai/view" target="_blank">AI 语音控车 ↗</a>
+</header>
+
+<div class="layout">
+  <div class="panel mapwrap">
+    <canvas id="map" width="900" height="620"></canvas>
+    <div class="mapfoot">
+      <span>实时地图：仅显示车辆当前位置，历史轨迹请到「轨迹回放页」查看</span>
+      <span>世界原点 ● ｜ y 轴向上（北上）｜ 单位：米</span>
+      <span>点地图上的车或右侧卡片即可选中控制</span>
+    </div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h2>车队（点击选中）</h2>
+      <div id="cars"></div>
+    </div>
+    <div class="card ctrl">
+      <h2>控制选中车辆</h2>
+      <div class="joyrow">
+        <div id="joy"><div id="knob">✥</div></div>
+        <div id="joyHint">
+          <b>V2 摇杆控制</b><br>
+          按住拖动 → 按角度矢量行驶<br>
+          松手 → 保持方向继续走<br>
+          拖回中心 → 减速停止<br>
+          双击摇杆 → 急停<br>
+          <span id="joyRead"></span>
+        </div>
+      </div>
+      <button class="stop" data-cmd="STOP">■ 停止</button>
+      <div id="resp"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const map = $("#map"), ctx = map.getContext("2d");
+
+/* ---------------- WebSocket：每秒广播 + 指数退避重连 ---------------- */
+let fleet = {};               // device_id -> 最新状态
+let ws = null, wsRetry = 0;   // 重连次数（退避指数）
+const RETRY_MAX_DELAY = 30000;
+
+function wsConnect() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  let lastListRender = 0;
+  ws.onopen = () => { wsRetry = 0; setBadge("on", "WS 已连接"); };
+  ws.onmessage = ev => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type !== "fleet_state") return;
+    fleet = {};
+    for (const c of msg.cars) {
+      fleet[c.device_id] = c;
+      if (c.x !== null && c.y !== null) {
+        applyObs(c.device_id, c.x, c.y, c.heading ?? 0, c.speed ?? 0, c.online);
+      }
+    }
+    // 本地高速旁路下 WS 可达 10Hz，列表 DOM 限流到 5Hz 避免无谓重排
+    const now = Date.now();
+    if (now - lastListRender > 200) { renderCars(); lastListRender = now; }
+    updateLatency();
+  };
+  ws.onclose = ws.onerror = () => {
+    const delay = Math.min(1000 * 2 ** wsRetry, RETRY_MAX_DELAY);
+    wsRetry++;
+    setBadge("reconnect", `WS 断线，${(delay/1000).toFixed(0)}s 后重连（第${wsRetry}次）`);
+    setTimeout(wsConnect, delay);
+  };
+}
+function setBadge(cls, text) { const b = $("#wsbadge"); b.className = "badge " + cls; b.textContent = text; }
+function updateLatency() {
+  const times = Object.values(fleet).map(c => c.time).filter(Boolean);
+  if (!times.length) { $("#latency").textContent = ""; return; }
+  const newest = Math.max(...times.map(Date.parse));
+  const lag = ((Date.now() - newest) / 1000).toFixed(1);
+  $("#latency").textContent = `数据滞后 ${lag}s（新于 5s 即达标）`;
+}
+wsConnect();
+
+/* ---------------- 车辆列表渲染 ---------------- */
+let selected = null;
+function renderCars() {
+  const box = $("#cars");
+  const list = Object.values(fleet);
+  if (!list.length) { box.innerHTML = '<div style="color:var(--dim);font-size:12px">等待首帧…</div>'; return; }
+  if (!selected || !fleet[selected]) selected = list[0].device_id;
+  box.innerHTML = "";
+  for (const c of list) {
+    const row = document.createElement("div");
+    row.className = "carrow" + (c.device_id === selected ? " sel" : "");
+    row.innerHTML = `
+      <span class="dot ${c.online ? "" : "off"}" style="background:${c.color}"></span>
+      <span class="carname">${c.name}</span>
+      <span class="carsub">${c.online ? "● 在线" : "○ 离线"}<br>
+        x=${fmt(c.x)} y=${fmt(c.y)} ｜ ${fmt(c.speed)}% ｜ 电量 ${fmt(c.battery)}</span>`;
+    row.onclick = () => { selected = c.device_id; renderCars(); };
+    box.appendChild(row);
+  }
+}
+const fmt = v => (v === null || v === undefined) ? "–" : (typeof v === "number" ? v.toFixed(1) : v);
+
+/* ---------------- 控制（POST /command，与 APP 同协议） ---------------- */
+async function postCommand(body) {
+  if (!selected) { showResp("bad", "请先选中车辆"); return false; }
+  body.device_id = selected;
+  try {
+    const r = await fetch("/command", { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (r.ok && j.ok) { showResp("good", `✔ 已受理 ${body.cmd}`); return true; }
+    showResp("bad", `✘ HTTP ${r.status} ${j.error || ""}`);
+  } catch (e) { showResp("bad", "✘ 网络错误 " + e); }
+  return false;
+}
+document.querySelectorAll(".ctrl [data-cmd]").forEach(b => {
+  b.onclick = () => {
+    const body = { cmd: b.dataset.cmd };
+    if (b.dataset.cmd === "STOP") { joyKnob(0, 0); joyRead.textContent = ""; }  // 停止时摇杆回中
+    postCommand(body);
+  };
+});
+function showResp(cls, text) { const el = $("#resp"); el.className = cls; el.textContent = text; }
+
+/* ---------------- V2 同款摇杆：矢量 move(angle,speed)，松手保持方向 ---------------- */
+const joy = $("#joy"), knob = $("#knob"), joyRead = $("#joyRead");
+const JOY_R = 44;               // 摇杆最大行程（像素），140px 盘面
+let dragging = false, dragStart = 0, lastSend = 0, lastAngle = -999, lastSpeed = -1;
+
+function joyVector(ev) {
+  const rect = joy.getBoundingClientRect();
+  let dx = ev.clientX - (rect.left + rect.width / 2);
+  let dy = ev.clientY - (rect.top + rect.height / 2);
+  const r = Math.hypot(dx, dy);
+  if (r > JOY_R) { dx *= JOY_R / r; dy *= JOY_R / r; }
+  // 屏幕向上 = 正北：方位角 0=北，顺时针为正（与 V2 theta=atan2(vx,vy) 一致）
+  let angle = Math.atan2(dx, -dy) * 180 / Math.PI;
+  if (angle < 0) angle += 360;
+  const speed = Math.round(Math.min(Math.hypot(dx, dy) / JOY_R, 1) * 100);
+  return { dx, dy, r: Math.hypot(dx, dy), angle, speed };
+}
+function joyKnob(dx, dy) { knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; }
+
+joy.addEventListener("pointerdown", ev => {
+  if (!selected) { showResp("bad", "请先选中车辆"); return; }
+  joy.setPointerCapture(ev.pointerId);
+  dragging = true; dragStart = Date.now(); lastSend = 0; lastAngle = -999; lastSpeed = -1;
+  joy.classList.add("drag");
+  // 注意：按下瞬间不评估位置、不发任何命令 —— 抓取摇杆本身不应改变车的状态
+});
+joy.addEventListener("pointermove", ev => { if (dragging) joyMove(ev); });
+
+function joyMove(ev) {
+  const v = joyVector(ev);
+  joyKnob(v.dx, v.dy);
+  if (v.r < 12) {                       // 拖动中拉回中心 = 停止意图
+    joyRead.textContent = "拉回中心 → 停止";
+    if (Date.now() - lastSend > 400 && lastSpeed !== 0) {
+      lastSpeed = 0; lastSend = Date.now(); postCommand({ cmd: "STOP" });
+    }
+    return;
+  }
+  joyRead.textContent = `方位角 ${v.angle.toFixed(0)}° ｜ 速度 ${v.speed}%`;
+  // 节流：角度或速度变化明显才发（≤4Hz），拖动中方向实时可调
+  const changed = Math.abs(v.angle - lastAngle) > 3 || Math.abs(v.speed - lastSpeed) > 3;
+  if ((changed && Date.now() - lastSend > 250) || Date.now() - lastSend > 800) {
+    lastAngle = v.angle; lastSpeed = v.speed; lastSend = Date.now();
+    postCommand({ cmd: "MOVE", angle: +v.angle.toFixed(1), speed: v.speed });
+  }
+}
+
+joy.addEventListener("pointerup", ev => {
+  if (!dragging) return;
+  dragging = false; joy.classList.remove("drag");
+  // 摇杆停在松手位置（不回中）——视觉与车的实际状态一致；
+  // 松手不发任何命令 —— V2 语义：小车保持当前方向继续行驶
+  joyRead.textContent = "已松手：保持当前方向行驶";
+});
+joy.addEventListener("dblclick", () => postCommand({ cmd: "STOP" }));  // 双击急停
+
+/* ---------------- 地图渲染：世界坐标 y 向上 + 完整车形 ---------------- */
+/* 拖尾轨迹：默认不画（每车后面的彩色线）。需要时在地址后加 ?trail=1 恢复 */
+const SHOW_TRAIL = location.search.includes("trail");
+const TRAIL_MAX = 150;
+const CAR_SCALE = 0.6;        // 车形缩放系数（1.0 = 原始大小）
+const trails = {};            // device_id -> [{x,y}]
+const lastSeen = {};          // device_id -> {x,y} 用于判断是否新增轨迹点
+
+/* ---- 航位推算（分段式）：
+   真实位置修复（x/y 变化）→ 外推起点对齐观测；
+   命令回显（仅朝向/速度变化）→ 起点沿旧方向推进到此刻再换新方向，
+   与真车"收到命令即转向"的运动方式一致，杜绝回显把车拉回旧位置的抖动 ---- */
+const MAX_SPEED_MS = 1.5;     // 与后端一致：speed 100% = 1.5 m/s
+const STALE_S = 8;            // 超过 8s 无真实观测：外推速度 3s 内衰减到 0
+const EXTRAP_ENABLED = !location.search.includes("plain");  // ?plain=1 回退纯观测模式
+const obs = {};               // device_id -> 观测/外推状态（见 applyObs）
+const disp = {};              // device_id -> 平滑显示位置 {x,y,heading}
+let lastFrame = performance.now();
+
+function applyObs(id, x, y, heading, speed, online) {
+  const now = Date.now();
+  let o = obs[id];
+  if (!o) {
+    obs[id] = { fx: x, fy: y, fixAt: now, online,
+                ex: x, ey: y, t0: now, eh: heading, ev: speed / 100 * MAX_SPEED_MS };
+    return;
+  }
+  if (online !== o.online) { o.online = online; }
+  if (!o.online) return;
+  const posChanged = o.fx !== x || o.fy !== y;
+  const motionChanged = o.eh !== heading || o.ev !== speed / 100 * MAX_SPEED_MS;
+  if (!posChanged && !motionChanged) return;    // 同一份缓存广播，不动外推时钟
+  const dt = Math.min((now - o.t0) / 1000, STALE_S);
+  if (posChanged) {
+    o.fx = x; o.fy = y; o.fixAt = now;
+    o.ex = x; o.ey = y;                         // 真实修复：起点对齐最新观测
+  } else {                                      // 回显：起点沿旧方向推进 dt 再转向
+    o.ex += Math.sin(o.eh * Math.PI / 180) * o.ev * dt;
+    o.ey += Math.cos(o.eh * Math.PI / 180) * o.ev * dt;
+  }
+  o.eh = heading;
+  o.ev = speed / 100 * MAX_SPEED_MS;
+  o.t0 = now;
+}
+
+function estPos(id) {
+  const o = obs[id];
+  if (!o || !o.online) return null;
+  if (!EXTRAP_ENABLED) return { x: o.fx, y: o.fy, heading: o.eh };
+  const dt = (Date.now() - o.t0) / 1000;
+  let dist;
+  if (dt <= STALE_S) {
+    dist = o.ev * dt;
+  } else {
+    // 观测过期：减速滑行至停（∫v(1-t/3)dt），防止车影无限漂移
+    const extra = Math.min(dt - STALE_S, 3);
+    dist = o.ev * STALE_S + o.ev * (extra - extra * extra / 6);
+  }
+  const th = o.eh * Math.PI / 180;
+  return { x: o.ex + Math.sin(th) * dist, y: o.ey + Math.cos(th) * dist, heading: o.eh };
+}
+
+/* 画布自适应：跟随容器宽度重设内部分辨率，避免固定 900x620 在窄屏被压扁 */
+function fitCanvas() {
+  const w = Math.max(280, map.parentElement.clientWidth - 2);
+  const h = Math.max(260, Math.min(window.innerHeight * 0.62, Math.round(w * 0.72)));
+  if (map.width !== w || map.height !== h) { map.width = w; map.height = h; }
+}
+window.addEventListener("resize", fitCanvas);
+
+function draw() {
+  fitCanvas();
+  const W = map.width, H = map.height;
+  ctx.fillStyle = "#0d1420"; ctx.fillRect(0, 0, W, H);
+  const list = Object.values(fleet);
+
+  // 每帧更新平滑显示位置：目标 = 外推位置，指数趋近（新观测到达时也无跳变）
+  const now = performance.now();
+  const fdt = Math.min((now - lastFrame) / 1000, 0.1);
+  lastFrame = now;
+  for (const c of list) {
+    const t = estPos(c.device_id);
+    if (!t) continue;
+    const s = disp[c.device_id] || (disp[c.device_id] = { x: t.x, y: t.y, heading: t.heading });
+    const k = Math.min(1, fdt * 8);
+    s.x += (t.x - s.x) * k;
+    s.y += (t.y - s.y) * k;
+    let dh = t.heading - s.heading;              // 航向角按最短弧平滑
+    while (dh > 180) dh -= 360;
+    while (dh < -180) dh += 360;
+    s.heading += dh * k;
+  }
+
+  const pts = list.filter(c => c.online && disp[c.device_id]);
+
+  // 观测去重：位置变了才记轨迹点（默认关闭拖尾，?trail=1 时启用）
+  for (const c of (SHOW_TRAIL ? list : [])) {
+    if (c.x === null || c.y === null) continue;
+    const t = trails[c.device_id] || (trails[c.device_id] = []);
+    const ls = lastSeen[c.device_id];
+    if (!ls || Math.hypot(c.x - ls.x, c.y - ls.y) > 0.05) {
+      t.push({ x: c.x, y: c.y });
+      if (t.length > TRAIL_MAX) t.shift();
+      lastSeen[c.device_id] = { x: c.x, y: c.y };
+    }
+  }
+
+  if (pts.length) {
+    // 自适应视野：包含原点与全部车辆（用平滑显示位置，避免边界抖动）
+    let minX = 0, maxX = 0, minY = 0, maxY = 0;
+    for (const c of pts) {
+      const s = disp[c.device_id];
+      minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+      minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+    }
+    const pad = 4;
+    minX -= pad; maxX += pad; minY -= pad; maxY += pad;
+    const zoom = Math.min(W / (maxX - minX), H / (maxY - minY));
+    const offX = (W - (maxX - minX) * zoom) / 2 - minX * zoom;
+    const offY = (H - (maxY - minY) * zoom) / 2 + maxY * zoom;  // y 轴向上
+    const toXY = (x, y) => [x * zoom + offX, offY - y * zoom];
+
+    // 网格 + 原点
+    ctx.strokeStyle = "rgba(42,58,85,.5)"; ctx.lineWidth = 1;
+    for (let gx = Math.floor(minX); gx <= maxX; gx += 2) {
+      const [sx] = toXY(gx, 0);
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+    }
+    for (let gy = Math.floor(minY); gy <= maxY; gy += 2) {
+      const [, sy] = toXY(0, gy);
+      ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
+    }
+    const [ox, oy] = toXY(0, 0);
+    ctx.fillStyle = "#e2b13c"; ctx.beginPath(); ctx.arc(ox, oy, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#8fa3bf"; ctx.font = "11px sans-serif"; ctx.fillText("原点(0,0)", ox + 6, oy - 6);
+
+    // 轨迹分轨（默认关闭拖尾，?trail=1 时启用）
+    for (const c of (SHOW_TRAIL ? list : [])) {
+      const t = trails[c.device_id] || [];
+      if (t.length < 2) continue;
+      ctx.strokeStyle = c.color; ctx.globalAlpha = c.online ? .85 : .3;
+      ctx.lineWidth = c.device_id === selected ? 2.5 : 1.5;
+      ctx.beginPath();
+      t.forEach((p, i) => { const [sx, sy] = toXY(p.x, p.y); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      // 起点
+      const [sx0, sy0] = toXY(t[0].x, t[0].y);
+      ctx.strokeStyle = c.color; ctx.beginPath(); ctx.arc(sx0, sy0, 4, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // 车体（用平滑外推位置 + 平滑航向，60fps 连续运动）
+    for (const c of list) {
+      if (c.x === null) continue;
+      const s = disp[c.device_id];
+      if (!s) continue;
+      const [px, py] = toXY(s.x, s.y);
+      drawCar(px, py, s.heading, c.color, c.device_id === selected, !c.online);
+      ctx.fillStyle = "#dfe7ee"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(`${c.name} ${c.online ? fmt(c.speed) + "%" : "离线"}`, px, py + 24);
+      ctx.textAlign = "left";
+      if (c.device_id === selected) {
+        ctx.strokeStyle = "#37c2a0"; ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(px - 20, py - 25, 40, 50);
+        ctx.setLineDash([]);
+      }
+    }
+  } else {
+    ctx.fillStyle = "#8fa3bf"; ctx.font = "14px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("等待 WebSocket 首帧数据…", W / 2, H / 2);
+    ctx.textAlign = "left";
+  }
+  requestAnimationFrame(draw);
+}
+
+/* 完整车形（车身+轮子+挡风+车顶舱+大灯），随 heading 旋转；0°=正北，顺时针为正 */
+function drawCar(px, py, thetaDeg, color, isSel, off) {
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate((thetaDeg) * Math.PI / 180);   // 0°朝北（屏幕上方）
+  ctx.scale(CAR_SCALE, CAR_SCALE);          // 整体缩小车形
+  if (off) ctx.globalAlpha = .35;
+  // 车轮（四角）
+  ctx.fillStyle = "#20242a";
+  [[-20, -18], [20, -18], [-20, 26], [20, 26]].forEach(([wx, wy]) => {
+    ctx.beginPath(); ctx.roundRect(wx - 4, wy - 7, 8, 14, 3); ctx.fill();
+  });
+  // 车身
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(-22, -30, 44, 62, 9); ctx.fill();
+  // 前挡风玻璃（车头在 -y）
+  ctx.fillStyle = "rgba(190,220,240,.75)";
+  ctx.beginPath(); ctx.roundRect(-15, -22, 30, 10, 3); ctx.fill();
+  // 车顶舱
+  ctx.fillStyle = "rgba(255,255,255,.22)";
+  ctx.beginPath(); ctx.roundRect(-14, -6, 28, 22, 5); ctx.fill();
+  // 大灯
+  ctx.fillStyle = "#f5c542";
+  ctx.beginPath(); ctx.arc(-13, -30, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(13, -30, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

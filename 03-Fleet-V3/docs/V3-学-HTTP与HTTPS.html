@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · HTTP 与 HTTPS（含本项目升级指南）</title>
+<style>
+  :root{--bg:#f5f8fc;--card:#fff;--ink:#1f2933;--dim:#5b6b7c;--line:#dde5ee;
+        --http:#d97706;--https:#0f8a8a;--shadow:0 2px 10px rgba(31,41,51,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.75;
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+  a{color:#1d6fa5;text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;
+       font-family:Consolas,"Courier New",monospace;color:#234}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a,#1c5c6e);color:#fff;padding:30px 20px 26px}
+  .hero .inner{max-width:1100px;margin:0 auto}
+  .hero h1{margin:0 0 6px;font-size:26px}.hero .sub{margin:0 0 12px;color:#c7dbe6;font-size:14px}
+  .hero p{margin:0;color:#e6f0f5;font-size:14px;max-width:900px}
+  .back{display:inline-block;margin-top:13px;font-size:13px;color:#a8f0dc;
+        border:1px solid rgba(168,240,220,.5);padding:5px 12px;border-radius:16px}
+  .topnav{position:sticky;top:0;z-index:9;background:#fff;border-bottom:1px solid var(--line)}
+  .topnav .inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px;padding:8px 20px}
+  .topnav a{font-size:13px;color:var(--dim);padding:6px 12px;border-radius:20px}
+  .topnav a:hover{background:#eef3f9;color:var(--ink);text-decoration:none}
+  section{margin-top:30px;scroll-margin-top:56px}
+  .sec-head{display:flex;align-items:center;gap:11px;margin:0 0 11px}
+  .sec-no{width:31px;height:31px;flex:none;border-radius:8px;background:#475569;color:#fff;
+          font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .sec-head h2{margin:0;font-size:20px}
+  .tag{font-size:12px;color:var(--dim);background:#eaf0f6;padding:3px 10px;border-radius:12px}
+  .lead{color:var(--dim);margin:0 0 13px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:14px 17px;box-shadow:var(--shadow);margin-bottom:11px}
+  .card h3{margin:0 0 7px;font-size:16px}.card p{margin:0 0 8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  @media(max-width:800px){.grid2{grid-template-columns:1fr}}
+  .concl{border-left:4px solid var(--https);background:#f0f9f8;padding:12px 16px;
+         border-radius:0 8px 8px 0;margin-bottom:13px}
+  .concl b{color:#0b6f6f}
+  .file{font-family:Consolas,monospace;font-size:.87em;color:#7a4b00;background:#fff5e3;
+        padding:1px 5px;border-radius:4px}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin:0 4px 3px 0}
+  .pill.h{background:#fff0dc;color:#a8600a}.pill.s{background:#e6f4f4;color:#0b6f6f}
+  pre{background:#0f1a2c;color:#d7e3f0;border-radius:8px;padding:12px 15px;overflow-x:auto;
+      font-size:12.5px;line-height:1.65;font-family:Consolas,"Courier New",monospace;margin:8px 0}
+  .cm{color:#7f9bb5}.kw{color:#f0c674}.num{color:#a8e6a3}.add{color:#a8e6a3}.del{color:#e88b84}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#eef3f9;font-weight:700}tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);margin-bottom:12px}
+  .tblwrap table{min-width:700px}
+  ul{margin:6px 0 8px;padding-left:22px}li{margin:4px 0}
+  details{background:#fff;border:1px solid var(--line);border-radius:9px;margin-bottom:9px}
+  details summary{cursor:pointer;padding:10px 15px;font-weight:600;font-size:14.5px;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+";display:inline-flex;width:19px;height:19px;margin-right:8px;
+      align-items:center;justify-content:center;background:#eef3f9;border-radius:5px;color:#1d6fa5}
+  details[open] summary::before{content:"-"}
+  details .body{padding:0 15px 13px 42px;font-size:14px}
+  .step{background:#fff;border:1px solid var(--line);border-left:4px solid var(--https);
+        border-radius:8px;padding:13px 16px;margin-bottom:11px}
+  .step .t{font-weight:700;font-size:16px;margin-bottom:3px}
+  .step .meta{font-size:12.5px;color:var(--dim);margin-bottom:7px}
+  .warn{background:#fff4f2;border-left:4px solid #d9534f;padding:10px 14px;
+        border-radius:0 8px 8px 0;font-size:13.5px;margin-bottom:10px}
+  .okbox{background:#eef8f2;border-left:4px solid #2f8a5b;padding:10px 14px;
+         border-radius:0 8px 8px 0;font-size:13.5px;margin-bottom:10px}
+  .note{font-size:13px;color:var(--dim)}
+  footer{margin-top:40px;padding-top:15px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="hero"><div class="inner">
+  <h1>V3 学 · HTTP 与 HTTPS</h1>
+  <p class="sub">两者的区别、项目里各自用在哪、以及把局域网链路升级为 HTTPS 的可操作指南</p>
+  <p>这份属于「<strong>线</strong>」（协议链路）+「<strong>点</strong>」（改造落点）。<strong>注意：本文只是指南，没有改动任何正在运行的代码</strong>——项目已验收通过，实施与否由你决定。</p>
+  <a class="back" href="V3-学习导航.html">← 返回学习导航</a>
+</div></div>
+
+<div class="topnav"><div class="inner">
+  <a href="#s0">结论</a><a href="#s1">项目现状盘点</a><a href="#s2">区别对照</a>
+  <a href="#s3">TLS 做了什么</a><a href="#s4">升级六步</a><a href="#s5">难点与备选</a>
+  <a href="#s6">验证清单</a><a href="#s7">坑与自测</a>
+</div></div>
+
+<div class="wrap">
+
+<section id="s0">
+  <div class="sec-head"><div class="sec-no">0</div><h2>先给结论</h2></div>
+  <div class="concl">
+    <p><b>一句话</b>：<strong>HTTPS 不是另一种协议，就是 HTTP 外面套了一层 TLS</strong>。请求方法、路径、JSON 报文、状态码全都没变，变的只是"这段字节在网线里是明文还是密文"。所以升级时<strong>业务逻辑一行都不用改</strong>，改的只是"怎么起服务、客户端怎么连"。</p>
+    <p style="margin:0"><b>生活比喻</b>：HTTP 像寄明信片，路上谁都能看清内容；HTTPS 像把同一张明信片装进带锁的保险箱，且收件人要先出示身份证（证书）证明"我确实是那台服务器"。<strong>信的内容没变，运输方式变了</strong>。</p>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>TLS 带来的三件事</h3><ul style="font-size:13.5px">
+      <li><strong>加密</strong>：中间人看不到 JSON 里的位置、命令、token</li>
+      <li><strong>身份认证</strong>：证书证明"你连的真是那台后端"，防冒充</li>
+      <li><strong>完整性</strong>：传输中被篡改会被发现</li>
+    </ul></div>
+    <div class="card"><h3>它不解决什么</h3><ul style="font-size:13.5px">
+      <li>不解决"密码太简单"（admin/admin123 仍是弱口令）</li>
+      <li>不解决"服务端本身被攻破"</li>
+      <li>不解决"明文 HTTP 页面里混了 HTTPS 请求"之外的混合内容问题</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>项目现状盘点：哪里是 HTTP、哪里已经是加密的</h2><span class="tag">先别急着升错地方</span></div>
+  <p class="lead">你说"当前项目中都有涉及到"，这个判断是准确的。但要先分清：加密的部分其实<strong>不在客户端这一段</strong>。</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:25%">链路</th><th style="width:17%">协议</th><th style="width:13%">加密</th><th>证据（源码 / 配置）</th></tr></thead>
+    <tbody>
+      <tr><td>APP ↔ 业务后端</td><td><span class="pill h">HTTP/1.1 明文</span> :8000</td><td>否</td><td><span class="file">FleetClient.ets : 58、90、144</span> 全部是 <code>http://${host}:${port}</code></td></tr>
+      <tr><td>网页 ↔ 业务后端</td><td><span class="pill h">HTTP + ws:// 明文</span> :8000</td><td>否</td><td><span class="file">monitor.html</span> 的 <code>fetch("/command")</code>、<code>new WebSocket(ws://...)</code>；<span class="file">admin.html</span> 的相对路径 fetch</td></tr>
+      <tr><td><strong>后端 ↔ 华为云应用侧 API</strong></td><td><span class="pill s">HTTPS</span></td><td><strong>是</strong></td><td><span class="file">cloud_config.json</span> 的 <code>endpoint</code> 本身就是 <code>https://9dcc8e0e...iotda-app.cn-north-4.myhuaweicloud.com</code>；SDK 用 AK/SK 签名</td></tr>
+      <tr><td>模拟小车 ↔ IoTDA</td><td><span class="pill s">MQTT over TLS 8883</span></td><td><strong>是</strong></td><td><span class="file">car_mqtt_client.py : 258~263</span> 的 <code>ssl.create_default_context()</code> + <code>tls_set_context()</code>。<strong>注意：这是加密的 MQTT，不是 HTTPS</strong></td></tr>
+      <tr><td>后端 → 模拟器 /state</td><td><span class="pill h">HTTP 明文</span> 127.0.0.1:808N</td><td>否</td><td>本机回环调试口，不出网卡，风险极低</td></tr>
+    </tbody>
+  </table></div>
+  <div class="okbox"><strong>结论</strong>：所谓"把项目中的 HTTP 升级为 HTTPS"，准确地说只指<strong>局域网里"客户端（网页 + APP）↔ 业务后端 :8000"这一段</strong>。云端 SDK 那段早就是 HTTPS 了，设备那段是加密 MQTT，都不用动；本机 127.0.0.1 旁路也无升级必要。</div>
+  <div class="warn"><strong>为什么当前敢用明文</strong>：教学项目跑在同一个 WiFi 局域网里，数据只是小车坐标和演示用 token。但同一个网络里的人理论上可以抓包看到 <code>X-Auth-Token</code>、伪造命令、冒充后端——这正是 HTTPS 要补的缺口。</div>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>HTTP 与 HTTPS 的区别对照</h2></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:19%">维度</th><th style="width:40%">HTTP</th><th>HTTPS（HTTP + TLS）</th></tr></thead>
+    <tbody>
+      <tr><td><strong>本质</strong></td><td>应用层协议，直接跑在 TCP 上</td><td>同一个 HTTP，中间插入 TLS 层：HTTP → TLS → TCP</td></tr>
+      <tr><td><strong>默认端口</strong></td><td>80</td><td>443（<strong>只是默认值</strong>；本项目升完仍可用 8000）</td></tr>
+      <tr><td><strong>握手</strong></td><td>TCP 三次握手后直接发请求</td><td>TCP 握手后还要 TLS 握手（协商算法、验证书、交换密钥），多 1~2 个往返</td></tr>
+      <tr><td><strong>证书 / CA</strong></td><td>不需要</td><td>服务端要有证书；客户端要信任签发它的 CA，否则报"证书不受信任"</td></tr>
+      <tr><td><strong>数据形态</strong></td><td>明文，抓包直接读到 JSON 与 token</td><td>密文，抓包只能看到 IP、端口、大致流量大小</td></tr>
+      <tr><td><strong>身份验证</strong></td><td>无，可能被 DNS 劫持 / 中间人冒充</td><td>证书 + 域名/IP 校验，能识别冒充</td></tr>
+      <tr><td><strong>URL 前缀</strong></td><td><code>http://</code>，WebSocket 是 <code>ws://</code></td><td><code>https://</code>，WebSocket 是 <code>wss://</code></td></tr>
+      <tr><td><strong>性能</strong></td><td>略快</td><td>首次握手多一点开销，之后对称加密几乎无感；HTTP/2、连接复用还能反超</td></tr>
+      <tr><td><strong>调试</strong></td><td>curl / F12 / 抓包一目了然，教学友好</td><td>需要 <code>-k</code>、装证书或配置代理才能看明文</td></tr>
+      <tr><td><strong>项目里的取舍</strong></td><td>局域网演示、便于抓包教学、零配置</td><td>若要把 APP/后台放到公网或多人共用网络，<strong>必须</strong>升级</td></tr>
+    </tbody>
+  </table></div>
+  <div class="card"><h3>代码视角：协议差异对业务代码是"透明"的</h3>
+    <p style="margin:0;font-size:13.5px">下面这行在项目里同时适用于 HTTP 和 HTTPS，升级后<strong>完全不用改</strong>：</p>
+<pre><span class="cm">// web/admin.html：相对路径，浏览器自动跟随页面自身的协议</span>
+<span class="kw">const</span> r = <span class="kw">await</span> fetch(path, {headers: hdr(), ...opts});
+<span class="cm">// web/monitor.html：发命令同理</span>
+<span class="kw">const</span> r = <span class="kw">await</span> fetch(<span class="kw">"/command"</span>, { method: <span class="kw">"POST"</span>, ... });</pre>
+    <p style="margin:0" class="note">只有<strong>写死完整 URL 的地方</strong>（APP 的 <code>http://${host}:${port}</code>）才必须改字符串。这个差别在升级时非常关键。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>TLS 到底做了什么（简化握手）</h2></div>
+  <div class="card"><ol style="font-size:14px">
+    <li><strong>TCP 三次握手</strong>：先连上 8000 端口（与 HTTP 完全相同）。</li>
+    <li><strong>ClientHello</strong>：客户端说"我支持这些加密算法"。</li>
+    <li><strong>ServerHello + 证书</strong>：服务端选定算法，并把<strong>证书</strong>（含公钥、域名/IP、签发者）发过来。</li>
+    <li><strong>客户端验证证书</strong>：是不是受信任的 CA 签发？有没有过期？证书里的域名/IP 和我访问的地址一致吗？<strong>这一步就是自签证书在鸿蒙 APP 上最容易失败的地方</strong>。</li>
+    <li><strong>密钥协商</strong>：双方用非对称加密安全地商量出一个"会话密钥"。</li>
+    <li><strong>切换对称加密</strong>：之后的 HTTP 报文全部用会话密钥加密传输（对称加密快）。</li>
+  </ol>
+  <p style="margin:0" class="note">之后每一次普通请求都复用这个会话，开销很小。所以"HTTPS 很慢"在长连接/复用场景下基本不成立。</p></div>
+  <div class="card"><h3>项目里已有的加密代码长什么样（可作参照）</h3>
+<pre><span class="cm"># device/car_mqtt_client.py : 257~263 —— MQTT 的 TLS 配置（不是 HTTPS，但同一套 TLS）</span>
+<span class="kw">try</span>:
+    ctx = ssl.create_default_context()
+    mqttc.tls_set_context(ctx)                 <span class="cm"># 用系统 CA 校验证书</span>
+    print(<span class="kw">"[MQTT] TLS: 使用系统 CA 校验"</span>)
+<span class="kw">except</span> Exception <span class="kw">as</span> e:
+    mqttc.tls_set(cert_reqs=ssl.CERT_NONE)      <span class="cm"># 降级：不校验（仅调试可接受）</span>
+    mqttc.tls_insecure_set(True)</pre>
+    <p style="margin:0;font-size:13.5px">看，TLS 的接入点在代码里就是"给连接套一层 context"。Flask 侧升级也是同样的思路，只是换成 <code>ssl_context</code> 参数。</p></div>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>升级六步（可照着做）</h2><span class="tag">本文只给方案，未改动工程</span></div>
+  <p class="lead">目标：把 <code>http://PC内网IP:8000</code> 变成 <code>https://PC内网IP:8000</code>，网页与 APP 都能连，<code>ws://</code> 同步变成 <code>wss://</code>。</p>
+
+  <div class="step"><div class="t">第 1 步 · 生成一张证书（含局域网 IP 的 SAN）</div>
+    <div class="meta">在项目根目录执行（Git Bash / OpenSSL 1.1.1+）；把 IP 换成你 PC 的实际内网地址</div>
+<pre>openssl req -x509 -newkey rsa:<span class="num">2048</span> -nodes \
+  -keyout server.key -out server.crt -days <span class="num">365</span> \
+  -subj <span class="kw">"/CN=v3-fleet-local"</span> \
+  -addext <span class="kw">"subjectAltName=IP:192.168.1.10,DNS:localhost"</span></pre>
+    <p><strong>为什么必须写 SAN</strong>：现代客户端不再只看 CN，而是校验 subjectAltName。你用 <code>https://192.168.1.10:8000</code> 访问，证书里就必须有 <code>IP:192.168.1.10</code>，否则会报"证书与主机名不匹配"。</p>
+  </div>
+
+  <div class="step"><div class="t">第 2 步 · 后端启动时挂上证书</div>
+    <div class="meta"><span class="file">server/app.py : 1079</span>（当前原文 → 改后）</div>
+<pre><span class="cm"># 现在</span>
+app.run(host=<span class="kw">"0.0.0.0"</span>, port=<span class="num">8000</span>, threaded=True, use_reloader=False)
+
+<span class="cm"># 改成（建议用环境变量控制，方便一键回退）</span>
+<span class="kw">import</span> os
+ctx = (<span class="kw">"server.crt"</span>, <span class="kw">"server.key"</span>) <span class="kw">if</span> os.environ.get(<span class="kw">"V3_HTTPS"</span>) == <span class="kw">"1"</span> <span class="kw">else</span> None
+app.run(host=<span class="kw">"0.0.0.0"</span>, port=<span class="num">8000</span>, threaded=True,
+        use_reloader=False, ssl_context=ctx)</pre>
+    <p><strong>关键点</strong>：<code>flask-sock</code> 的 <code>/ws</code> 跑在同一个 Flask 服务上，服务端<strong>不用改 WebSocket 代码</strong>，它自动变成 <code>wss</code>。端口保持 8000 完全可以，443 只是惯例不是规定。</p>
+  </div>
+
+  <div class="step"><div class="t">第 3 步 · 网页端：几乎零改动（这是现成的好设计）</div>
+    <div class="meta"><span class="file">web/monitor.html : 130~133</span>　<span class="file">web/admin.html : 183~184</span></div>
+<pre><span class="cm">// monitor.html 早就写好了协议自适应，不用动：</span>
+<span class="kw">const</span> proto = location.protocol === <span class="kw">"https:"</span> ? <span class="kw">"wss"</span> : <span class="kw">"ws"</span>;
+ws = <span class="kw">new</span> WebSocket(`${proto}://${location.host}/ws`);
+
+<span class="cm">// admin.html 用的是相对路径，页面是 https 时请求自动就是 https：</span>
+<span class="kw">const</span> r = <span class="kw">await</span> fetch(path, {headers: hdr(), ...opts});</pre>
+    <p>只要用 <code>https://...</code> 打开页面，所有 <code>fetch</code> 自动走 HTTPS、WebSocket 自动走 WSS。<strong>没有混合内容问题</strong>（项目里没有任何写死的 <code>http://</code> 资源引用）。</p>
+    <div class="okbox">首次访问自签证书时，浏览器会显示"您的连接不是私密连接" → 点"高级 → 继续前往"。这是自签证书的正常表现，不是配置失败。</div>
+  </div>
+
+  <div class="step"><div class="t">第 4 步 · APP 端：三处字符串 + 证书信任（真正的难点）</div>
+    <div class="meta"><span class="file">CarFleet/entry/src/main/ets/net/FleetClient.ets : 58、90、144</span></div>
+<pre><span class="cm">// 现在（三处都是写死的 http://）</span>
+<span class="kw">this</span>.baseUrl = `http://${host}:${port}`;
+<span class="kw">const</span> resp = <span class="kw">await</span> req.request(`http://${host}:${port}/fleet/status`, {...});
+<span class="kw">const</span> resp = <span class="kw">await</span> req.request(
+  `http://${host}:${port}/track?device_id=${encodeURIComponent(deviceId)}`, {...});
+
+<span class="cm">// 改成（建议抽成一个常量，别改三遍）</span>
+<span class="kw">const</span> SCHEME = <span class="kw">'https'</span>;
+<span class="kw">this</span>.baseUrl = `${SCHEME}://${host}:${port}`;</pre>
+    <p><strong>但只改字符串还不够</strong>：鸿蒙系统默认不信任自签证书，请求会直接失败。三种处理方式（按推荐度排序）：</p>
+    <ul style="font-size:13.5px">
+      <li><strong>方案 A（最规范）</strong>：把自建 CA 证书放进应用资源，在 <code>@ohos.net.http</code> 的请求选项中指定自定义 CA（该能力以你所用 SDK 版本的 <code>HttpRequestOptions</code> 文档为准，常见字段名为 <code>caPath</code>），并在 <span class="file">module.json5</span> 里确认网络安全配置允许。同时证书 SAN 必须含 PC 的 IP。</li>
+      <li><strong>方案 B（设备侧）</strong>：把这张自签 CA 装入手机/模拟器的受信任凭据（开发设备可做，不适合分发给用户）。</li>
+      <li><strong>方案 C（公网/正式）</strong>：用受信任 CA 签发的证书 + 真实域名 + 内网 DNS 指向 PC，客户端无需任何特殊配置。适合真要部署时。</li>
+      <li><strong>教学折中</strong>：APP 暂保留 HTTP，只把网页端升到 HTTPS（网页浏览器点一次"继续前往"即可），演示"HTTPS 链路"概念已经够；或按第 5 步用反向代理统一处理。</li>
+    </ul>
+    <p class="note">另外：APP 里内嵌管理后台的 Web 组件加载的是 <code>/admin/view</code>，若 APP 侧用 https，这个 URL 也要一起换；Web 组件对自签证书同样可能拦截，需要按所用 SDK 的 Web 组件证书策略处理。</p>
+  </div>
+
+  <div class="step"><div class="t">第 5 步 · 本机旁路保持原样</div>
+    <div class="meta"><span class="file">server/app.py</span> 的 <code>local_fast_loop</code></div>
+    <p style="margin:0;font-size:13.5px">后端 10Hz 拉 <code>http://127.0.0.1:808N/state</code> 是<strong>同一台机器内部的回环流量</strong>，不经过网卡、不暴露到局域网，<strong>不需要升级也不建议升级</strong>（给每台模拟器配证书只会徒增麻烦）。同理，<code>cloud_config.json</code> 的 SDK endpoint 已经是 https，MQTT 已是 TLS 8883，都不动。</p>
+  </div>
+
+  <div class="step"><div class="t">第 6 步 · 可选：用反向代理，一行代码都不改</div>
+    <p style="margin:0;font-size:13.5px">如果不想动 Flask 和 ArkTS，可以在 PC 上跑一个 nginx / stunnel：外部 <code>https://PC:8443</code> → 本地 <code>http://127.0.0.1:8000</code>。优点：<strong>后端源码零改动、证书集中管理</strong>；缺点：多一个进程、WebSocket 需要显式配置 <code>proxy_set_header Upgrade</code> 才能转发，APP 仍要处理自签证书信任。适合只想演示"链路上锁"的场景。</p>
+  </div>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>改造前后对照 + 影响面</h2></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:26%">位置</th><th style="width:20%">要改吗</th><th>改什么</th></tr></thead>
+    <tbody>
+      <tr><td><span class="file">server/app.py</span></td><td><strong>要</strong>（1 行）</td><td><code>app.run(..., ssl_context=...)</code>；路由、接口、JSON 全不变</td></tr>
+      <tr><td><span class="file">web/monitor.html</span></td><td>不用</td><td>协议自适应 + 相对路径已就位</td></tr>
+      <tr><td><span class="file">web/admin.html</span> / <span class="file">track_demo.html</span></td><td>不用</td><td>相对路径自动跟随</td></tr>
+      <tr><td><span class="file">FleetClient.ets</span></td><td><strong>要</strong>（3 处）</td><td><code>http://</code> → <code>https://</code> + 自签证书信任配置</td></tr>
+      <tr><td><span class="file">Index.ets</span>（Web 组件 URL）</td><td><strong>要</strong></td><td>内嵌后台的地址改用 https 前缀</td></tr>
+      <tr><td><span class="file">cloud_config.json</span></td><td>不用</td><td>SDK endpoint 本来就是 https</td></tr>
+      <tr><td><span class="file">car_mqtt_client.py</span></td><td>不用</td><td>本来就是 MQTT over TLS 8883</td></tr>
+      <tr><td><code>/state</code> 本机旁路</td><td>不用</td><td>127.0.0.1 回环，无暴露面</td></tr>
+      <tr><td>测试脚本 <span class="file">test_api.py</span></td><td><strong>要</strong></td><td><code>BASE = "http://127.0.0.1:8000"</code> 改成 https，或加 <code>ssl._create_unverified_context()</code></td></tr>
+      <tr><td>文档 / 启动说明</td><td>要</td><td>访问地址、APP 里填的协议前缀、curl 示例</td></tr>
+    </tbody>
+  </table></div>
+  <div class="warn"><strong>升级后最容易被忘掉的两处</strong>：① <code>test_api.py</code> 里的 BASE 常量（否则 50 项自测全红）；② APP 里手动输入的 host 若是 IP，证书 SAN 必须与之<strong>完全一致</strong>（用 <code>192.168.1.10</code> 访问就不能只签 <code>localhost</code>）。</div>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>验证清单</h2></div>
+  <div class="card"><ol style="font-size:14px;margin:0">
+    <li><code>curl -k https://127.0.0.1:8000/health</code> 能返回 JSON（<code>-k</code> 是跳过自签证书校验）。</li>
+    <li>浏览器访问 <code>https://PC内网IP:8000/monitor/view</code>，接受证书告警后，大屏能收到车；看页面右上角徽标显示 <strong>WS 已连接</strong>（说明 wss 也通了）。</li>
+    <li>F12 → Network 里请求的 Scheme 列应为 <code>https</code> / <code>wss</code>，且没有 mixed content 报错。</li>
+    <li>APP 重新构建后，车队页能列出车（若空白，先查证书信任与 SAN）。</li>
+    <li>拖摇杆发命令，后端 <code>commands.log</code> 有记录 —— 证明业务链路完全没被加密改造影响。</li>
+    <li>回退验证：把 <code>V3_HTTPS</code> 环境变量去掉、APP 改回 http，系统应恢复原状（这正是建议用开关而不是硬改的原因）。</li>
+  </ol></div>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>常见坑 + 自测</h2></div>
+  <div class="grid2">
+    <div class="card"><h3>常见坑</h3><ul style="font-size:13.5px">
+      <li>自签证书没写 SAN / SAN 里的 IP 与访问地址不一致 → 证书校验失败。</li>
+      <li>只改了 <code>http→https</code>，忘记 <code>ws→wss</code>（本项目已有自适应，别的地方容易漏）。</li>
+      <li>https 页面里引用了 <code>http://</code> 的脚本或接口 → 浏览器按"混合内容"直接拦截。</li>
+      <li>以为 443 是硬性要求 → 端口可自定义，本项目保持 8000 即可。</li>
+      <li>以为升了 HTTPS 就等于安全 → <code>admin/admin123</code>、token 放内存、无速率限制等问题依旧。</li>
+      <li>升级后抓包看不到明文了，教学演示时反而不好讲 —— 可以用浏览器 F12 看解密后的内容。</li>
+      <li>把"MQTT over TLS"说成"HTTPS"：协议不同，只是都用了 TLS 这一层。</li>
+    </ul></div>
+    <div class="card"><h3>与前后知识点的连接</h3><ul style="font-size:13.5px">
+      <li><strong>平行</strong>：《长连接与短连接》讲"这根线挂不挂断"，本份讲"这根线加不加密"——两个独立维度，可自由组合（如 wss = 长 + 加密）。</li>
+      <li><strong>往前</strong>：《技术栈与文件地图》里列了 SDK 的 HTTPS endpoint 与 MQTT 8883。</li>
+      <li><strong>往后</strong>：想真正落地 → 让我按第 4 步实施（会改动 app.py、FleetClient.ets、Index.ets，需 DevEco 重新构建）。</li>
+    </ul></div>
+  </div>
+  <h3 style="font-size:16px;margin:14px 0 8px">自测小问题</h3>
+  <details><summary>1. HTTPS 相比 HTTP，HTTP 报文本身变了吗？</summary><div class="body"><p>没有。方法、路径、头、JSON 请求体、状态码完全一致，只是这些字节在传输前被 TLS 加密、到达后解密。所以后端 22 个路由、前端 fetch 逻辑都不用改。</p></div></details>
+  <details><summary>2. 项目里哪些链路其实早就加密了？</summary><div class="body"><p>后端 → 华为云应用侧 SDK（<code>https://...iotda-app...</code>），以及小车 → IoTDA 的 MQTT over TLS 8883。要补的只有局域网"客户端 ↔ 后端 :8000"这一段。</p></div></details>
+  <details><summary>3. 为什么网页端升级几乎不用改代码，APP 端却要改？</summary><div class="body"><p>网页全用相对路径（<code>fetch("/command")</code>）且 WS 代码已按 <code>location.protocol</code> 自动选 ws/wss；APP 里把完整 URL 写死成 <code>http://${host}:${port}</code>，还涉及系统对自签证书的信任策略。</p></div></details>
+  <details><summary>4. 自签证书为什么必须带 SAN？</summary><div class="body"><p>现代 TLS 客户端校验证书主体时看 subjectAltName，不再只看 CN；且校验值要与你地址栏/代码里写的主机名或 IP 精确一致。否则即使证书本身可信，也会因"名称不匹配"被拒。</p></div></details>
+  <details><summary>5. 升级 HTTPS 之后，还有哪些安全问题没解决？</summary><div class="body"><p>弱口令 <code>admin/admin123</code>、token 仅内存态且无过期、接口无速率限制、云端 AK/SK 明文放在配置文件里。加密只保护"传输途中"，不保护"两端本身"。</p></div></details>
+  <details><summary>6. 如果只想演示概念、不想动 APP，最省事的做法是？</summary><div class="body"><p>只给 Flask 加 <code>ssl_context</code>，网页用 https 打开（浏览器点一次"继续前往"），APP 暂时保留 http 走 8000 明文——但这要求后端同时监听两个协议，或者干脆演示时先不启动 APP。更干净的做法是第 6 步的反向代理：只有代理对外是 https，后端仍是 http。</p></div></details>
+</section>
+
+<footer>
+  V3 学 · HTTP 与 HTTPS（含升级指南）｜ 2026-11-08 ｜ <strong>本文件为讲解与方案，未修改任何运行代码</strong> ｜ 同系列 <span class="file">V3-学习导航.html</span>、<span class="file">V3-学-长连接与短连接.html</span>
+</footer>
+</div>
+</body>
+</html>

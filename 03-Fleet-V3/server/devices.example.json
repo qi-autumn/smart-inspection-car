@@ -1,0 +1,52 @@
+{
+  "_说明": "示例模板：复制为 devices.json 后填入自己的设备 ID 与密钥。device_id 格式为 {product_id}_{node_id}。切勿提交真实值。",
+  "devices": [
+    {
+      "device_id": "YOUR_PRODUCT_ID_car_001",
+      "name": "1号巡检车",
+      "color": "#e24b4a",
+      "secret": "YOUR_DEVICE_SECRET_001",
+      "spawn": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "http_port": 8081,
+      "frozen": false
+    },
+    {
+      "device_id": "YOUR_PRODUCT_ID_car_002",
+      "name": "2号巡检车",
+      "color": "#185fa5",
+      "secret": "YOUR_DEVICE_SECRET_002",
+      "spawn": {
+        "x": 0.0,
+        "y": 8.0
+      },
+      "http_port": 8082
+    },
+    {
+      "device_id": "YOUR_PRODUCT_ID_car_003",
+      "name": "3号巡检车",
+      "color": "#e67e22",
+      "secret": "YOUR_DEVICE_SECRET_003",
+      "spawn": {
+        "x": 0.0,
+        "y": 16.0
+      },
+      "http_port": 8083,
+      "frozen": false
+    },
+    {
+      "device_id": "YOUR_PRODUCT_ID_car_004",
+      "name": "4号巡检车",
+      "color": "#d35400",
+      "secret": "YOUR_DEVICE_SECRET_004",
+      "spawn": {
+        "x": 8.0,
+        "y": 0.0
+      },
+      "http_port": 8085,
+      "frozen": false
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>项目知识手册 · 阶段一 TCP 直连</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f4f6f9;
+         color: #1f2d3d; line-height: 1.75; padding: 28px 16px 60px; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 28px; margin-bottom: 6px; }
+  .sub { color: #7a8a9c; font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 20px; margin: 34px 0 14px; padding-left: 10px;
+       border-left: 4px solid #185FA5; }
+  p { margin: 8px 0; }
+  .card { background: #fff; border-radius: 12px; padding: 18px 22px;
+          box-shadow: 0 2px 8px rgba(31,45,61,.06); margin: 14px 0; }
+  pre { background: #1f2d3d; color: #d8e2ec; border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6;
+        margin: 10px 0; }
+  code { font-family: Consolas, "Courier New", monospace; }
+  p code, li code { background: #e8eef5; color: #185FA5; border-radius: 4px;
+                    padding: 1px 6px; font-size: 0.92em; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 14px; margin-top: 14px; }
+  .topic { background: #fff; border-radius: 12px; padding: 18px 20px;
+           box-shadow: 0 2px 8px rgba(31,45,61,.06);
+           border-top: 3px solid #185FA5; display: block; text-decoration: none;
+           color: inherit; transition: transform .12s, box-shadow .12s; }
+  .topic:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(31,45,61,.12); }
+  .topic .no { font-size: 12px; color: #185FA5; font-weight: 700; letter-spacing: 1px; }
+  .topic h3 { font-size: 17px; margin: 4px 0 6px; }
+  .topic p { font-size: 13px; color: #5a6b7f; margin: 0; }
+  .tip { border-left: 4px solid #22a35c; background: #eef8f2;
+         padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  ol { margin: 8px 0 8px 22px; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>智能寻检车 · 项目知识手册</h1>
+  <div class="sub">阶段一：TCP 直连闭环 · 课后消化专用 · 每个知识点都回到我们亲手写过的代码</div>
+
+  <h2>先回顾：这个阶段我们建成了什么</h2>
+  <div class="card">
+    <pre><code>鸿蒙 APP(ClassCarCtrl) --TCP:8888--┐
+test_client.py(终端)   --TCP:8888--┼→ car_server.py --WebSocket:8889(JSON)→ 浏览器俯视图
+                                   │   （Car 运动模型 · 100ms 广播）
+┌─────────────────────────────────────────────────────┐
+│ 单元1 echo 服务器 → 单元2 协议+asyncio → 单元3 运动模型 → 单元4 双服务 │
+│ → 单元5 俯视图 → 单元6 鸿蒙 APP                                    │
+└─────────────────────────────────────────────────────┘</code></pre>
+    <p>七个单元走下来，我们实际上横跨了：<b>并发编程（线程/协程）、网络协议（TCP/WebSocket/HTTP）、
+    应用层协议设计、前端可视化（Canvas）、移动开发（ArkTS）</b>五大块。
+    下面的六讲就是把这五大块里"值得带走"的部分拆开讲透。</p>
+  </div>
+
+  <h2>六讲目录</h2>
+  <div class="grid">
+    <a class="topic" href="kb-01-thread.html">
+      <div class="no">01</div>
+      <h3>线程与多线程</h3>
+      <p>单线程客户端为什么"炸屏"？收发分离怎么改？线程间通信的三种方式。附赠：多线程 vs asyncio 对比。</p>
+    </a>
+    <a class="topic" href="kb-02-cs.html">
+      <div class="no">02</div>
+      <h3>客户端与服务端</h3>
+      <p>谁等谁连、连接全过程、短连接 vs 长连接、服务端广播怎么写、心跳与假在线。</p>
+    </a>
+    <a class="topic" href="kb-03-tcp-http.html">
+      <div class="no">03</div>
+      <h3>TCP 与 HTTP</h3>
+      <p>不在一个层次的两个协议；为什么控车不用 HTTP；选型对照表与经典误区。</p>
+    </a>
+    <a class="topic" href="kb-04-websocket.html">
+      <div class="no">04</div>
+      <h3>Socket 与 WebSocket</h3>
+      <p>一个是"门"，一个是"方言"；浏览器为什么连不了裸 TCP；8888/8889 双服务的设计动机。</p>
+    </a>
+    <a class="topic" href="kb-05-canvas.html">
+      <div class="no">05</div>
+      <h3>Canvas 实时渲染</h3>
+      <p>立即模式 vs 保留模式；translate/rotate 口诀；小车"动"的本质是数据驱动重绘；轨迹渐隐实现。</p>
+    </a>
+    <a class="topic" href="kb-06-protocol.html">
+      <div class="no">06</div>
+      <h3>应用层协议设计</h3>
+      <p>粘包与半包（踩了三次的坑）、\n 分帧原理、CMD-ACK-ERR 协议四问。本项目含金量最高的一讲。</p>
+    </a>
+  </div>
+
+  <h2>怎么用这份手册</h2>
+  <div class="card">
+    <ol>
+      <li><b>先读 06（协议）和 01（线程）</b>——这两讲对应我们踩坑最深的经历，也是面试区分度最高的；</li>
+      <li>每讲末尾有<b>动手验证</b>：都只用到课堂项目文件，跑一遍胜过读十遍（尤其"亲眼看粘包"那条一行命令）；</li>
+      <li>每讲的<b>面试问答</b>建议合上手册先自己作答，再对照参考——答不出没关系，能发现自己"以为懂了"就是收获；</li>
+      <li>有拿不准的，直接回到项目代码对照：<code>car_server.py</code> 每个关键设计都写了注释说明"为什么这么写"。</li>
+    </ol>
+  </div>
+
+  <h2>一页话总结：这个项目教会我们的思维</h2>
+  <div class="card">
+    <p>① <b>分层</b>：运动模型、通信、展示各管各的——所以模拟车能换真车、终端客户端能换 APP，协议一字不改；</p>
+    <p>② <b>契约意识</b>：协议帧格式和坐标系约定一旦冻结，三处实现必须逐字一致——"接口"不只是函数签名；</p>
+    <p>③ <b>先打桩后集成</b>：每造一层就用替身测一层（test_client 就是 APP 的替身），出问题永远能定位到单层；</p>
+    <p>④ <b>面向失败设计</b>：非法输入回 ERR 不崩溃、断线自动重连、心跳防假在线——网络程序的第一假设是"一切皆会断"。</p>
+    <div class="tip">这四条不是口号——单元 1 到单元 6 的每一步决策都在践行它们。面试时用具体经历支撑观点，
+    永远比背概念有说服力。</div>
+  </div>
+
+</div>
+</body>
+</html>

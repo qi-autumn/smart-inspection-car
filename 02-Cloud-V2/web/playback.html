@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>车队轨迹回放</title>
+<style>
+  html,body{margin:0;height:100%;background:#0f1720;color:#dfe7ee;
+    font-family:"Microsoft YaHei",sans-serif;overflow:hidden}
+  #bar{position:fixed;top:0;left:0;right:0;height:44px;display:flex;
+    align-items:center;gap:10px;padding:0 14px;background:rgba(15,23,32,.9);
+    border-bottom:1px solid #24313d;z-index:5;font-size:13px}
+  #bar button{background:#1d2a36;color:#dfe7ee;border:1px solid #33465a;
+    border-radius:6px;padding:4px 10px;cursor:pointer}
+  #bar input[type=range]{flex:1}
+  canvas{display:block}
+  #legend{position:fixed;right:10px;top:54px;background:rgba(15,23,32,.85);
+    border:1px solid #24313d;border-radius:8px;padding:8px 12px;
+    font-size:12px;line-height:1.8;z-index:5}
+</style>
+</head>
+<body>
+<div id="bar">
+  <button id="play">播放</button>
+  <select id="range">
+    <option value="300">最近 5 分钟</option>
+    <option value="600" selected>最近 10 分钟</option>
+    <option value="1800">最近 30 分钟</option>
+    <option value="3600">最近 1 小时</option>
+  </select>
+  <button id="reload">加载数据</button>
+  <input type="range" id="slider" min="0" max="1000" value="0">
+  <span id="clock">--:--</span>
+  <select id="speed"><option value="1">1x</option><option value="4">4x</option>
+    <option value="16">16x</option><option value="60">60x</option></select>
+</div>
+<div id="legend"></div>
+<canvas id="cv"></canvas>
+<script>
+const COLORS=["#4fa3ff","#43d17c","#f2a33c","#e2564b","#b06ee8",
+              "#2ec5c9","#f26fb2","#a8c33a","#8b9dc3","#e8d44d"];
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+let tracks={},t0=0,t1=0,cur=0,playing=false,lastFrame=0;
+function resize(){cv.width=innerWidth;cv.height=innerHeight;}
+addEventListener("resize",resize);resize();
+
+async function loadTracks(){
+  const span=+document.getElementById("range").value;
+  const to=Date.now()/1000, from=to-span;
+  try{
+    const r=await fetch("/api/cars");const live=(await r.json()).cars;
+    const ids=Object.keys(live).sort();
+    tracks={};
+    for(const id of ids){
+      const tr=await fetch(`/api/track?dev=${id}&from=${from}&to=${to}&max=1500`);
+      const data=(await tr.json()).points;
+      if(data.length>1) tracks[id]=data;
+    }
+    let mn=1e15,mx=0;
+    for(const id in tracks){const p=tracks[id];
+      mn=Math.min(mn,p[0].ts);mx=Math.max(mx,p[p.length-1].ts);}
+    if(mx>mn){t0=mn;t1=mx;cur=t0;
+      document.getElementById("slider").max=1000;
+      buildLegend(ids);
+    }
+  }catch(e){console.error(e);}
+}
+function buildLegend(ids){
+  document.getElementById("legend").innerHTML=ids.map((id,i)=>
+    `<span style="color:${COLORS[i%COLORS.length]}">■ ${id}</span>`).join("<br>");
+}
+function fitAndMap(){
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const id in tracks)for(const p of tracks[id]){
+    x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);
+    y0=Math.min(y0,p.y);y1=Math.max(y1,p.y);}
+  if(x0>x1){x0=-5;x1=5;y0=-5;y1=5;}
+  const pad=40;
+  const sx=(cv.width-2*pad)/Math.max(x1-x0,6);
+  const sy=(cv.height-64-2*pad)/Math.max(y1-y0,6);
+  const s=Math.min(sx,sy);
+  const cx=(x0+x1)/2,cy=(y0+y1)/2;
+  return p=>[ (p.x-cx)*s+cv.width/2, (p.y-cy)*s+(cv.height-44)/2+44 ];
+}
+function interp(arr,t){
+  if(t<=arr[0].ts)return arr[0];
+  if(t>=arr[arr.length-1].ts)return arr[arr.length-1];
+  let lo=0,hi=arr.length-1;
+  while(hi-lo>1){const mid=(lo+hi)>>1;(arr[mid].ts<=t)?lo=mid:hi=mid;}
+  const a=arr[lo],b=arr[hi],f=(t-a.ts)/Math.max(b.ts-a.ts,1e-9);
+  return {x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f,
+          theta:a.theta, speed:b.speed, battery:a.battery};
+}
+function fmt(ts){
+  const d=new Date(ts*1000);
+  return d.toTimeString().slice(0,8);
+}
+function draw(){
+  ctx.fillStyle="#0f1720";ctx.fillRect(0,0,cv.width,cv.height);
+  const ids=Object.keys(tracks);if(!ids.length)return;
+  const map=fitAndMap();
+  // 网格
+  ctx.strokeStyle="rgba(255,255,255,.05)";
+  for(let gx=0;gx<cv.width;gx+=60){ctx.beginPath();
+    ctx.moveTo(gx,44);ctx.lineTo(gx,cv.height);ctx.stroke();}
+  for(let gy=44;gy<cv.height;gy+=60){ctx.beginPath();
+    ctx.moveTo(0,gy);ctx.lineTo(cv.width,gy);ctx.stroke();}
+  ids.forEach((id,i)=>{
+    const col=COLORS[i%COLORS.length],pts=tracks[id];
+    // 轨迹线
+    ctx.strokeStyle=col+"55";ctx.lineWidth=2;ctx.beginPath();
+    pts.forEach((p,j)=>{const[px,py]=map(p);
+      j?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    // 当前位置
+    const c=interp(pts,cur),[px,py]=map(c);
+    ctx.fillStyle=col;
+    ctx.beginPath();ctx.arc(px,py,8,0,7);ctx.fill();
+    ctx.fillStyle="#dfe7ee";ctx.font="12px sans-serif";ctx.textAlign="center";
+    ctx.fillText(`${id} ${c.speed.toFixed(1)}m/s`,px,py-14);
+  });
+  document.getElementById("clock").textContent=fmt(cur);
+  document.getElementById("slider").value=
+    Math.round((cur-t0)/Math.max(t1-t0,1e-9)*1000);
+}
+function loop(now){
+  if(playing){
+    const dt=(now-lastFrame)/1000*+document.getElementById("speed").value;
+    cur=Math.min(cur+dt,t1);
+    if(cur>=t1)playing=false;
+  }
+  lastFrame=now;draw();requestAnimationFrame(loop);
+}
+document.getElementById("play").onclick=e=>{
+  playing=!playing;if(cur>=t1)cur=t0;
+  e.target.textContent=playing?"暂停":"播放";};
+document.getElementById("reload").onclick=loadTracks;
+document.getElementById("slider").oninput=e=>{
+  playing=false;cur=t0+(t1-t0)*(+e.target.value/1000);
+  document.getElementById("play").textContent="播放";};
+requestAnimationFrame(loop);
+loadTracks();
+</script>
+</body>
+</html>

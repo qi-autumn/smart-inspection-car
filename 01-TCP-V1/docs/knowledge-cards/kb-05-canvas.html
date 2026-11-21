@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>05 · Canvas 实时渲染 — 项目知识手册</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f4f6f9;
+         color: #1f2d3d; line-height: 1.75; padding: 28px 16px 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; margin-bottom: 20px; }
+  .topbar a, .nav a { color: #185FA5; text-decoration: none; }
+  .topbar a:hover, .nav a:hover { text-decoration: underline; }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  .sub { color: #7a8a9c; font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 20px; margin: 34px 0 12px; padding-left: 10px;
+       border-left: 4px solid #185FA5; }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: #2c3e50; }
+  p { margin: 8px 0; }
+  .card { background: #fff; border-radius: 12px; padding: 18px 22px;
+          box-shadow: 0 2px 8px rgba(31,45,61,.06); margin: 14px 0; }
+  pre { background: #1f2d3d; color: #d8e2ec; border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6;
+        margin: 10px 0; }
+  code { font-family: Consolas, "Courier New", monospace; }
+  p code, li code { background: #e8eef5; color: #185FA5; border-radius: 4px;
+                    padding: 1px 6px; font-size: 0.92em; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid #d5dde6; padding: 8px 12px; text-align: left; }
+  th { background: #eef3fa; }
+  .tip { border-left: 4px solid #22a35c; background: #eef8f2;
+         padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .warn { border-left: 4px solid #d9822b; background: #fdf5ec;
+          padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .qa { margin: 14px 0; }
+  .qa .q { font-weight: 600; color: #185FA5; }
+  .nav { display: flex; justify-content: space-between; margin-top: 40px;
+         font-size: 14px; padding-top: 14px; border-top: 1px solid #d5dde6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <a href="index.html">← 知识手册主页</a>
+    <span>05 / 06</span>
+    <a href="kb-06-protocol.html">下一篇：应用层协议设计 →</a>
+  </div>
+
+  <h1>Canvas 实时渲染：小车是怎么"活"起来的</h1>
+  <div class="sub">对应项目文件：web/car_view_step1.html（静态）→ car_view.html（最终版）</div>
+
+  <h2>一、为什么这是重点</h2>
+  <p>"页面上的小车怎么画的？怎么动的？轨迹怎么实现的？"——这三个问题背后是前端可视化的一整条技术链：
+  Canvas 坐标系、变换、渲染循环、数据驱动重绘。而且本项目强调的"坐标系三处一致"，
+  是所有地图 / 游戏 / 图表类应用共有的核心问题。</p>
+
+  <h2>二、核心概念：Canvas 是"画完就忘"的位图画布</h2>
+  <div class="card">
+    <p>Canvas 和 DOM 元素（div/button）的根本区别：<b>DOM 是保留模式</b>——你声明一个按钮，浏览器替你一直显示；
+    <b>Canvas 是立即模式</b>——你每画一笔只是往一块位图上涂像素，画完浏览器不记得，
+    想改画面必须整块重画。</p>
+    <p>这直接决定了本项目俯视图的架构：<b>没有"移动小车对象"这回事，只有"用新坐标把整幅画重画一遍"。</b></p>
+    <pre><code>function render() {
+  drawGrid();                  // 第 1 层：场地网格
+  if (car) {
+    drawTrail();               // 第 2 层：历史轨迹
+    drawCar();                 // 第 3 层：小车
+  } else {
+    drawIdleHint();            // 没数据：等待提示
+  }
+  requestAnimationFrame(render);  // 排队下一帧，循环往复
+}</code></pre>
+    <p><code>requestAnimationFrame</code>（rAF）让浏览器在"下一次刷新时机"回调 render——通常每秒 60 次。
+    于是形成双节奏配合：<b>数据 100ms 一帧（WebSocket 推），画面 16ms 一帧（rAF 重绘）</b>。
+    每次重绘都用全局变量 <code>car</code> 里最新的一份数据——这就是"数据驱动渲染"。</p>
+  </div>
+
+  <h2>三、小车怎么画：translate / rotate 两步变换</h2>
+  <div class="card">
+    <p>难点：小车是一张"竖着的图"（车头朝上），但它的朝向是任意角度的。
+    Canvas 的解法是<b>变换坐标系</b>而不是变换图形——口诀：<b>先搬桌子（translate），再转桌子（rotate），最后在桌子上画车</b>：</p>
+    <pre><code>function drawCar(x, y, heading, color) {
+  ctx.save();
+  ctx.translate(x, y);              // ① 把原点搬到车中心
+  ctx.rotate(headingRad(heading));  // ② 整个坐标系顺时针转 heading 度
+
+  // —— 以下坐标全部是"以车为中心"的本地坐标 ——
+  // 约定：车头指向本地 -Y（画布上方）。rotate 之后，本地 -Y 就是运动方向
+  ctx.fillStyle = color;
+  roundRect(-15, -22, 30, 44, 6); ctx.fill();   // 车身 30×44
+  ...
+  ctx.restore();   // 恢复变换——下一辆车/下一帧不受污染
+}</code></pre>
+    <p><code>save()/restore()</code> 是变换的"存档/读档"：进车前存档，画完读档，
+    保证每辆车的变换互不影响——轨迹、网格才不会被"转花"。</p>
+    <h3>坐标系三处一致（本项目最重要的契约）</h3>
+    <table>
+      <tr><th>位置</th><th>约定</th></tr>
+      <tr><td>服务端运动模型</td><td>x += speed·sin(heading)，y -= speed·cos(heading)——y 取负因为 y 向下为正</td></tr>
+      <tr><td>浏览器 Canvas</td><td>天然 (0,0) 左上角、y 向下、rotate 正角度=顺时针——与服务端约定<b>同构，零转换直接画</b></td></tr>
+      <tr><td>鸿蒙 APP</td><td>只显示数字不画图，但解析的 x/y/heading 语义必须相同</td></tr>
+    </table>
+    <div class="warn">为什么 heading=90° 是朝右？顺时针 90°，"上"转到"右"，正对着 Canvas rotate 的正方向。
+    如果哪一处理解成逆时针（数学角），小车就会"镜像乱跑"——比如发 LEFT 车往右转。
+    这类 bug 的排查方法论：锁定约定 → 三处逐一核对 → 只改不一致的那一处。</div>
+  </div>
+
+  <h2>四、小车怎么"动" + 轨迹怎么实现</h2>
+  <div class="card">
+    <p><b>动</b>：WebSocket onmessage 每 100ms 更新 <code>car = JSON.parse(ev.data)</code>；
+    rAF 下一帧重绘时用新 x/y/heading——小车就"爬"过去了。60fps 重绘 + 10Hz 数据，
+    视觉上平滑（浏览器在两帧数据间其实是阶梯状跳动的，10Hz 对这种速度已经足够顺眼）。</p>
+    <p><b>轨迹渐隐</b>：一个数组 + 一条透明度规则：</p>
+    <pre><code>var trail = [];                       // 历史足迹
+ws.onmessage = function (ev) {
+  car = JSON.parse(ev.data);
+  trail.push({ x: car.x, y: car.y });       // 每帧记一个点
+  if (trail.length &gt; 240) trail.shift();    // 只留最近 24 秒
+};
+function drawTrail() {
+  for (var i = 1; i &lt; trail.length; i++) {
+    var alpha = i / trail.length;           // 越新（下标越大）越不透明
+    ctx.strokeStyle = "rgba(64,132,220," + (alpha * 0.55) + ")";
+    ctx.beginPath();
+    ctx.moveTo(trail[i-1].x, trail[i-1].y); // 相邻两点连线
+    ctx.lineTo(trail[i].x, trail[i].y);
+    ctx.stroke();
+  }
+}</code></pre>
+    <p>三个设计点：① 轨迹只是"历史位置的折线图"，没有任何魔法；② <code>shift()</code> 控制长度，
+    防止数组无限膨胀；③ alpha 随下标线性增强 → 老的足迹自然淡出。</p>
+    <p><b>断线自动重连</b>：onclose 里 setTimeout 2 秒后重连，配合 <code>car = null</code> 回到"等待画面"——
+    服务端重启后页面自动跟上，不用手动刷新。</p>
+  </div>
+
+  <h2>五、面试 / 实操问答</h2>
+  <div class="card qa">
+    <p class="q">Q1：Canvas 和 SVG 怎么选？</p>
+    <p>A：Canvas 是立即模式位图，适合大量、高频重绘的元素（游戏、粒子、本项目的实时小车）；
+    SVG 是保留模式矢量图，每个图形都是可交互的 DOM 节点，适合少量、需要点击/缩放的图（图标、流程图）。
+    本项目 60fps 重绘，SVG 每帧改 DOM 反而低效，选 Canvas 正确。</p>
+
+    <p class="q">Q2：requestAnimationFrame 和 setInterval(16) 的区别？</p>
+    <p>A：rAF 与浏览器刷新周期同步、页面切后台自动暂停（省资源）、一次回调正好渲染一帧；
+    setInterval 不看渲染时机、后台照跑、可能堆积回调。动画一律 rAF。</p>
+
+    <p class="q">Q3：页面动画掉帧，可能的原因？</p>
+    <p>A：每帧做了重活——大循环、强制布局回流、大量 DOM 操作、每帧新建对象触发 GC。
+    本项目的做法可借鉴：数据解析只在 onmessage（10Hz），渲染循环里只有纯绘制；
+    轨迹限长 240 点，绘制量恒定。</p>
+
+    <p class="q">Q4：为什么画面要"全屏重画"而不是只重画小车？</p>
+    <p>A：Canvas 立即模式没有"局部对象"概念，旧像素不会被自动清除。重画前先 drawGrid 覆盖全屏
+    等效于清屏。进阶做法（脏矩形/离屏 Canvas/分层）只在性能不够时才需要——先做对，再优化。</p>
+  </div>
+
+  <h2>六、动手验证与思考题</h2>
+  <div class="card">
+    <p><b>验证 1</b>：打开 car_view_step1.html 拖动 heading 滑块——确认 90° 朝右、345° 是左转一格
+    （和服务端 CMD:LEFT 的 -15° 互相印证）。</p>
+    <p><b>验证 2</b>：在 drawCar 的 <code>ctx.rotate(headingRad(heading))</code> 前加一个负号，
+    重启页面连上服务端发 LEFT——复现"镜像乱跑"。这是理解"约定一致性"最直观的方式。
+    （改完记得改回来！）</p>
+    <p><b>思考 1</b>：把 TRAIL_MAX 从 240 改成 24000 会怎样？改成 3 呢？——理解"保留多少历史"是体验与开销的折中。</p>
+    <p><b>思考 2</b>：APP 端将来如果也要画俯视图（ArkTS 同样有 Canvas 组件），坐标代码能照搬吗？
+    哪些约定必须一字不差？（答：坐标系约定全部照搬——这正是它写进三处代码顶部注释的原因。）</p>
+  </div>
+
+  <div class="nav">
+    <a href="index.html">← 返回主页</a>
+    <a href="kb-06-protocol.html">06 · 应用层协议设计 →</a>
+  </div>
+
+</div>
+</body>
+</html>

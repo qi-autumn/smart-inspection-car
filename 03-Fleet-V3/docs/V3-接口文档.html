@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 车队版 · 接口文档</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --ink:#1c2330; --dim:#5f6b7c;
+    --blue:#185fa5; --blue-l:#e6f1fb; --teal:#0f6e56; --teal-l:#e1f5ee;
+    --purple:#534ab7; --purple-l:#eeedfe; --green:#3b6d11; --green-l:#eaf3de;
+    --red:#a32d2d; --red-l:#fcebeb; --amber:#854f0b; --amber-l:#faeeda;
+    --line:#c9cfd8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink);
+       font:14px/1.7 "Microsoft YaHei","PingFang SC",sans-serif; padding:24px;}
+  .wrap{max-width:1080px; margin:0 auto;}
+  h1{font-size:20px; font-weight:600; margin-bottom:4px;}
+  .sub{color:var(--dim); font-size:13px; margin-bottom:18px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px;
+        padding:20px 24px; margin-bottom:20px;}
+  h2{font-size:16px; font-weight:600; margin-bottom:12px; padding-bottom:8px;
+     border-bottom:2px solid var(--line);}
+  h3{font-size:14px; font-weight:600; margin:18px 0 8px;}
+  h4{font-size:13px; font-weight:600; margin:12px 0 6px;}
+  p{margin-bottom:8px;}
+  table{width:100%; border-collapse:collapse; font-size:13px; margin:8px 0;}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  th{background:#eef1f5; font-weight:600;}
+  code{font-family:Consolas,monospace; font-size:12.5px; background:#eef1f5;
+       padding:1px 5px; border-radius:4px;}
+  pre{background:#101722; color:#d7e2ee; font:12.5px/1.6 Consolas,monospace;
+      padding:14px 16px; border-radius:8px; overflow-x:auto; margin:8px 0;}
+  pre b{color:#7fd0a8; font-weight:400;}
+  pre i{color:#e8b26a; font-style:normal;}
+  .ep{display:flex; align-items:center; gap:8px; margin:14px 0 4px; flex-wrap:wrap;}
+  .m{font:600 12px Consolas,monospace; color:#fff; padding:2px 9px; border-radius:5px;}
+  .m.get{background:#1d9e75;} .m.post{background:#378add;}
+  .m.del{background:#d85a30;} .m.ws{background:#7f77dd;} .m.mqtt{background:#639922;}
+  .path{font:600 13.5px Consolas,monospace;}
+  .auth{font-size:12px; color:var(--dim);}
+  .req{border-left:4px solid var(--blue); background:var(--blue-l);
+       padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:13px;}
+  .note{border-left:4px solid var(--amber); background:var(--amber-l);
+        padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:13px;}
+  .ok{border-left:4px solid var(--teal); background:var(--teal-l);
+      padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:13px;}
+  .toc{columns:2; font-size:13px; padding-left:20px;}
+  .toc li{margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>V3 车队版 · 接口文档</h1>
+  <div class="sub">版本 v1.1 · 覆盖：业务后端 REST/WebSocket · 设备 MQTT 协议 · 后端↔云端 SDK 调用 · 共四类接口</div>
+
+  <div class="card">
+    <h2>目录</h2>
+    <ol class="toc">
+      <li><a href="#general">通用约定</a></li>
+      <li><a href="#rest-query">REST · 查询类接口</a></li>
+      <li><a href="#rest-cmd">REST · 控制接口 /command</a></li>
+      <li><a href="#ws">WebSocket /ws 实时广播</a></li>
+      <li><a href="#admin">REST · 管理接口 /admin/*</a></li>
+      <li><a href="#mqtt">设备 MQTT 协议（模拟器↔云端）</a></li>
+      <li><a href="#sdk">后端 ↔ 云端 SDK 调用</a></li>
+      <li><a href="#err">错误码与排错</a></li>
+    </ol>
+  </div>
+
+  <!-- ================= 通用约定 ================= -->
+  <div class="card" id="general">
+    <h2>1. 通用约定</h2>
+    <table>
+      <tr><th style="width:140px">项</th><th>值</th></tr>
+      <tr><td>Base URL</td><td><code>http://&lt;后端IP&gt;:8000</code>（本机调试 <code>http://127.0.0.1:8000</code>）</td></tr>
+      <tr><td>请求/响应格式</td><td>JSON（<code>Content-Type: application/json</code>）</td></tr>
+      <tr><td>统一响应包络</td><td><code>{ "ok": true, ...数据 }</code> 成功；<code>{ "ok": false, "error": "原因" }</code> 失败。HTTP 状态码同时标注（200/400/403/404/502）</td></tr>
+      <tr><td>管理接口鉴权</td><td>请求头 <code>X-Auth-Token: &lt;token&gt;</code>（由 <code>POST /admin/login</code> 签发；<b>内存态，后端重启即失效需重登</b>）</td></tr>
+      <tr><td>坐标约定</td><td>x 向东增大、y 向北增大，单位米；heading（theta）0=正北、顺时针增大（90=正东）</td></tr>
+      <tr><td>device_id</td><td>云端全名 <code>{product_id}_car_00N</code>，如 <code>YOUR_PRODUCT_ID_car_001</code>；/command 支持传短名 <code>car_001</code> 自动解析</td></tr>
+      <tr><td>时间参数</td><td>Unix 秒 或 <code>YYYY-MM-DD HH:MM[:SS]</code>（本地时区）</td></tr>
+    </table>
+  </div>
+
+  <!-- ================= 查询类 ================= -->
+  <div class="card" id="rest-query">
+    <h2>2. REST · 查询类接口</h2>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/health</span></div>
+    <p>健康检查。响应：<code>{"ok":true,"total":4,"online":1,"local_fast":true}</code></p>
+    <div class="ok"><b>local_fast 字段</b>：后端是否启用"本地高速旁路"。启用时后端以 10Hz 直读模拟器进程内存状态（本机 <code>:8081~8085/state</code>）喂给缓存和 WS，<b>不产生任何云端消息</b>，位置更新从 5s 一跳变为 0.1s 连续刷新；设环境变量 <code>V3_LOCAL_FAST=0</code> 可关闭（第⑧步真车接入后应关闭）。轨迹库仍只记真实影子观测，不受影响。</div>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/devices</span></div>
+    <p>注册表全部车辆（静态信息 + 实时状态）。</p>
+<pre>{
+  "ok": true,
+  "devices": [
+    { <b>"device_id"</b>: "…_car_001", <b>"name"</b>: "1号巡检车", <b>"color"</b>: "#3aa55d",
+      <b>"frozen"</b>: false, <b>"online"</b>: true,
+      <b>"x"</b>: 10.2, <b>"y"</b>: 5.0, <b>"heading"</b>: 90.0, <b>"speed"</b>: 60.0,
+      <b>"battery"</b>: 98.5, <b>"time"</b>: "2026-11-08 08:30:00" }
+  ]
+}</pre>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/status?device_id=…_car_001</span></div>
+    <p>单车状态（读缓存）。字段同上单个元素。</p>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/fleet/status</span></div>
+    <p><b>全队状态批量（APP 主用，800ms 轮询）</b>。</p>
+<pre>{
+  "ok": true,
+  "cars": [
+    { "device_id": "…_car_001", "name": "1号巡检车", "color": "#3aa55d",
+      "online": true, "x": 10.2, "y": 5.0, "heading": 90.0,
+      "speed": 60.0, "battery": 98.5, "time": "…" },
+    { "device_id": "…_car_002", "online": false, "x": null, "y": null,
+      "heading": null, "speed": 0, "battery": null, "time": null }
+  ]
+}</pre>
+    <p class="note">离线车：x/y/heading/battery 为 <code>null</code>，speed 为 0。前端按 online 判断渲染。</p>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/track?device_id=…&amp;from=…&amp;to=…</span></div>
+    <div class="req"><b>参数</b>：device_id 必填；from/to 可选，缺省最近 24 小时。</div>
+<pre>{
+  "ok": true,
+  "device_id": "…_car_001",
+  "points": [
+    { "x": 10.2, "y": 5.0, "theta": 90.0, "speed": 60.0,
+      "battery": 98.5, "t": "2026-11-08 08:30:00" }
+  ]
+}</pre>
+    <p>时间升序；t 为本地时间字符串（APP 解析：<code>Date.parse(t.replace(' ','T'))</code>）。仅"真实影子观测且位置/状态变化"的点会入库。</p>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/audit/recent</span></div>
+    <p>最近命令审计（JSONL 尾部）。</p>
+  </div>
+
+  <!-- ================= 控制类 ================= -->
+  <div class="card" id="rest-cmd">
+    <h2>3. REST · 控制接口</h2>
+
+    <div class="ep"><span class="m post">POST</span><span class="path">/command</span></div>
+
+    <table>
+      <tr><th style="width:110px">字段</th><th>说明</th></tr>
+      <tr><td>device_id</td><td>必填。全名或短名</td></tr>
+      <tr><td>cmd</td><td>必填。<code>FORWARD / BACK / LEFT / RIGHT / STOP / MOVE</code></td></tr>
+      <tr><td>speed</td><td>0–100（%）。FORWARD/BACK/LEFT/RIGHT/MOVE 必带；STOP 不带</td></tr>
+      <tr><td>angle</td><td>仅 MOVE：0–360，航向角（0=北，顺时针）</td></tr>
+    </table>
+
+<pre><i>请求</i>
+POST /command
+{ "device_id": "car_001", "cmd": "MOVE", "angle": 90, "speed": 70 }
+
+<i>换算（后端完成）</i>
+vx = sin(90°) × 70/100 = 0.70   （向东）
+vy = cos(90°) × 70/100 = 0.00   （向北分量）
+
+<i>响应 200</i>
+{ "ok": true, "device_id": "…_car_001",
+  "command_id": "b67a…", "executed": true, "response_name": "MOVE" }</pre>
+
+    <div class="ok"><b>语义说明（重要）</b>：拉模式下应用侧收不到设备 MQTT 回执，当前返回的 <code>executed:true</code> 表示<b>云平台已受理</b>（设备在线时立即送达）。真实的"已执行"确认来自设备随后的属性上报（命令后 ≤2s 事件补报），前端通过乐观回显+影子校准呈现。</div>
+    <div class="note"><b>错误</b>：400 参数缺失/非法、未注册；403 设备已冻结；502 华为云 API 调用失败（含设备离线时命令仍可投递——命令队列会暂存，设备上线后收到）。</div>
+  </div>
+
+  <!-- ================= WebSocket ================= -->
+  <div class="card" id="ws">
+    <h2>4. WebSocket /ws 实时广播</h2>
+    <p>连接 <code>ws://&lt;后端IP&gt;:8000/ws</code>。服务端<b>单向推送</b>，客户端无需发送任何消息。</p>
+    <table>
+      <tr><th>推送节奏</th><th>说明</th></tr>
+      <tr><td>事件驱动</td><td>任何 /command 受理（乐观回显）→ 立即推一帧（命令→画面 ≈0.33s）</td></tr>
+      <tr><td>兜底周期</td><td>每 0.5s 一帧（缓存未变时内容相同）</td></tr>
+    </table>
+<pre><i>帧格式（JSON 文本帧）</i>
+{ "type": "fleet_state",
+  "ts": 1699423200,
+  "cars": [
+    { "device_id": "…_car_001", "name": "1号巡检车", "color": "#3aa55d",
+      "online": true, "x": 10.2, "y": 5.0, "heading": 90.0,
+      "speed": 60.0, "battery": 98.5, "time": "…" }
+  ]
+}</pre>
+    <p class="note">帧语义契约（页面端航位推算依赖）：x/y 变化 = 真实位置修复；仅 heading/speed 变化 = 命令回显。客户端据此决定"对齐观测"还是"换向外推"。</p>
+  </div>
+
+  <!-- ================= 管理接口 ================= -->
+  <div class="card" id="admin">
+    <h2>5. REST · 管理接口 /admin/*（X-Auth-Token 鉴权）</h2>
+
+    <div class="ep"><span class="m post">POST</span><span class="path">/admin/login</span></div>
+<pre><i>请求</i>  { "username": "admin", "password": "admin123" }
+<i>响应</i>  { "ok": true, "token": "8df7f131…" }    <b>注意字段是 username（非 user）</b></pre>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/admin/overview</span></div>
+    <p>总览统计：车辆总数/在线数/冻结数/今日命令数等。</p>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/admin/devices</span></div>
+    <p>注册表 + 实时状态（管理页签数据源）。响应结构同 /devices，另含 spawn/http_port。</p>
+
+    <div class="ep"><span class="m post">POST</span><span class="path">/admin/devices</span><span class="auth">注册新车</span></div>
+<pre><i>请求</i>  { "node_id": "car_006", "name": "6号巡检车" }
+<i>响应</i>  { "ok": true, "device_id": "…_car_006", "secret": "YOUR_CREDENTIAL",
+        "color": "#16a085", "spawn": [0, 18], "http_port": 8086 }</pre>
+    <div class="note">流程：先 DeleteDevice 清云端可能残留 → AddDevice 建档 → devices.json 追加（自动分配颜色/出生点/调试端口 8081+N）。</div>
+
+    <div class="ep"><span class="m post">POST</span><span class="path">/admin/devices/&lt;did&gt;/freeze</span><span class="auth">冻结/解冻</span></div>
+<pre><i>请求</i>  { "frozen": true }     <i>响应</i>  { "ok": true, "frozen": true }</pre>
+    <p>冻结后对该设备的 /command 一律 403，设备连接本身不受影响。</p>
+
+    <div class="ep"><span class="m del">DELETE</span><span class="path">/admin/devices/&lt;did&gt;</span><span class="auth">注销设备</span></div>
+<pre><i>请求</i>  { "confirm": true }
+<i>流程</i>  停模拟器进程 → 云端 DeleteDevice → devices.json 移除
+<i>约束</i>  车队至少保留一台，全删返回 400</pre>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/admin/cloud/devices</span><span class="auth">云端对账</span></div>
+<pre>{ "ok": true,
+  "cloud": [
+    { "device_id": "…_car_001", "node_id": "car_001", "status": "ONLINE",
+      "in_registry": true,  "sync": "两边一致" },
+    { "device_id": "…_car_004", "node_id": "car_004", "status": "OFFLINE",
+      "in_registry": false, "sync": "云端残留" } ],
+  "local_only": [] }</pre>
+    <p class="note">实现注意：ListDevices 的 limit 上限 50（传 100 报 400），按 product_id 客户端过滤。</p>
+
+    <div class="ep"><span class="m del">DELETE</span><span class="path">/admin/cloud/&lt;did&gt;</span><span class="auth">删除云端残留</span></div>
+
+    <div class="ep"><span class="m post">POST</span><span class="path">/admin/devices/&lt;did&gt;/start</span><span class="auth">上线</span><span class="m post">POST</span><span class="path">…/stop</span><span class="auth">下线</span></div>
+    <p>后端在本机拉起/终止该车的模拟器进程（start 前自动清理僵进程；stop 按命令行特征 <code>car_mqtt_client.py --device &lt;node&gt;</code> 匹配全部实例）。上线约 3s 后云端状态翻为 ONLINE。</p>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/admin/commands</span></div>
+    <p>命令历史（分页字段 limit/offset）。</p>
+
+    <div class="ep"><span class="m get">GET</span><span class="path">/monitor/view · /admin/view · /track/view · /console/view</span></div>
+    <p>展示页路由（动态返回 HTML，无需重启即可更新）。</p>
+  </div>
+
+  <!-- ================= MQTT ================= -->
+  <div class="card" id="mqtt">
+    <h2>6. 设备 MQTT 协议（模拟器 ↔ 云端，真车同款合同）</h2>
+    <table>
+      <tr><th style="width:120px">项</th><th>值</th></tr>
+      <tr><td>接入地址</td><td><code>iot-mqtts.cn-north-4.myhuaweicloud.com:8883</code>（TLS）</td></tr>
+      <tr><td>认证</td><td>平台生成的 ClientID / Username / Password 三元组（密钥即 devices.json 的 secret）</td></tr>
+    </table>
+
+    <h3>6.1 上行 · 属性上报（car_status 服务）</h3>
+<pre><i>Topic</i>  $oc/devices/{device_id}/sys/properties/report
+{
+  "services": [{
+    "service_id": "car_status",
+    "properties": {
+      "x": 10.2,        <i>// 东向坐标，米</i>
+      "y": 5.0,         <i>// 北向坐标，米</i>
+      "theta": 90.0,    <i>// 朝向角，0=正北顺时针</i>
+      "speed": 60.0,    <i>// 0-100</i>
+      "battery": 98.5   <i>// 0-100</i>
+    }
+  ]
+}</pre>
+    <table>
+      <tr><th>上报时机</th><th>间隔</th><th>说明</th></tr>
+      <tr><td>行驶中</td><td>5 s</td><td>路线图硬约束（IoTDA 免费单元约 1 万条/日）</td></tr>
+      <tr><td>静止</td><td>60 s</td><td>保活报平安</td></tr>
+      <tr><td>命令执行后</td><td>立即（限流 2s）</td><td>事件补报，缩短命令可见延迟</td></tr>
+    </table>
+
+    <h3>6.2 下行 · 命令（car_control 服务）</h3>
+<pre><i>订阅 Topic</i>  $oc/devices/{device_id}/sys/commands/#
+<i>收到的消息体</i>
+{ "paras": { "vx": 0.7, "vy": 0.0 },   <i>// move：车体坐标速度矢量，vx右/vy前</i>
+  "service_id": "car_control",
+  "command_name": "move" }              <i>// 或 stop（paras 为空）</i>
+<i>回执 Topic</i>  …/sys/commands/request_id={rid}（request_id 从命令 topic 提取）</pre>
+    <div class="note"><b>易错点</b>：命令挂 <code>car_control</code>，属性挂 <code>car_status</code>，两个 service_id 不可混用。</div>
+  </div>
+
+  <!-- ================= SDK ================= -->
+  <div class="card" id="sdk">
+    <h2>7. 后端 ↔ 云端 SDK 调用（huaweicloudsdkiotda v5）</h2>
+    <table>
+      <tr><th>方法</th><th>用途</th><th>调用时机</th><th>已踩坑</th></tr>
+      <tr><td>ShowDevice</td><td>查单台在线状态</td><td>poll_loop 每 2s</td><td>ListDevices 过滤参数不生效→必须逐台查；status 平铺在 <code>resp.status</code></td></tr>
+      <tr><td>ShowDeviceShadow</td><td>读影子属性</td><td>poll_loop 每 2s</td><td>属性在 <code>resp.shadow[].reported.properties</code>；数值是 Decimal</td></tr>
+      <tr><td>CreateCommand</td><td>下发 move/stop</td><td>POST /command</td><td>命令体类是 <code>DeviceCommandRequest</code>（非文档 CommandBody）</td></tr>
+      <tr><td>AddDevice / DeleteDevice</td><td>注册 / 注销</td><td>admin 注册/删除</td><td>注册前先 DeleteDevice 清残留，否则"已存在"</td></tr>
+      <tr><td>ListDevices</td><td>云端对账</td><td>GET /admin/cloud/devices</td><td>limit 上限 50</td></tr>
+    </table>
+    <p>鉴权：BasicCredentials(AK, SK, project_id) + derived predicate；区域 Region(region_id, endpoint)，配置在 <code>server/cloud_config.json</code>。</p>
+  </div>
+
+  <!-- ================= 错误码 ================= -->
+  <div class="card" id="err">
+    <h2>8. 错误码与排错</h2>
+    <table>
+      <tr><th>HTTP</th><th>含义</th><th>常见原因</th></tr>
+      <tr><td>400</td><td>参数错误 / 未注册 / 车队至少留一台</td><td>缺 device_id、cmd 非法、speed 越界、设备不在注册表</td></tr>
+      <tr><td>401/403</td><td>未登录 / 已冻结</td><td>X-Auth-Token 缺失或失效（重启后端后要重登）；frozen=true</td></tr>
+      <tr><td>404</td><td>资源不存在</td><td>did 拼错</td></tr>
+      <tr><td>502</td><td>华为云 API 失败</td><td>AK/SK 失效、配额耗尽、设备名不存在</td></tr>
+    </table>
+    <h3>快速排查顺序</h3>
+    <p>①车在线吗（/fleet/status）→ ②被冻结吗 → ③<code>server/commands.log</code> 最后几行的 result → ④后端控制台报错 → ⑤模拟器黑窗是否被关闭（关窗=下线）。</p>
+  </div>
+</div>
+</body>
+</html>

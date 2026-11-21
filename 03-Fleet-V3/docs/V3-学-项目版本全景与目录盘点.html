@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V3-学-项目版本全景与目录盘点</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#fff; --ink:#1f2937; --muted:#5b6779; --line:#e3e9f2;
+    --blue:#2563eb; --blue-bg:#eff5ff; --green:#0f766e; --green-bg:#eafaf6;
+    --orange:#b45309; --orange-bg:#fff5e6; --red:#b91c1c; --red-bg:#fef2f2;
+    --purple:#6d28d9; --purple-bg:#f4efff; --gray:#475569; --gray-bg:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Arial,sans-serif;
+    line-height:1.8;font-size:15px}
+  .wrap{max-width:1020px;margin:0 auto;padding:28px 20px 60px}
+  header{background:linear-gradient(135deg,#2563eb,#6d28d9);color:#fff;
+    border-radius:16px;padding:26px 30px;box-shadow:0 8px 24px rgba(37,99,235,.16)}
+  header h1{margin:0 0 6px;font-size:25px}
+  header p{margin:2px 0;opacity:.94;font-size:14px}
+  .crumbs{margin-top:12px;font-size:12.5px;opacity:.85}
+  h2{margin:34px 0 12px;font-size:20px;border-left:4px solid var(--blue);padding-left:12px}
+  h3{margin:0 0 6px;font-size:16px}
+  .sec{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(20,40,80,.04)}
+  .lead{background:var(--blue-bg);border:1px solid #cfe0ff;border-left:5px solid var(--blue);
+    border-radius:12px;padding:16px 20px;font-size:16px;margin-top:18px}
+  .lead b{color:var(--blue)}
+  .analogy{background:var(--green-bg);border:1px solid #a7f3d0;border-left:5px solid var(--green);
+    border-radius:12px;padding:14px 20px}
+  .warn{background:var(--red-bg);border:1px solid #fecaca;border-left:5px solid var(--red);
+    border-radius:12px;padding:14px 20px;margin:12px 0}
+  .warn b{color:var(--red)}
+  .note{background:var(--orange-bg);border:1px solid #fed7aa;border-left:5px solid var(--orange);
+    border-radius:12px;padding:14px 20px;margin:12px 0}
+  code{background:#eef2f8;border:1px solid #e1e8f2;border-radius:5px;padding:1px 5px;
+    font-family:Consolas,"Courier New",monospace;font-size:13px;color:#1e3a8a}
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14px;margin:10px 0}
+  th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:#f0f4fa;color:#334155;font-weight:600}
+  tr:last-child td{border-bottom:0}
+  .pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:bold;white-space:nowrap}
+  .p1{background:var(--blue-bg);color:var(--blue)}
+  .p2{background:var(--green-bg);color:var(--green)}
+  .p3{background:var(--orange-bg);color:var(--orange)}
+  .p4{background:var(--purple-bg);color:var(--purple)}
+  .p5{background:var(--gray-bg);color:var(--gray)}
+  .p6{background:var(--red-bg);color:var(--red)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card p{margin:5px 0;color:var(--muted);font-size:13.5px}
+  .big{font-size:19px;font-weight:bold;color:var(--blue)}
+  .svgbox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+  svg{width:100%;height:auto;display:block}
+  ol,ul{padding-left:22px;margin:8px 0}
+  li{margin-bottom:5px}
+  .q{background:var(--purple-bg);border:1px solid #ddd0fb;border-radius:10px;padding:14px 18px}
+  .q summary{cursor:pointer;font-weight:bold;color:var(--purple)}
+  .q p{margin:8px 0 0;color:#4c3b7a;font-size:14px}
+  footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:13px;text-align:center}
+  @media(max-width:640px){.wrap{padding:16px 12px 40px}header{padding:18px}header h1{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>项目版本全景与目录盘点</h1>
+  <p>我的智能巡检小车项目里，到底有几个版本？分别是哪几个？</p>
+  <div class="crumbs">学习路径：总体把控 → 面 → 线 → 点　|　盘点对象：E:\Harmony\Project（12 个顶层目录） 与 E:\Harmony\CompleteProject（11-14 完整包）</div>
+</header>
+
+<div class="lead">
+  <b>一句话结论：</b>按《V3-开发路线图》的官方口径，只有 <b>3 个正式版本</b>：<b>V1 TCP 直连单车版 → V2 华为云 IoTDA 云控版 → V3 巡检车队版</b>。但目录里实际有 12 个顶层文件夹：其中 <b>8 个属于巡检车项目</b>（3 个主线版本 + 4 条支线/适配 + 1 个废弃分支），另外 <b>3 个是无关的模板/音乐课程</b>、<b>1 个是课堂资料</b>。所以「几个版本」有三种数法，别只记一个数字。
+</div>
+
+<h2>1. 生活比喻：一个项目，三代车 + 一堆试车记录</h2>
+<div class="analogy">
+  把它想成<b>一家造小车公司的样品间</b>：<br>
+  · <b>正式版本</b> = 三代正式量产车：一代用网线直连（V1）、二代换成云平台遥控（V2）、三代能管一整支车队（V3）。每代定型后就不再改。<br>
+  · <b>支线/适配</b> = 给同一代车换轮胎、换屏幕、换发动机的试制车：把 APP 搬到鸿蒙板子（CarOH）、把控制程序塞进真车主控板（CarAgent）、把单车改成双车（CarDual）。车还是那代车，只是换了个跑法。<br>
+  · <b>废弃分支</b> = 造了一半发现方向不对、推倒重来的样车（目录 <code>V3</code>，旧 TCP 多车方案）。<br>
+  · <b>无关目录</b> = 隔壁部门放在同一个仓库里的空壳和别的课程材料（Application / culture / music）。
+</div>
+
+<h2>2. 三种数法：先明确「版本」指什么</h2>
+<table>
+  <tr><th>数法</th><th>数量</th><th>分别是</th><th>什么时候用这个口径</th></tr>
+  <tr><td><span class="pill p1">官方版本</span></td><td class="big">3</td><td>V1 TCP 直连 / V2 IoT 云控 / V3 车队版</td><td>写报告、答辩、按路线图验收 —— <b>推荐用这个</b></td></tr>
+  <tr><td><span class="pill p2">巡检车相关工程</span></td><td class="big">8</td><td>Car、CarDual、CarOH、CarAgent、IoTDA、V3、v3-fleet、CarFleet</td><td>清点磁盘上到底有多少套代码</td></tr>
+  <tr><td><span class="pill p5">顶层目录总数</span></td><td class="big">12</td><td>上面 8 个 + classroom + Application + culture + music</td><td>整理文件夹、做备份时</td></tr>
+</table>
+<p style="color:var(--muted);font-size:13.5px">路线图 <code>docs/V3-开发路线图.md</code> 第 0 节原文：「V1 TCP 直连（lab01-tcp-sim）定版归档，不动；V2 IoT 云控单车版（iot-stage）定版冻结，作为教学版本；V3 车队版（v3-fleet，本工程）开发中」。<code>v3-fleet/README.md</code> 开头也写明「从 V2 复制改造的独立工程，云侧零改动，只改业务层」。</p>
+
+<h2>3. 演进主线：三代车分别改了什么</h2>
+<div class="svgbox">
+<svg viewBox="0 0 920 320" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei, PingFang SC, Arial" font-size="13">
+  <rect x="0" y="0" width="920" height="320" fill="#ffffff"/>
+  <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#64748b"/></marker></defs>
+
+  <rect x="22" y="70" width="250" height="116" rx="12" fill="#eff5ff" stroke="#93b8fb"/>
+  <text x="147" y="96" text-anchor="middle" fill="#1e3a8a" font-size="16" font-weight="bold">V1 · TCP 直连单车版</text>
+  <text x="147" y="120" text-anchor="middle" fill="#334155">APP ──TCP 9000── 模拟小车</text>
+  <text x="147" y="141" text-anchor="middle" fill="#5b6779">JSON 换行分帧 / 20Hz 积分</text>
+  <text x="147" y="162" text-anchor="middle" fill="#5b6779">HTTP 8080 俯视图</text>
+  <text x="147" y="180" text-anchor="middle" fill="#2563eb">目录：Car（+ classroom/lab01-tcp）</text>
+
+  <rect x="336" y="70" width="250" height="116" rx="12" fill="#eafaf6" stroke="#7fd6c1"/>
+  <text x="461" y="96" text-anchor="middle" fill="#0f766e" font-size="16" font-weight="bold">V2 · IoTDA 云控版</text>
+  <text x="461" y="120" text-anchor="middle" fill="#334155">APP → PC 后端 → 华为云 → 小车</text>
+  <text x="461" y="141" text-anchor="middle" fill="#5b6779">MQTT/TLS 8883 + 设备影子</text>
+  <text x="461" y="162" text-anchor="middle" fill="#5b6779">应用侧 SDK / 9090、9091</text>
+  <text x="461" y="180" text-anchor="middle" fill="#0f766e">目录：IoTDA（+ Car/CarOH 云端模式）</text>
+
+  <rect x="650" y="70" width="250" height="116" rx="12" fill="#fff5e6" stroke="#f3c48b"/>
+  <text x="775" y="96" text-anchor="middle" fill="#b45309" font-size="16" font-weight="bold">V3 · 巡检车队版</text>
+  <text x="775" y="120" text-anchor="middle" fill="#334155">N 台车 + 网页 + 后台 + AI</text>
+  <text x="775" y="141" text-anchor="middle" fill="#5b6779">统一 registry / 8000 / WS / SQLite</text>
+  <text x="775" y="162" text-anchor="middle" fill="#5b6779">轨迹回放、自然语言控车</text>
+  <text x="775" y="180" text-anchor="middle" fill="#b45309">目录：v3-fleet + CarFleet</text>
+
+  <line x1="274" y1="128" x2="332" y2="128" stroke="#64748b" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="588" y1="128" x2="646" y2="128" stroke="#64748b" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="303" y="118" text-anchor="middle" fill="#475569" font-size="11">换通信</text>
+  <text x="617" y="118" text-anchor="middle" fill="#475569" font-size="11">扩规模</text>
+
+  <text x="460" y="226" text-anchor="middle" fill="#334155" font-size="13" font-weight="bold">主线不变的东西：move / stop 控制语义、物模型 car_control、设备身份与密钥</text>
+  <text x="460" y="250" text-anchor="middle" fill="#5b6779" font-size="12.5">支线（换运行环境 / 换车数）：CarOH 上鸿蒙板 · CarAgent 装真车主控 · CarDual 双车 · V3 旧 TCP 多车（已废弃）</text>
+  <text x="460" y="278" text-anchor="middle" fill="#b91c1c" font-size="12.5">坑：目录「V3」不是正式 V3，正式 V3 是 v3-fleet + CarFleet 这一对</text>
+  <text x="460" y="302" text-anchor="middle" fill="#5b6779" font-size="12">目录时间线：Car 11-01 → CarDual 11-03 → IoTDA / V3 11-07 → CarFleet / CarOH / v3-fleet 11-08</text>
+</svg>
+</div>
+
+<h2>4. 八个巡检车相关工程，逐个对号入座</h2>
+<table>
+  <tr><th>目录</th><th>归属</th><th>是什么 / 关键证据</th><th>联网方式</th></tr>
+  <tr><td><code>Car</code></td><td><span class="pill p1">V1 主体</span></td><td>第一代 HarmonyOS APP，<code>net/CarTcpClient.ets</code> + <code>tools/car_server.py</code>（TCP 9000）；<b>后来又加了</b> <code>net/CloudClient.ets</code> 云端模式开关，所以一份代码同时能演 V1 和 V2 客户端</td><td>TCP 9000 / HTTP 9090</td></tr>
+  <tr><td><code>IoTDA</code></td><td><span class="pill p2">V2 主体</span></td><td>云控全套：车端 MQTT 客户端、产品模型 zip、俯视图/回放页，以及后端三连 <code>cloud_backend.py</code>(单车 9090) → <code>_dual.py</code>(双车防撞 9091) → <code>_fleet.py</code>(N 车车队)。这三个 py 就是 V2 内部的小台阶</td><td>MQTT 8883 / HTTP</td></tr>
+  <tr><td><code>v3-fleet</code></td><td><span class="pill p3">V3 主体</span></td><td>正式 V3 的业务后端（Flask 8000）+ 设备模拟器 + 5 个网页 + 全部文档与 16 份讲解 HTML。<code>README.md</code> 明说「从 V2 复制改造」</td><td>HTTP 8000 / WS / IoTDA SDK</td></tr>
+  <tr><td><code>CarFleet</code></td><td><span class="pill p3">V3 客户端</span></td><td>V3 的 ArkTS APP，<code>net/FleetClient.ets</code> 连 <code>10.0.2.2:8000</code>；含选车、摇杆、监控大屏、管理后台、AI 控车内嵌视图。<b>V3 是「v3-fleet + CarFleet」两个目录合起来才完整</b></td><td>HTTP 8000</td></tr>
+  <tr><td><code>CarDual</code></td><td><span class="pill p4">支线·双车</span></td><td>双车 APP，<code>net/DualClient.ets</code> 走 HTTP 连 <code>cloud_backend_fleet.py</code>(9090)，属于 V2→V3 之间的多车过渡；<code>docs/项目分层验收方案.md</code> 仍沿用第一阶段模板（复制未改）</td><td>HTTP 9090</td></tr>
+  <tr><td><code>CarOH</code></td><td><span class="pill p4">支线·换系统</span></td><td>把 Car 的 APP 移植到 OpenHarmony / DAYU200：<code>bundleName=com.example.caroh</code>、SDK API 20、<code>@ohos.net.socket</code>；<code>README-OpenHarmony构建说明.md</code> 有一张与 Car 的差异对照表。业务代码与 V1 完全一致，只是换了运行环境</td><td>TCP 9000 / HTTP 9090 双模式</td></tr>
+  <tr><td><code>CarAgent</code></td><td><span class="pill p4">支线·真车端</span></td><td>不是手机 APP，是<b>装在小车主控板上</b>的程序：<code>net/CarTcpServer.ets</code> 监听 9000 当 TCP 服务端，<code>driver/MotorDriver.ets</code> 驱动真实电机；目标 OpenHarmony 3.2 / API 9（见 <code>README-部署指南.md</code>）</td><td>TCP 服务端 9000</td></tr>
+  <tr><td><code>V3</code></td><td><span class="pill p6">废弃分支</span></td><td><b>名字最坑的一个</b>：只有 <code>car_server.py</code> + <code>test_client.py</code>，是一台服务器用 TCP 模拟 3 辆车、消息带 <code>device_id</code> 的旧底座（注释写「V3 多车模拟底座（第 1 步）」）。后来按路线图改走 IoTDA 云端架构，被 <code>v3-fleet</code> 取代，<b>不是正式 V3</b></td><td>裸 TCP / JSON 分帧</td></tr>
+</table>
+
+<h2>5. 另外 4 个目录：不是巡检车版本</h2>
+<div class="grid">
+  <div class="card"><span class="pill p5">课堂资料</span><h3>classroom</h3>
+    <p>课程实战工作区：<code>kb/</code> 6 份知识卡、<code>slides/</code> 幻灯片、<code>lab01-tcp/README.md</code>。README 里提到的 <code>lab01-tcp-sim</code>、<code>iot-stage</code>、<code>lab02-iot</code> <b>在本目录下并不存在</b>（只在文档里被引用）。它是教学切片，不是可运行版本。</p></div>
+  <div class="card"><span class="pill p5">空模板</span><h3>Application</h3>
+    <p>10-11 建的 DevEco 默认工程，<code>bundleName=com.example.application</code>，Index.ets 是 Hello World，没有任何小车代码。</p></div>
+  <div class="card"><span class="pill p5">空模板</span><h3>culture</h3>
+    <p>11-20 新建的 DevEco 默认工程，同样是 Hello World，<code>com.example.culture</code>。它比 11-14 的完整包还新，所以<b>不在 CompleteProject 里</b>。</p></div>
+  <div class="card"><span class="pill p5">其他课程</span><h3>music</h3>
+    <p>黑马云音乐项目（620 个文件 / 20 MB），跟巡检车毫无关系，上次打包时已主动排除。</p></div>
+</div>
+
+<h2>6. 三套编号并存，别混着说</h2>
+<div class="note">
+  查目录时会看到三套「阶段/版本」编号在同时用，这是最容易把人绕晕的地方：
+  <table style="margin-top:10px">
+    <tr><th>编号体系</th><th>出处</th><th>内容</th></tr>
+    <tr><td><b>项目版本（要记的）</b></td><td><code>v3-fleet/docs/V3-开发路线图.md</code> §0</td><td>V1 TCP 直连 → V2 IoT 云控 → V3 车队版</td></tr>
+    <tr><td>技术实现阶段</td><td>IoTDA 各 py 文件头注释</td><td>第一阶段 TCP 直连 → 第二阶段 MQTT 接入 → 第三阶段云端桥接 → 第四阶段车队多车化</td></tr>
+    <tr><td>课程章节</td><td><code>classroom/README.md</code></td><td>阶段 1 操控 UI → 阶段 2 摇杆 → 阶段 3 TCP 网络 → 阶段 4 IoTDA 云接入</td></tr>
+  </table>
+  <b>记法：</b>对外只说 V1/V2/V3；「第几阶段」只在讲具体实现时才提，且要说明是哪一套。
+</div>
+
+<h2>7. 在四层架构里，每个版本动的是哪一层</h2>
+<table>
+  <tr><th>层</th><th>V1</th><th>V2</th><th>V3</th></tr>
+  <tr><td>设备/车端</td><td>Python 模拟小车（TCP 服务端）</td><td>MQTT 设备客户端接入 IoTDA</td><td>参数化模拟器（devices.json 登记 N 台）</td></tr>
+  <tr><td>通信</td><td>裸 TCP 长连接 + JSON 分帧</td><td>MQTT/TLS 8883 + 设备影子 + 应用侧 API</td><td>沿用 V2 云侧，一层不改</td></tr>
+  <tr><td>业务后端</td><td>没有（APP 直连车）</td><td>PC 桥接后端 9090/9091</td><td>Flask 8000 + SQLite + WebSocket + AI</td></tr>
+  <tr><td>展示/客户端</td><td>1 个 APP + 俯视图 HTML</td><td>APP 加云端模式开关 + 多车俯视图</td><td>5 个网页 + 管理后台 + 轨迹回放 + CarFleet APP</td></tr>
+</table>
+<p style="color:var(--muted);font-size:13.5px">一句话：<b>V1 改的是「怎么连」，V2 改的是「中间加一层云」，V3 改的是「一台变一队、加业务系统」</b>。云侧物模型从 V2 到 V3 零改动，这也是路线图反复强调的硬约束。</p>
+
+<h2>8. 常见坑</h2>
+<div class="warn">
+  <b>① 目录 V3 ≠ 正式 V3。</b> <code>E:\Harmony\Project\V3</code> 是废弃的 TCP 多车底座；正式 V3 在 <code>v3-fleet</code>（后端）和 <code>CarFleet</code>（APP）。找代码时别进错门。<br>
+  <b>② 路线图里的 V1/V2 目录名在磁盘上找不到。</b> 文档写的是 <code>lab01-tcp-sim</code>、<code>iot-stage</code>，实际落地对应 <code>Car</code> 和 <code>IoTDA</code>，文档命名与实物命名没对齐。<br>
+  <b>③ Car / CarOH 不是「纯 V1」。</b> 两者都带 <code>CloudClient.ets</code> 和云端模式开关，同一份代码能切两种架构，别只看目录名判断版本。<br>
+  <b>④ 好几个 <code>docs/项目分层验收方案.md</code> 是从 Car 复制后没改的</b>（CarDual、CarOH、CarFleet 里都还写着「适用范围：第一阶段 TCP 直连模拟」），不能拿它判断当前工程属于哪一代，要看 <code>net/</code> 下的客户端类和端口。<br>
+  <b>⑤ CompleteProject 是 11-14 的快照。</b> 之后新建的 <code>culture</code> 不在包里；包内的 <code>04-previous-versions</code> 收的是 8 个历史工程，<code>01/02</code> 才是当前 V3。
+</div>
+
+<h2>9. 自测三题（能答出来就算真的分清了）</h2>
+<div class="q">
+  <details><summary>① 如果老师问「你项目做了几个版本」，标准答案怎么说？</summary>
+  <p>3 个正式版本：V1 TCP 直连单车、V2 华为云 IoTDA 云控、V3 巡检车队。再补一句：另有 4 条支线适配（双车 / OpenHarmony 移植 / 真车车端 / 课堂切片）和 1 个已废弃的旧 TCP 多车分支，不算正式版本。</p></details>
+  <details><summary>② 想改「车队里第 3 台车的初始位置」，该进哪个目录？</summary>
+  <p><code>v3-fleet/server/devices.json</code>（正式 V3 的设备注册表）。不是 <code>V3/car_server.py</code>（废弃），也不是 <code>IoTDA/car_mqtt_client_001.py</code>（V2 写死单车）。</p></details>
+  <details><summary>③ 看到 <code>CarOH/docs/项目分层验收方案.md</code> 写着「第一阶段」，能断定 CarOH 是 V1 吗？</summary>
+  <p>不能。那份文档是从 Car 复制过来忘记改的。看 <code>AppScope/app.json5</code>（com.example.caroh）、<code>build-profile.json5</code>（OpenHarmony API 20）和 <code>README-OpenHarmony构建说明.md</code> 才知道它是「V1 业务代码换到 OpenHarmony 运行环境」的支线，且同时支持云端模式。</p></details>
+</div>
+
+<h2>10. 与前后知识点的连接</h2>
+<div class="sec">
+  <ul>
+    <li><b>往前接</b>：<a href="./V3-学习导航.html">V3-学习导航.html</a>（总体把控）、<a href="./V3-笨蛋级详解.md">V3-笨蛋级详解.md</a>、<a href="./V3-项目架构详解.md">V3-项目架构详解.md</a> —— 先知道整个项目长什么样，再谈版本。</li>
+    <li><b>往「线」走</b>：<a href="./V3-学-模块连接与协议全景.html">模块连接与协议全景</a>（V1→V3 每次换的是哪根线）、<a href="./V3-学-长连接与短连接.html">长连接与短连接</a>、<a href="./V3-学-HTTP与HTTPS.html">HTTP 与 HTTPS</a>。</li>
+    <li><b>往「点」走</b>：<a href="./V3-学-技术栈与文件地图.html">技术栈与文件地图</a>、<a href="./V3-接口文档.html">接口文档</a>、<a href="./V3-学-CarFleet上板实录.html">CarFleet 上板实录</a>。</li>
+    <li><b>权威依据</b>：<a href="./V3-开发路线图.md">V3-开发路线图.md</a> §0「版本策略与总原则」、<a href="./V3-接口协议设计.md">V3-接口协议设计.md</a>。口径以路线图为准。</li>
+  </ul>
+</div>
+
+<footer>V3 学习资料 · 项目版本全景与目录盘点 · 2026-11-21 · 静态 HTML，可离线双击打开</footer>
+</div>
+</body>
+</html>

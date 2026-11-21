@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>02 · 客户端与服务端 — 项目知识手册</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f4f6f9;
+         color: #1f2d3d; line-height: 1.75; padding: 28px 16px 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; margin-bottom: 20px; }
+  .topbar a, .nav a { color: #185FA5; text-decoration: none; }
+  .topbar a:hover, .nav a:hover { text-decoration: underline; }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  .sub { color: #7a8a9c; font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 20px; margin: 34px 0 12px; padding-left: 10px;
+       border-left: 4px solid #185FA5; }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: #2c3e50; }
+  p { margin: 8px 0; }
+  .card { background: #fff; border-radius: 12px; padding: 18px 22px;
+          box-shadow: 0 2px 8px rgba(31,45,61,.06); margin: 14px 0; }
+  pre { background: #1f2d3d; color: #d8e2ec; border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6;
+        margin: 10px 0; }
+  code { font-family: Consolas, "Courier New", monospace; }
+  p code, li code { background: #e8eef5; color: #185FA5; border-radius: 4px;
+                    padding: 1px 6px; font-size: 0.92em; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid #d5dde6; padding: 8px 12px; text-align: left; }
+  th { background: #eef3fa; }
+  .tip { border-left: 4px solid #22a35c; background: #eef8f2;
+         padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .warn { border-left: 4px solid #d9822b; background: #fdf5ec;
+          padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .qa { margin: 14px 0; }
+  .qa .q { font-weight: 600; color: #185FA5; }
+  .nav { display: flex; justify-content: space-between; margin-top: 40px;
+         font-size: 14px; padding-top: 14px; border-top: 1px solid #d5dde6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <a href="index.html">← 知识手册主页</a>
+    <span>02 / 06</span>
+    <a href="kb-03-tcp-http.html">下一篇：TCP 与 HTTP →</a>
+  </div>
+
+  <h1>客户端与服务端</h1>
+  <div class="sub">对应项目文件：server/car_server.py、server/test_client.py、APP CarClient.ets</div>
+
+  <h2>一、为什么这是重点</h2>
+  <p>整个项目从头到尾只干了一件事：<b>让两个程序说话</b>。谁等、谁连、怎么连、连上后消息怎么流动——
+  这就是客户端/服务端模型的全部。面试里"说说 C/S 架构""服务端怎么主动推消息"这类题，
+  你都有亲手写过的代码可以讲。</p>
+
+  <h2>二、项目案例复盘：谁在等，谁在连</h2>
+  <div class="card">
+    <p>我们的方案：<b>小车端当服务端（等人来连），APP / 测试脚本当客户端（主动去连）</b>。</p>
+    <table>
+      <tr><th>角色</th><th>项目中的实现</th><th>行为</th></tr>
+      <tr><td>服务端（车）</td><td>car_server.py</td><td>bind(0.0.0.0, 8888) → listen → accept，占住端口守株待兔</td></tr>
+      <tr><td>客户端（APP）</td><td>CarClient.ets</td><td>connect(10.0.2.2, 8888)，主动找上门</td></tr>
+      <tr><td>客户端（测试脚本）</td><td>test_client.py</td><td>connect(127.0.0.1, 8888)，开发期替身</td></tr>
+      <tr><td>客户端（浏览器）</td><td>car_view.html</td><td>连 WebSocket 8889，<b>只看不控</b></td></tr>
+    </table>
+    <p><b>为什么让车当服务端？</b>三个理由：① 车部署后 IP/端口固定，适合"等"；APP 是来去匆匆的一方。
+    ② 真车主控板将来跑的就是这套服务端逻辑——换硬件不换协议。③ 服务端是状态的唯一持有者
+    （车在哪、多快、多少电都在 Car 对象里），客户端只是状态的消费者。</p>
+    <p><b>服务端三步曲</b>（单元 1 最小回声服务器里逐行写过）：</p>
+    <pre><code>server = await asyncio.start_server(client_handler, HOST, 8888)
+# 等价于三步：
+# 1. bind   —— 占住 0.0.0.0:8888 这个"门牌号"
+# 2. listen —— 开始排队等连接
+# 3. accept —— 每来一个客户端，派一个 handler 专门伺候它</code></pre>
+    <p>连接建立（底层是 TCP 三次握手，由操作系统自动完成，代码里就是一行 connect）后，
+    双方拥有一条<b>全双工通道</b>——两条独立的数据流，谁都可以随时发。</p>
+  </div>
+
+  <h2>三、短连接 vs 长连接</h2>
+  <div class="card">
+    <table>
+      <tr><th></th><th>短连接</th><th>长连接</th></tr>
+      <tr><td>生命周期</td><td>一次请求/数据交换后就断开</td><td>建立后长期保持，随用随发</td></tr>
+      <tr><td>建连开销</td><td>每次都要三次握手，频繁且贵</td><td>只付一次建连成本</td></tr>
+      <tr><td>实时性</td><td>差（每次都有建连延迟）</td><td>好（数据随时可达）</td></tr>
+      <tr><td>服务端资源</td><td>用完即释，压力小</td><td>占着连接数和内存</td></tr>
+      <tr><td>典型场景</td><td>网页浏览、普通 HTTP API</td><td>聊天、游戏、实时行情、<b>本项目控车</b></td></tr>
+    </table>
+    <p>本项目必须长连接：STATE 要以 100ms 节奏持续推流，指令要随时可发。
+    如果用短连接，每秒要握手 10 次，且"车主动推状态"根本无法实现（见第五节）。</p>
+    <p><b>长连接的代价：假在线。</b>拔网线、进程崩溃时，TCP 不会立刻通知对端——你的连接可能已经死了，
+    双方还以为活着。解法是心跳：</p>
+    <pre><code># 协议里的 PING / PONG：客户端定时发 PING，服务端回 PONG
+# 超时没收到 PONG -> 连接已死，触发重连
+if text == "PING":
+    return ["PONG"]</code></pre>
+  </div>
+
+  <h2>四、服务端如何主动推送：广播</h2>
+  <div class="card">
+    <p>这是本项目最值得讲透的设计。HTTP 的世界里永远是客户端问、服务端答（拉模式）；
+    但车的位置每秒变 10 次，"问"太慢也太浪费——我们用<b>推模式</b>：</p>
+    <pre><code># 服务端维护一个"在线名单"
+clients = set()                # 所有在线 TCP 客户端
+
+async def client_handler(reader, writer):
+    clients.add(writer)        # 接入：登记进名单
+    ...
+    finally:
+        clients.discard(writer)  # 断开：移出名单
+
+async def tick_loop():           # 每 100ms 跑一圈
+    car.step()                   # 推进运动模型
+    frame = (car.state_frame() + "\n").encode()
+    for w in list(clients):      # 名单里的人，每人发一份
+        try:
+            w.write(frame)
+            await w.drain()
+        except (ConnectionError, RuntimeError):
+            dead.append(w)       # 写失败的（已断开）摘除
+    for w in dead:
+        clients.discard(w)</code></pre>
+    <p>三个工程细节：</p>
+    <p>① <code>list(clients)</code> 拷贝后再遍历——遍历过程中集合可能被并发修改，直接遍历原集合会报错；</p>
+    <p>② 写失败的客户端先收集后摘除——广播循环里不做复杂操作，保持"快进快出"；</p>
+    <p>③ <b>一份状态，多路分发</b>：同一个 Car 对象，TCP 客户端收文本 STATE，WebSocket 客户端收 JSON——
+    广播循环"一个循环喂两张嘴"。</p>
+    <div class="tip">推 vs 拉不是二选一，是按场景选：实时控车用推（本项目）；低频查数据用拉。
+    下一阶段（华为云 IoT）你会看到翻转：云平台的设备影子就是拉为主的——到时候回来对照。</div>
+  </div>
+
+  <h2>五、面试高频问答</h2>
+  <div class="card qa">
+    <p class="q">Q1：什么是服务端？它和客户端的本质区别是什么？</p>
+    <p>A：本质区别是<b>谁监听、谁连接</b>：服务端 bind + listen 固定端口等待；客户端主动 connect。
+    服务端通常还是<b>状态与数据的权威持有者</b>（本项目里车的位置只在服务端），客户端是请求方/展示方。
+    同一台机器上两个程序可以互为对方的客户端和服务端。</p>
+
+    <p class="q">Q2：描述一下从 connect 到数据往返的完整过程。</p>
+    <p>A：客户端 connect(IP, port) → 操作系统完成三次握手 → 服务端 accept 返回新连接 →
+    双方拿到同一对"文件描述符级"的通道 → send/recv 全双工收发 → 一方 close（发 FIN）→
+    对端 recv 返回空，知道对端下线（我们服务端据此记"正常退出"）。</p>
+
+    <p class="q">Q3：服务端怎么把同一条消息发给所有在线客户端？</p>
+    <p>A：维护在线连接集合（如本项目的 <code>clients = set()</code>），推送时遍历集合逐个 write，
+    写失败的从集合移除。注意遍历时用副本、异常要兜住——广播循环不能被一个坏连接搞崩。</p>
+
+    <p class="q">Q4：一个服务端怎么同时伺候多个客户端？（高频！）</p>
+    <p>A：三种主流方案：① 每连接一个线程/进程（直观但开销大）；② I/O 多路复用（select/epoll，
+    单线程监听一堆 socket）；③ 事件循环 + 协程（asyncio 本质是对 epoll 的封装）。
+    本项目单元 1 是单连接阻塞版（第二个客户端连不进来），单元 2 升级为 asyncio——
+    每个连接一个协程，互不阻塞。能亲手对比过这两个版本，是极大的加分项。</p>
+
+    <p class="q">Q5：怎么判断长连接是否还活着？</p>
+    <p>A：应用层心跳（本项目 PING/PONG）或 TCP 自带的 keepalive（默认 2 小时太钝，一般不用）。
+    心跳超时未回 → 判定假在线 → 断开重连。</p>
+  </div>
+
+  <h2>六、动手验证与思考题</h2>
+  <div class="card">
+    <p><b>验证 1</b>：起 car_server.py，开两个终端分别跑 <code>test_client.py</code>——服务端日志出现两个连接，
+    任一终端发 <code>CMD:FORWARD</code>，两个终端的 STATE 坐标同步变化（广播的直接证据）。</p>
+    <p><b>验证 2</b>：手动杀掉一个客户端（Ctrl+C），看服务端日志如何记"正常退出"；
+    再用任务管理器强杀进程，对比"异常断开"——理解两种断线在服务端眼里的区别。</p>
+    <p><b>思考</b>：如果 100 个客户端同时在线，tick_loop 每 100ms 要写 100 次，
+    其中某个客户端网络很卡（写缓冲堆积），会发生什么？怎么防止"一个慢客户端拖垮整辆车的广播"？
+    （关键词：写超时、发送队列上限、踢掉慢客户端）</p>
+  </div>
+
+  <div class="nav">
+    <a href="index.html">← 返回主页</a>
+    <a href="kb-03-tcp-http.html">03 · TCP 与 HTTP →</a>
+  </div>
+
+</div>
+</body>
+</html>

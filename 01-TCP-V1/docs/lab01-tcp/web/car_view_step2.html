@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Lab05-俯视图 · step2：WebSocket 接入实时渲染</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", sans-serif; background: #e8edf4;
+         display: flex; flex-direction: column; align-items: center;
+         padding: 24px 16px; gap: 14px; }
+  header { width: min(860px, 96vw); display: flex;
+           align-items: center; justify-content: space-between; }
+  h1 { font-size: 18px; color: #1f2d3d; }
+  #connBadge { display: flex; align-items: center; gap: 6px;
+               font-size: 13px; color: #5a6b7f; }
+  #connDot { width: 10px; height: 10px; border-radius: 50%;
+             background: #b0b9c4; transition: background .2s; }
+  #connDot.on { background: #22a35c; box-shadow: 0 0 6px rgba(34,163,92,.6); }
+  canvas { background: #fff; border-radius: 8px;
+           box-shadow: 0 2px 10px rgba(31,45,61,.08); }
+  p.tip { font-size: 12px; color: #9aa7b5; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🚗 Lab01 俯视图 · step2：小车活了</h1>
+    <div id="connBadge"><span id="connDot"></span><span id="connText">连接中…</span></div>
+  </header>
+
+  <canvas id="field" width="800" height="600"></canvas>
+
+  <p class="tip">数据来源 ws://localhost:8889 · 每 100ms 一帧 JSON · 浏览器只看不控</p>
+
+<script>
+"use strict";
+
+// ============================================================
+// step2 在 step1 之上只加一件事：WebSocket 接入。
+//
+// 为什么是 WebSocket？浏览器出于安全策略不允许页面直连裸 TCP，
+// 只能说 HTTP / WebSocket。所以单元 4 在车端开了第二个服务：
+//   APP --TCP:8888----------> car_server --WebSocket:8889(JSON)--> 本页
+//
+// WebSocket 的浏览器 API 就四个钩子，本步全部用到：
+//   new WebSocket(url)  建连接（注意协议是 ws:// 不是 http://）
+//   ws.onopen           连上（绿点亮起）
+//   ws.onmessage        每来一帧触发一次（100ms 一次，ev.data 是 JSON 字符串）
+//   ws.onclose / onerror 断了（本步只显示状态；自动重连留给最终版）
+//
+// JSON 帧格式（与 car_server.py 的 state_json() 逐字段对应）：
+//   {"x":.., "y":.., "heading":.., "speed":.., "battery":..}
+// ============================================================
+
+var FIELD_W = 800, FIELD_H = 600;
+var canvas = document.getElementById("field");
+var ctx = canvas.getContext("2d");
+
+// file:// 双击打开时 location.hostname 是空串，兜底 localhost
+var WS_URL = "ws://" + (location.hostname || "localhost") + ":8889";
+
+var car = null;   // 最新一帧状态；null = 还没收到（画等待提示）
+
+// ---------------- WebSocket ----------------
+var ws = new WebSocket(WS_URL);
+
+ws.onopen = function () {
+  setConn(true, "已连接");
+};
+ws.onmessage = function (ev) {
+  // ev.data 是 JSON 字符串 -> JSON.parse 变成对象。这就是"反序列化"：
+  // 车端把运动状态编码成 JSON，浏览器把它解码回来
+  car = JSON.parse(ev.data);
+  setConn(true, "已连接");
+};
+ws.onclose = function () {
+  car = null;                       // 没数据了，画面回到等待提示
+  setConn(false, "已断开（车端未启动？）");
+};
+ws.onerror = function () { try { ws.close(); } catch (e) {} };
+
+function setConn(on, text) {
+  document.getElementById("connDot").className = on ? "on" : "";
+  document.getElementById("connText").textContent = text;
+}
+
+// ---------------- 以下绘图部分与 step1 相同（删去了滑块与教学车） ----------------
+function headingRad(h) { return h * Math.PI / 180; }
+
+function drawGrid() {
+  ctx.fillStyle = "#f3f7fb";
+  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+  ctx.strokeStyle = "#dfe7f0";
+  ctx.lineWidth = 1;
+  for (var gx = 0; gx <= FIELD_W; gx += 50) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, FIELD_H); ctx.stroke();
+  }
+  for (var gy = 0; gy <= FIELD_H; gy += 50) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(FIELD_W, gy); ctx.stroke();
+  }
+  ctx.strokeStyle = "#c9d5e2";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, FIELD_W - 2, FIELD_H - 2);
+  ctx.fillStyle = "#b9c5d3";
+  ctx.font = "12px sans-serif";
+  ctx.fillText("N ↑  (0,0) 左上角 · 场地 800 × 600", 10, 18);
+}
+
+function drawCar(x, y, heading, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(headingRad(heading));   // 顺时针约定与 Canvas rotate 正方向一致，不取负
+
+  ctx.fillStyle = "rgba(31,45,61,.15)";
+  ctx.save(); ctx.translate(3, 3); roundRect(-15, -22, 30, 44, 6); ctx.fill(); ctx.restore();
+
+  // 颜色语义：前进蓝 / 后退橙 / 静止灰——一眼看出运动状态
+  ctx.fillStyle = color;
+  roundRect(-15, -22, 30, 44, 6);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.85)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,.55)";
+  roundRect(-11, -4, 22, 16, 3);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(0, -20); ctx.lineTo(-8, -8); ctx.lineTo(8, -8);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawIdleHint() {
+  ctx.fillStyle = "#8b99a9";
+  ctx.font = "16px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("等待小车状态…（请确认 car_server.py 已启动）", FIELD_W / 2, FIELD_H / 2);
+  ctx.textAlign = "start";
+}
+
+function bodyColor(speed) {
+  return speed > 0 ? "#2f7bd9" : (speed < 0 ? "#c88719" : "#7a8a9c");
+}
+
+function render() {
+  drawGrid();
+  if (car) { drawCar(car.x, car.y, car.heading, bodyColor(car.speed)); }
+  else     { drawIdleHint(); }
+  requestAnimationFrame(render);   // 每帧重画全屏：100ms 新数据 + 60fps 重绘，画面即实时
+}
+render();
+</script>
+</body>
+</html>

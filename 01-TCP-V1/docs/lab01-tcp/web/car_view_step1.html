@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Lab05-俯视图 · step1：Canvas 静态画车</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", sans-serif; background: #e8edf4;
+         display: flex; flex-direction: column; align-items: center;
+         padding: 24px 16px; gap: 14px; }
+  h1 { font-size: 18px; color: #1f2d3d; }
+  #panel { background: #fff; border-radius: 12px; padding: 12px 18px;
+           box-shadow: 0 2px 10px rgba(31,45,61,.08);
+           font-size: 14px; color: #1f2d3d; display: flex; align-items: center; gap: 12px; }
+  #heading { width: 240px; }
+  #hVal { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 46px; }
+  canvas { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(31,45,61,.08); }
+  p.tip { font-size: 12px; color: #9aa7b5; max-width: 800px; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>Lab01 俯视图 · step1：先学会在画布上画一辆"朝向正确"的车</h1>
+
+  <div id="panel">
+    <label>拖动改朝向 heading：</label>
+    <input id="heading" type="range" min="0" max="359" value="0">
+    <span id="hVal">0°</span>
+  </div>
+
+  <canvas id="field" width="800" height="600"></canvas>
+
+  <p class="tip">
+    本页不联网：纯 Canvas 练习。<b>坐标系三处一致</b>是本步的全部意义——
+    服务端运动模型 / 本页 Canvas / 将来的鸿蒙 APP，任何一处理解偏差，小车就会"镜像乱跑"。
+  </p>
+
+<script>
+"use strict";
+
+// ============================================================
+// 坐标系约定（与 car_server.py 逐字一致，改一处就是 bug）：
+//   场地 800×600；(0,0) 在【左上角】；y 轴向下为正；heading 0°=朝上、顺时针增大。
+//
+// 好消息：Canvas 天然就是这套坐标系——(0,0) 左上角、y 向下。
+//   所以服务端的 y 不需要任何翻转，直接画。
+//
+// 两个关键 Canvas 函数（本步的教学核心）：
+//   ctx.translate(x, y)  把原点(0,0)平移到小车位置——之后所有坐标都相对车中心
+//   ctx.rotate(rad)      让整张"纸"转 rad 弧度——之后画的"上"就是车头方向
+//   （记住口诀：先搬桌子 translate，再转桌子 rotate，最后在桌子上画车）
+// ============================================================
+
+var FIELD_W = 800, FIELD_H = 600;
+var canvas = document.getElementById("field");
+var ctx = canvas.getContext("2d");
+
+// heading（度）-> 弧度。Canvas rotate() 的正角度 = 顺时针，
+// 与"heading 顺时针增大"约定天然一致，不用取负号！
+function headingRad(h) { return h * Math.PI / 180; }
+
+// ---------------- 场地：网格 ----------------
+function drawGrid() {
+  ctx.fillStyle = "#f3f7fb";
+  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+  ctx.strokeStyle = "#dfe7f0";
+  ctx.lineWidth = 1;
+  for (var gx = 0; gx <= FIELD_W; gx += 50) {          // 竖线
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, FIELD_H); ctx.stroke();
+  }
+  for (var gy = 0; gy <= FIELD_H; gy += 50) {          // 横线
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(FIELD_W, gy); ctx.stroke();
+  }
+  ctx.strokeStyle = "#c9d5e2";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, FIELD_W - 2, FIELD_H - 2);
+  ctx.fillStyle = "#b9c5d3";
+  ctx.font = "12px sans-serif";
+  ctx.fillText("N ↑  (0,0) 左上角 · 场地 800 × 600", 10, 18);
+}
+
+// ---------------- 车：画在 (x, y)、朝向 heading ----------------
+function drawCar(x, y, heading, color) {
+  ctx.save();
+  ctx.translate(x, y);          // ① 把原点搬到车中心
+  ctx.rotate(headingRad(heading));  // ② 整个坐标系转 heading 度（顺时针）
+
+  // —— 从这里开始，坐标全部是"以车为中心"的本地坐标 ——
+  // 约定：车头指向【本地 -Y】（画布上方）。rotate 之后，本地 -Y 就是运动方向。
+  // 检验：heading=0 时车头朝上；heading=90 顺时针转 90°，车头朝右。✓
+
+  // 车影（偏移 3px 制造悬浮感）
+  ctx.fillStyle = "rgba(31,45,61,.15)";
+  ctx.save(); ctx.translate(3, 3); roundRect(-15, -22, 30, 44, 6); ctx.fill(); ctx.restore();
+
+  // 车身：30 宽 × 44 高，长边沿 Y 轴——车是"竖着"的
+  ctx.fillStyle = color;
+  roundRect(-15, -22, 30, 44, 6);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.85)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 车窗（偏车尾一侧，衬托车头方向）
+  ctx.fillStyle = "rgba(255,255,255,.55)";
+  roundRect(-11, -4, 22, 16, 3);
+  ctx.fill();
+
+  // 车头箭头：指向本地 -Y（画布上方）——方向一目了然
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(0, -20); ctx.lineTo(-8, -8); ctx.lineTo(8, -8);
+  ctx.closePath(); ctx.fill();
+
+  ctx.restore();   // 恢复 translate/rotate 之前的状态——下一辆车不受污染
+}
+
+// 圆角矩形路径（车身的圆角外观）
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// ---------------- 主循环 ----------------
+var heading = 0;
+document.getElementById("heading").addEventListener("input", function (e) {
+  heading = +e.target.value;
+  document.getElementById("hVal").textContent = heading + "°";
+});
+
+function render() {
+  drawGrid();
+  // 三辆教学车固定摆放：0° 朝上 / 90° 朝右 / 345° 左转一格——
+  // 与服务端 CMD:LEFT 一次 -15° 的结果互相印证
+  drawCar(150, 300, 0,   "#2f7bd9");
+  drawCar(400, 300, 90,  "#4aa564");
+  drawCar(650, 300, 345, "#7a5fd0");
+  // 滑块控制的"自由车"：出生点(400,300) 正是服务端的出生点
+  drawCar(400, 500, heading, "#e05656");
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>

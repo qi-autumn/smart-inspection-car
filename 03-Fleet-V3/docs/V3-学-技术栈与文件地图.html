@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · 技术栈与文件地图</title>
+<style>
+  :root{
+    --bg:#f5f8fc; --card:#fff; --ink:#1f2933; --dim:#5b6b7c; --line:#dde5ee;
+    --c1:#0f8a8a; --c2:#d97706; --c3:#7c3aed; --c0:#3f51b5;
+    --shadow:0 2px 10px rgba(31,41,51,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.75;
+       font-family:"Microsoft YaHei","PingFang SC","Source Han Sans SC",system-ui,-apple-system,sans-serif}
+  a{color:#1d6fa5;text-decoration:none} a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;
+       font-family:Consolas,"Courier New",monospace;color:#234}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px 80px}
+
+  .hero{background:linear-gradient(135deg,#20304a,#1c5c6e);color:#fff;padding:32px 20px 28px}
+  .hero .inner{max-width:1120px;margin:0 auto}
+  .hero h1{margin:0 0 6px;font-size:26px}
+  .hero .sub{margin:0 0 14px;color:#c7dbe6;font-size:14px}
+  .hero p{margin:0;color:#e6f0f5;font-size:14px;max-width:900px}
+  .back{display:inline-block;margin-top:14px;font-size:13px;color:#a8f0dc;
+        border:1px solid rgba(168,240,220,.5);padding:5px 12px;border-radius:16px}
+  .back:hover{text-decoration:none;background:rgba(255,255,255,.1)}
+
+  .topnav{position:sticky;top:0;z-index:9;background:#fff;border-bottom:1px solid var(--line);
+          box-shadow:0 1px 6px rgba(31,41,51,.05)}
+  .topnav .inner{max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px;padding:8px 20px}
+  .topnav a{font-size:13px;color:var(--dim);padding:6px 12px;border-radius:20px}
+  .topnav a:hover{background:#eef3f9;color:var(--ink);text-decoration:none}
+
+  section{margin-top:32px;scroll-margin-top:58px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+  .sec-no{width:32px;height:32px;flex:none;border-radius:8px;color:#fff;font-weight:700;
+          display:flex;align-items:center;justify-content:center;font-size:14px;background:#475569}
+  .sec-head h2{margin:0;font-size:20px}
+  .tag{font-size:12px;color:var(--dim);background:#eaf0f6;padding:3px 10px;border-radius:12px}
+  .lead{color:var(--dim);margin:0 0 14px;font-size:14px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:15px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+  .card h3{margin:0 0 8px;font-size:16px}
+  .card p{margin:0 0 8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  .file{font-family:Consolas,"Courier New",monospace;font-size:.87em;color:#7a4b00;
+        background:#fff5e3;padding:1px 5px;border-radius:4px;white-space:nowrap}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+        background:#eaf0f6;color:var(--dim);margin:0 4px 3px 0}
+  .pill.tech{background:#e6f4f4;color:#0b6f6f}
+  .pill.core{background:#e9ecfb;color:#3f51b5}
+  .pill.test{background:#fdf0dd;color:#a8600a}
+  .pill.gen{background:#f0eef7;color:#6d42b8}
+  .pill.doc{background:#e8f2e9;color:#2f7a3f}
+
+  .concl{border-left:4px solid var(--c1);background:#f0f9f8;border-radius:0 8px 8px 0;
+         padding:12px 16px;margin-bottom:14px}
+  .concl b{color:#0b6f6f}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#eef3f9;font-weight:700}
+  tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);margin-bottom:12px}
+  .tblwrap table{min-width:720px}
+  td .file{white-space:normal}
+
+  /* 技术栈分层条 */
+  .layer{display:grid;grid-template-columns:130px 1fr;gap:0;border:1px solid var(--line);
+         border-radius:9px;overflow:hidden;margin-bottom:9px;background:#fff}
+  .layer .name{color:#fff;padding:12px;font-weight:700;font-size:14px;
+               display:flex;align-items:center;gap:6px}
+  .layer .body{padding:11px 14px}
+  .layer .body .desc{font-size:12.5px;color:var(--dim);margin-bottom:7px}
+  .l1 .name{background:#0f8a8a}.l2 .name{background:#3f51b5}
+  .l3 .name{background:#d97706}.l4 .name{background:#7c3aed}.l5 .name{background:#475569}
+  @media(max-width:640px){.layer{grid-template-columns:1fr}.layer .name{padding:8px 12px}}
+
+  .kcard{border:1px solid var(--line);border-left:4px solid var(--c2);border-radius:8px;
+         background:#fff;padding:12px 14px;margin-bottom:10px}
+  .kcard .t{font-weight:700;font-size:15px;margin-bottom:3px}
+  .kcard .where{font-size:12px;color:var(--dim);margin-bottom:6px}
+  .kcard .what{font-size:14px}
+  .kcard .why{font-size:13px;color:#9a4a12;background:#fff7ec;border-radius:5px;
+              padding:5px 9px;margin-top:7px}
+
+  ul{margin:6px 0 8px;padding-left:22px} li{margin:4px 0}
+  .q{background:#f2f7fb;border:1px dashed #b9cede;border-radius:8px;padding:10px 14px;margin-top:8px}
+  .q .lab{font-size:12px;color:#1d6fa5;font-weight:700}
+  details{background:#fff;border:1px solid var(--line);border-radius:9px;margin-bottom:9px;box-shadow:var(--shadow)}
+  details summary{cursor:pointer;padding:10px 15px;font-weight:600;font-size:14.5px;list-style:none;
+                  display:flex;align-items:center;gap:9px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+";display:inline-flex;width:19px;height:19px;flex:none;
+      align-items:center;justify-content:center;background:#eef3f9;border-radius:5px;color:#1d6fa5;font-weight:700}
+  details[open] summary::before{content:"-"}
+  details .body{padding:0 15px 13px 43px;font-size:14px}
+  .note{font-size:13px;color:var(--dim)}
+  .warn{background:#fff4f2;border-left:4px solid #d9534f;padding:10px 14px;border-radius:0 8px 8px 0;
+        font-size:13.5px;margin-bottom:10px}
+  .tree{font-family:Consolas,"Courier New",monospace;font-size:13px;line-height:2;
+        background:#0f1a2c;color:#d7e3f0;border-radius:9px;padding:16px 18px;overflow-x:auto}
+  .tree .c1{color:#7fd8c4}.tree .c2{color:#f0c674}.tree .c3{color:#a9b7c9}
+  footer{margin-top:42px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+  @media print{.topnav{display:none}.hero{background:#20304a}}
+</style>
+</head>
+<body>
+
+<div class="hero"><div class="inner">
+  <h1>V3 学 · 技术栈与文件地图</h1>
+  <p class="sub">各模块用了什么技术、每项技术到底起什么作用；哪些文件是主文件、哪些是过程性测试文件</p>
+  <p>这份属于学习路径里的「<strong>面</strong>（技术版图）+ <strong>点</strong>（文件定位）」。读完后你应该能做到：看到一个报错，马上知道该去哪个文件、哪一层的哪个技术环节找原因。</p>
+  <a class="back" href="V3-学习导航.html">← 返回学习导航</a>
+</div></div>
+
+<div class="topnav"><div class="inner">
+  <a href="#s0">一句话结论</a>
+  <a href="#s1">技术栈全景</a>
+  <a href="#s2">逐模块技术表</a>
+  <a href="#s3">八个关键技术点</a>
+  <a href="#s4">文件分类总表</a>
+  <a href="#s5">文件依赖图</a>
+  <a href="#s6">坑与自测</a>
+</div></div>
+
+<div class="wrap">
+
+<!-- 0 -->
+<section id="s0">
+  <div class="sec-head"><div class="sec-no">0</div><h2>先给结论</h2></div>
+  <div class="concl">
+    <p><b>一句话</b>：这个项目的技术栈其实很"轻"——<strong>没有数据库服务器、没有前端框架、没有消息队列中间件</strong>。全靠 Python 标准库 + 三个第三方库（paho-mqtt / Flask / 华为云 SDK），加一个 SQLite 文件、几页原生 HTML、一套鸿蒙 ArkTS，就把"多车—云端—后端—多端界面"串起来了。</p>
+    <p style="margin:0"><b>生活比喻</b>：这像一家小店——骑手用对讲机（MQTT）报位置，总部有块记录板（设备影子），店里的客服（Flask 后端）拿一个抄写本（STATE_CACHE）和一个账本（SQLite），顾客看的是手绘地图（Canvas 网页）和手机 App（ArkTS）。<strong>没有一项技术是"为了炫技"，每一项都是为了解决一个具体的卡点</strong>——这也是读技术栈时最该抓住的线索。</p>
+  </div>
+  <div class="grid3">
+    <div class="card"><h3>判断"主文件"的三条标准</h3>
+      <p style="font-size:13.5px">① 后端启动时会不会 <code>import</code> 它；② 页面路由会不会指向它；③ 模拟器启动时会不会读它。三条中任意命中一条 = 运行时必需的主文件。</p></div>
+    <div class="card"><h3>"过程性文件"是什么</h3>
+      <p style="font-size:13.5px">开发过程中为了<strong>验收某一步 / 造演示数据 / 记录设计</strong>而写的，系统跑起来之后不依赖它们。删掉不影响运行，但删掉就看不出项目是怎么一步步长出来的。</p></div>
+    <div class="card"><h3>还有一类容易误判</h3>
+      <p style="font-size:13.5px"><strong>运行时自动生成</strong>的产物（<code>fleet.db</code>、<code>commands.log</code>、<code>__pycache__</code>、<code>build/</code>）。它们不是源码，不该手改，也不算主文件。</p></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>技术栈全景（按层看）</h2><span class="tag">面</span></div>
+  <p class="lead">下面五条横带对应四层架构 + 工具链。每条里先列技术标签，再说这一层"靠什么活着"。</p>
+
+  <div class="layer l1"><div class="name">L1 模拟小车</div><div class="body">
+    <span class="pill tech">Python 3</span><span class="pill tech">paho-mqtt</span><span class="pill tech">ssl / TLS 8883</span>
+    <span class="pill tech">hmac + hashlib</span><span class="pill tech">threading</span>
+    <span class="pill tech">http.server</span><span class="pill tech">argparse</span><span class="pill tech">JSON</span>
+    <div class="desc">每台车一个独立进程。核心是 <strong>20Hz 状态机 + MQTT 长连接 + 本地调试 HTTP 口</strong>；靠参数 <code>--device</code> 复用同一份代码。</div>
+  </div></div>
+
+  <div class="layer l2"><div class="name">L2 华为云</div><div class="body">
+    <span class="pill tech">IoTDA 标准版</span><span class="pill tech">MQTT Broker</span><span class="pill tech">设备影子</span>
+    <span class="pill tech">物模型 car_status / car_control</span><span class="pill tech">应用侧 REST API</span>
+    <div class="desc">云端不跑我们写的代码，只提供三种能力：<strong>接入、存最后一次上报、转发命令</strong>。配额约 1 万条/日，是很多设计取舍的源头。</div>
+  </div></div>
+
+  <div class="layer l3"><div class="name">L3 业务后端</div><div class="body">
+    <span class="pill tech">Flask</span><span class="pill tech">flask-sock / WebSocket</span>
+    <span class="pill tech">huaweicloudsdkiotda v5</span><span class="pill tech">huaweicloudsdkcore</span>
+    <span class="pill tech">ThreadPoolExecutor</span><span class="pill tech">threading.Lock</span>
+    <span class="pill tech">sqlite3 / WAL</span><span class="pill tech">subprocess</span><span class="pill tech">urllib</span>
+    <span class="pill tech">secrets</span>
+    <div class="desc">全系统枢纽：<strong>一个进程里同时跑 HTTP 服务、轮询线程、旁路线程、WebSocket 推送线程</strong>，共用一份带锁的缓存。22 个 REST 端点 + 1 个 WS 端点。</div>
+  </div></div>
+
+  <div class="layer l4"><div class="name">L4 客户端</div><div class="body">
+    <span class="pill core">原生 HTML/CSS/JS（无框架）</span><span class="pill core">Canvas 2D</span>
+    <span class="pill core">requestAnimationFrame</span><span class="pill core">WebSocket API / fetch</span>
+    <span class="pill core">CSS Grid + media query</span><span class="pill core">localStorage</span>
+    <span class="pill core">HarmonyOS ArkTS / ArkUI</span><span class="pill core">@ohos.net.http</span>
+    <span class="pill core">@ohos.data.preferences</span><span class="pill core">@ohos.web.webview</span>
+    <div class="desc">网页走"浏览器原生能力 + 自研航位推算算法"；APP 走 ArkTS 声明式 UI + 800ms HTTP 轮询。<strong>两边都不直连云端</strong>。</div>
+  </div></div>
+
+  <div class="layer l5"><div class="name">工具链</div><div class="body">
+    <span class="pill">Windows .bat 启动脚本</span><span class="pill">DevEco Studio（hvigor 构建 / 签名）</span>
+    <span class="pill">curl + Python 自测脚本</span><span class="pill">node --check（JS 语法校验）</span>
+    <div class="desc">没有 CI/CD、没有容器、没有包管理锁文件（除鸿蒙工程自带的 oh-package）。属于教学项目刻意保持的简单度。</div>
+  </div></div>
+
+  <div class="warn"><strong>为什么没用 MySQL / Vue / React / Redis？</strong> 因为这是教学项目：状态量小（4 台车）、单机运行、需要学生能一眼看全链路。SQLite 一个文件、原生 JS 一个页面、内存缓存一个字典，比引入框架更利于"看得见"。这不是技术落后，是<strong>刻意控制复杂度</strong>。</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>逐模块技术表：每一项的作用</h2><span class="tag">重点</span></div>
+  <p class="lead">"作用"这一列是核心——写的是<strong>它解决了哪个具体问题，以及去掉它会怎样</strong>。</p>
+
+  <h3 style="font-size:16px;margin:16px 0 8px">2.1 设备模拟层 · <span class="file">device/car_mqtt_client.py</span></h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:19%">技术点</th><th style="width:24%">用在代码里</th><th>作用（去掉会怎样）</th></tr></thead>
+    <tbody>
+      <tr><td><code>paho-mqtt</code></td><td><code>mqtt.Client()</code>、<code>loop_start()</code>、<code>subscribe/publish</code></td><td>Python 的 MQTT 客户端库，负责与 IoTDA 建立<strong>长连接</strong>、订阅命令 topic、发布属性。<strong>没有它设备根本不在线</strong>，云端 ShowDevice 永远返回 OFFLINE。</td></tr>
+      <tr><td><code>ssl</code> + 8883</td><td><code>tls_set()</code></td><td>给 MQTT 套 TLS 加密。IoTDA 设备接入端口 8883 要求加密链路，不配置会握手失败。</td></tr>
+      <tr><td><code>hmac</code> / <code>hashlib</code></td><td>生成 MQTT 密码</td><td>IoTDA 要求密码是"设备密钥 + 时间戳"的 <strong>HMAC-SHA256</strong> 结果，而不是明文密钥。算错就报 <em>Bad user name or password</em>。</td></tr>
+      <tr><td><code>threading.Lock</code></td><td><code>CarSim.lock</code></td><td>运动线程（20Hz 改坐标）和上报线程（读坐标）并发，加锁保证读到的快照不是"半个更新"的脏数据。</td></tr>
+      <tr><td>20Hz 定时积分 <code>TICK_HZ</code></td><td>运动循环</td><td>每 0.05 秒按 <code>x += vx·dt</code> 推一次位置，让车在进程内部是<strong>连续运动</strong>的。这是"实时"的真正源头。</td></tr>
+      <tr><td>三档上报节奏</td><td>5s / 60s / 命令后 ≤2s</td><td>在"云端消息配额"和"状态新鲜度"之间取平衡。事件补报让命令不必干等 5 秒周期才被看见。</td></tr>
+      <tr><td><code>ThreadingHTTPServer</code></td><td>8081~8085 的 <code>/state</code></td><td>每车进程开一个本地调试口，吐内存里 20Hz 的真实状态。<strong>后端 10Hz 高速旁路读的就是它</strong>——屏幕丝滑的关键，也是 V2 当年流畅的原因。</td></tr>
+      <tr><td><code>argparse</code></td><td><code>--device car_001</code></td><td>一份代码跑出 N 台车，身份/密钥/出生点全从 <span class="file">devices.json</span> 读。没有它就得多份复制粘贴的脚本。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:16px 0 8px">2.2 云端接入与 SDK</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:19%">技术点</th><th style="width:24%">用在代码里</th><th>作用（去掉会怎样）</th></tr></thead>
+    <tbody>
+      <tr><td><strong>设备影子</strong></td><td>ShowDeviceShadow</td><td>云端替每台设备保存"最后一次上报的属性"。<strong>它是拉模式能成立的前提</strong>：后端随时来查都有数据，不必等设备此刻在线。代价是数据可能是几秒前的。</td></tr>
+      <tr><td><strong>物模型服务 ID</strong></td><td><code>car_status</code> / <code>car_control</code></td><td>属性上报挂 <code>car_status</code>（x/y/theta/speed/battery），命令下发挂 <code>car_control</code>（move/stop）。<strong>挂错服务命令会石沉大海</strong>。</td></tr>
+      <tr><td><code>huaweicloudsdkiotda.v5</code></td><td>6 个 Request 类</td><td>应用侧 REST SDK，让后端能查状态、查影子、下发命令、增删设备。<strong>后端与云端唯一的对话方式</strong>（网页/APP 都不碰它）。</td></tr>
+      <tr><td><code>BasicCredentials</code> + <code>DerivedCredentials</code></td><td>AK/SK 鉴权</td><td>用账号 AK/SK 给应用侧 API 签名；<code>with_derived_predicate</code> 是 IoTDA 区域服务的特殊要求，漏了会鉴权失败。</td></tr>
+      <tr><td><code>Region(id, endpoint)</code></td><td>客户端 builder</td><td>指定 cn-north-4 实例和接入地址，SDK 才知道往哪台服务器发请求。</td></tr>
+      <tr><td>MQTT topic 约定</td><td><code>$oc/devices/{id}/sys/...</code></td><td>上报与命令的"信封地址"。<strong>这是将来换真车时必须原样照抄的合同</strong>，上面三层因此零改动。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:16px 0 8px">2.3 业务后端 · <span class="file">server/app.py</span>（1083 行，全项目最大）</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:19%">技术点</th><th style="width:24%">用在代码里</th><th>作用（去掉会怎样）</th></tr></thead>
+    <tbody>
+      <tr><td><code>Flask</code></td><td>22 个 <code>@app.get/post/delete</code></td><td>提供 REST 服务与静态页面路由。<strong>所有客户端唯一的入口</strong>（:8000）。没有它网页和 APP 都无处可连。</td></tr>
+      <tr><td><code>flask-sock</code></td><td><code>@sock.route("/ws")</code></td><td>给 Flask 补 WebSocket 能力，服务端可<strong>主动推帧</strong>。没有它乐观回显无法即时送达，页面只能退回轮询。</td></tr>
+      <tr><td><strong>后台线程 + 带锁缓存</strong></td><td><code>poll_loop</code> / <code>STATE_CACHE</code> / <code>CACHE_LOCK</code></td><td>轮询线程每 2 秒抄云端影子写进字典，HTTP 线程只读字典。<strong>让"慢云端"和"快页面"解耦</strong>；加锁防多线程同时读写串数据。</td></tr>
+      <tr><td><code>ThreadPoolExecutor</code></td><td><code>local_fast_loop</code></td><td>10Hz <strong>并发</strong>拉取各车 <code>/state</code>。串行时 3 个离线端口各等 0.15s 超时，会把 10Hz 拖成 2Hz——这是实测踩过的坑。</td></tr>
+      <tr><td><code>urllib.request</code></td><td>本地旁路 HTTP 客户端</td><td>直读同机模拟器进程内存状态，<strong>零云端消息</strong>，不违反 5s/60s 配额约束。可用 <code>V3_LOCAL_FAST=0</code> 关闭（真车接入时）。</td></tr>
+      <tr><td><strong>乐观回显 + 回显守卫</strong></td><td><code>_echo_command_state</code> / <code>ECHO_PENDING</code></td><td>命令被受理的瞬间把预期朝向写进缓存并立即推帧（约 0.3s 可见）；守卫拦住随后到达的旧影子，防止车"画了又跳回"。<strong>这是自研逻辑，不是任何库</strong>，专门解决跟手感。</td></tr>
+      <tr><td><code>subprocess</code> + <code>taskkill</code></td><td><code>/admin/devices/{id}/start|stop</code></td><td>后端在 PC 上拉起/终止模拟器进程。<strong>这是"APP 里点上线，车就在线"的原理</strong>，也是唯一由 L3 反向操作 L1 的受控通道。</td></tr>
+      <tr><td><code>secrets.token_hex</code></td><td>admin 登录 token</td><td>生成随机令牌存在内存字典里，重启即失效。教学级鉴权，够用但不该用于生产。</td></tr>
+      <tr><td>JSON Lines 审计</td><td><span class="file">commands.log</span></td><td>每条命令/管理操作追加一行 JSON，<strong>排查"谁在什么时候下了线"的第一现场</strong>。</td></tr>
+      <tr><td>统一响应包络</td><td><code>{ok:true,...}</code> / <code>{ok:false,error}</code></td><td>所有接口同构，客户端只需判一个字段。<code>executed:true</code> 表示云端已受理，<strong>不等于车已执行</strong>。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:16px 0 8px">2.4 轨迹存储 · <span class="file">server/track_store.py</span></h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:19%">技术点</th><th style="width:24%">用在代码里</th><th>作用（去掉会怎样）</th></tr></thead>
+    <tbody>
+      <tr><td><code>sqlite3</code> + <strong>WAL</strong></td><td><code>fleet.db</code></td><td>单文件嵌入式数据库，无需装服务。<code>PRAGMA journal_mode=WAL</code> 让读写并发不互相锁死；<code>busy_timeout</code> 防止偶发锁等待直接报错。</td></tr>
+      <tr><td>单进程一把 <code>_LOCK</code></td><td>insert / query 串行</td><td>路线图明确"不上多进程"，所以用一把线程锁把写操作串行化，换取实现简单、无竞态。</td></tr>
+      <tr><td>索引 <code>idx_track_dev_ts</code></td><td>按设备 + 时间查询</td><td>轨迹回放按车 + 时间窗过滤，没索引数据量一大就会慢。</td></tr>
+      <tr><td>"变化才插行" + 治理</td><td>7 天过期 / 单车 2 万条</td><td>静止时 60s 的重复上报不产生重复点；定期清理防止 db 无限膨胀。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:16px 0 8px">2.5 网页客户端 · <span class="file">web/*.html</span></h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:19%">技术点</th><th style="width:24%">用在代码里</th><th>作用（去掉会怎样）</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Canvas 2D</strong></td><td><code>getContext("2d")</code></td><td>画地图、网格、车形、轨迹折线。选它而非 DOM 元素，是因为几十台车 + 上百轨迹点用矢量绘制更轻、更可控。</td></tr>
+      <tr><td><code>requestAnimationFrame</code></td><td><code>draw()</code> 自循环</td><td>跟随屏幕刷新率（约 60fps）重绘，配合平滑插值，让车"滑动"而不是"瞬移"。</td></tr>
+      <tr><td><code>fitCanvas()</code> + media query</td><td>画布内部分辨率 / ≤760px 单列</td><td>固定 900×620 在手机上会被压扁；动态重设分辨率 + 窄屏切单列，保证电脑手机都不变形。</td></tr>
+      <tr><td><strong>WebSocket API</strong></td><td><code>new WebSocket("/ws")</code> + 指数退避重连</td><td>大屏接收服务端推送；断线自动重连。APP 没用这个，走的是轮询。</td></tr>
+      <tr><td><code>fetch</code></td><td><code>POST /command</code>、<code>GET /track</code></td><td>发命令、拉轨迹。所有请求都是 JSON。</td></tr>
+      <tr><td><strong>分段航位推算（自研）</strong></td><td><code>applyObs</code> / <code>estPos</code></td><td>把"5 秒一个真实观测点"和"0.25 秒一条命令回显"缝成连续动画：真实修复对齐位置，回显只改朝向且起点沿旧方向推进。<strong>全项目最绕但最关键的前端算法</strong>。</td></tr>
+      <tr><td>自绘确认弹窗</td><td><span class="file">admin.html</span> 的遮罩层</td><td>HarmonyOS Web 组件会吞掉原生 <code>confirm()</code>，导致 APP 里"删除"按钮看似失灵。改成页面内 DOM 弹窗，两端通用。</td></tr>
+      <tr><td><code>localStorage</code></td><td>学习导航的进度勾选</td><td>仅用于教学文档保存学习进度，与业务运行无关。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:16px 0 8px">2.6 鸿蒙 APP · <span class="file">CarFleet/</span></h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:19%">技术点</th><th style="width:24%">用在代码里</th><th>作用（去掉会怎样）</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ArkTS / ArkUI 声明式 UI</strong></td><td><span class="file">Index.ets</span>（1090 行）<code>@Entry</code> / <code>@State</code> / <code>@Builder</code></td><td>状态变化自动刷新 UI，四个视图靠一个状态变量切换。没有它就得手写界面刷新逻辑。</td></tr>
+      <tr><td><code>@ohos.net.http</code></td><td><span class="file">FleetClient.ets</span></td><td>APP 唯一的联网方式：800ms 轮询 <code>/fleet/status</code>、命令 POST、轨迹 GET。<strong>全项目 App↔后端只有 HTTP+JSON 一种协议</strong>。</td></tr>
+      <tr><td><code>@ohos.data.preferences</code></td><td>记住绑定的车</td><td>轻量键值存储，APP 重启后自动恢复上次选中的车。类似网页的 localStorage。</td></tr>
+      <tr><td><code>@ohos.web.webview</code></td><td>第四视图"管理后台"</td><td>用 Web 组件内嵌 <code>/admin/view</code>，不必用 ArkUI 重写一遍后台。必须开 <code>javaScriptAccess</code> + <code>domStorageAccess</code>。</td></tr>
+      <tr><td>ArkUI <code>Canvas</code> / <code>Stack</code> / <code>rotate</code></td><td>实时地图、车形、轨迹</td><td>把网页端的地图与车形能力搬到 APP；<code>carShape</code> 用 <code>scale()</code> 缩放车形。</td></tr>
+      <tr><td><code>ohos.permission.INTERNET</code></td><td><span class="file">module.json5</span></td><td>鸿蒙要求显式声明联网权限，漏了所有请求静默失败。</td></tr>
+      <tr><td>hvigor 构建 + 签名</td><td><span class="file">build-profile.json5</span> 等</td><td>打包 HAP 安装到真机。复制工程时带了旧签名材料会报错，需在 DevEco 里重新自动签名。</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>八个最关键的技术点（单独拎出来记）</h2><span class="tag">点</span></div>
+  <p class="lead">如果时间有限，先记住这八个。它们覆盖了项目里 80% 的设计意图，也是面试/答辩最容易被问到的地方。</p>
+
+  <div class="grid2">
+    <div class="kcard"><div class="t">① 设备影子（拉模式的地基）</div>
+      <div class="where">L2 云端 · 由 <span class="file">app.py</span> 的 ShowDeviceShadow 读取</div>
+      <div class="what">云端为每台设备保存"最后一次上报"，后端随时来查都有值。</div>
+      <div class="why">作用：让后端不必与设备同时在线也能拿到状态。代价：数据天然滞后几秒，后面所有"流畅度"工作都是在补这个代价。</div></div>
+
+    <div class="kcard"><div class="t">② STATE_CACHE（唯一状态源）</div>
+      <div class="where">L3 后端 · <code>dict</code> + <code>threading.Lock</code></div>
+      <div class="what">轮询线程写、HTTP/WS 线程读，全系统只有这一份状态。</div>
+      <div class="why">作用：把"慢云端"和"快客户端"解耦。任何页面、APP、管理后台都不许自己问云端——这条铁律让多端天然一致。</div></div>
+
+    <div class="kcard"><div class="t">③ 乐观回显 + 回显守卫</div>
+      <div class="where">L3 后端 · <code>_echo_command_state</code> / <code>ECHO_PENDING</code></div>
+      <div class="what">命令受理即预测结果并推帧；守卫拦住随后到达的旧影子。</div>
+      <div class="why">作用：把"命令 → 画面可见"从 2~5 秒压到约 0.33 秒，同时防止车"画了又跳回"。这是自研逻辑，项目里最巧妙的一处。</div></div>
+
+    <div class="kcard"><div class="t">④ 本地高速旁路（10Hz /state）</div>
+      <div class="where">L1↔L3 · <code>ThreadingHTTPServer</code> + <code>ThreadPoolExecutor</code></div>
+      <div class="what">后端并发直读模拟器内存里的 20Hz 真实状态。</div>
+      <div class="why">作用：零云端消息、不破配额，让画面显示真实位置而非预测。仅模拟阶段有效，真车接入时用 <code>V3_LOCAL_FAST=0</code> 关闭。</div></div>
+
+    <div class="kcard"><div class="t">⑤ 分段航位推算</div>
+      <div class="where">L4 网页 · <span class="file">monitor.html</span> 的 <code>applyObs</code> / <code>estPos</code></div>
+      <div class="what">真实观测对齐位置，命令回显只改朝向、起点沿旧方向推进。</div>
+      <div class="why">作用：把低频观测点缝成 60fps 连续动画。若把回显当成新观测，车会每 250ms 被拉回旧位置——这正是之前"越改越抖"的 bug。</div></div>
+
+    <div class="kcard"><div class="t">⑥ MQTT 物模型合同</div>
+      <div class="where">L1↔L2 · <code>car_status</code> 上报 / <code>car_control</code> 命令</div>
+      <div class="what">固定的 topic、服务 ID、属性字段、HMAC 鉴权。</div>
+      <div class="why">作用：<strong>第⑧步换真车时，只要固件照抄这套报文，上面三层一行不用改</strong>。这是整个项目坚持协议约束的回报。</div></div>
+
+    <div class="kcard"><div class="t">⑦ SQLite WAL + "变化才插行"</div>
+      <div class="where">L3 存储 · <span class="file">track_store.py</span></div>
+      <div class="what">单文件库、WAL 并发、只记真实影子观测、7 天/2 万条治理。</div>
+      <div class="why">作用：历史数据保真（预测值绝不入库），回放页才有意义；同时避免静止时的重复数据撑爆库。</div></div>
+
+    <div class="kcard"><div class="t">⑧ subprocess 反向管控设备</div>
+      <div class="where">L3→L1 · <code>/admin/devices/{id}/start|stop</code></div>
+      <div class="what">后端按命令行特征拉起/终止模拟器进程。</div>
+      <div class="why">作用：让手机 APP 能远程"上线/下线"PC 上的车。也是四层铁律唯一的受控例外——因为"在线"本质由设备 MQTT 连接决定，后端无法凭空改。</div></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>文件地图：主文件 / 过程性文件 / 产物 / 文档</h2><span class="tag">点</span></div>
+  <p class="lead">按"删掉它系统还能不能跑"分成四类。行数取自当前工程实测，方便你估计阅读量。</p>
+
+  <h3 style="font-size:16px;margin:14px 0 8px"><span class="pill core">A 类 · 主文件</span> 运行时必需，共 12 项</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:27%">文件</th><th style="width:8%">规模</th><th style="width:33%">作用</th><th>谁依赖它 / 改动影响面</th></tr></thead>
+    <tbody>
+      <tr><td><span class="file">server/app.py</span></td><td>1083 行</td><td><strong>全系统枢纽</strong>：22 个 REST 端点 + 1 个 WebSocket、状态轮询、本地旁路、乐观回显、管理后台、轨迹落库触发。</td><td>所有网页与 APP 都连它。改一处接口，网页和 APP 可能同时受影响。</td></tr>
+      <tr><td><span class="file">server/track_store.py</span></td><td>114 行</td><td>SQLite 轨迹库的建表、插入、查询、清理。</td><td>被 app.py <code>import</code>；改表结构会影响 <code>/track</code> 响应格式。</td></tr>
+      <tr><td><span class="file">server/devices.json</span></td><td>4 台车</td><td><strong>车辆注册表</strong>：完整云设备 ID、名称、颜色、密钥、出生点、调试端口、冻结位。</td><td>后端和模拟器都读它。加车/删车必须同时改这里与云端。</td></tr>
+      <tr><td><span class="file">server/cloud_config.json</span></td><td>配置</td><td>华为云 AK/SK、project_id、region、endpoint、product_id。</td><td>所有 SDK 调用与模拟器 MQTT 接入都读它。换云账号只改这里。</td></tr>
+      <tr><td><span class="file">device/car_mqtt_client.py</span></td><td>295 行</td><td><strong>小车本体</strong>：20Hz 状态机、MQTT 接入、命令执行、属性上报、本地 <code>/state</code> 口。</td><td>每台车一个进程实例。改它等于改"车"的定义，真车接入时它是被替换的对象。</td></tr>
+      <tr><td><span class="file">web/monitor.html</span></td><td>476 行</td><td><strong>实时监控大屏</strong>：Canvas 地图、摇杆、车队列表、航位推算、WS 接收。</td><td>路由 <code>/monitor/view</code>。前端"手感"相关改动几乎都在这里。</td></tr>
+      <tr><td><span class="file">web/admin.html</span></td><td>386 行</td><td><strong>B/S 管理后台</strong>：登录、注册、上下线、冻结、删除、云端对账、命令历史。</td><td>路由 <code>/admin/view</code>，APP 内嵌的也是它。改这里 APP 与浏览器同时生效。</td></tr>
+      <tr><td><span class="file">web/track_demo.html</span></td><td>165 行</td><td>轨迹回放页：时间窗、车辆筛选、Canvas 画线、点数/里程统计。</td><td>路由 <code>/track/view</code>，调 <code>GET /track</code>。</td></tr>
+      <tr><td><span class="file">CarFleet/.../net/FleetClient.ets</span></td><td>238 行</td><td>APP 网络层：800ms 轮询、绑定切换、发命令、拉轨迹。</td><td>APP 所有页面共用。改协议字段要同时改它和 app.py。</td></tr>
+      <tr><td><span class="file">CarFleet/.../pages/Index.ets</span></td><td>1090 行</td><td>APP 四个视图（车队/操控/轨迹详情/内嵌后台）+ 车形绘制 + 摇杆 + Preferences。</td><td>APP 唯一主页面。改 ArkTS 必须在 DevEco 重新构建。</td></tr>
+      <tr><td><span class="file">CarFleet/.../module.json5</span>、<span class="file">app.json5</span></td><td>配置</td><td>声明 INTERNET 权限、页面路由、bundleName。</td><td>漏权限则 APP 所有网络请求静默失败。</td></tr>
+      <tr><td><span class="file">start_car_001~003.bat</span>、<span class="file">start_all_cars.bat</span></td><td>启动脚本</td><td>分窗口启动模拟器进程。</td><td>方便手工启动；也可改用后台的"上线"按钮，功能等价。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:18px 0 8px"><span class="pill test">B 类 · 过程性 / 测试文件</span> 开发验收用，删掉不影响运行</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:27%">文件</th><th style="width:14%">属于哪一步</th><th style="width:34%">作用</th><th>为什么是"过程性"</th></tr></thead>
+    <tbody>
+      <tr><td><span class="file">device/verify_step1.py</span></td><td>第 ① 步验收</td><td>连云端逐台查 ShowDevice 状态与影子，确认双实例位置互不串扰（5/5 通过）。</td><td>只在第①步验收时跑一次，系统运行完全不依赖它。</td></tr>
+      <tr><td><span class="file">server/test_api.py</span></td><td>第 ② 步起累积</td><td>接口自测：从最初 27 项扩到 <strong>50 项</strong>，覆盖命令、冻结闭环、MOVE、管理接口。</td><td>是"测试脚手架"，不参与运行；怀疑哪里坏了才跑一遍。</td></tr>
+      <tr><td><span class="file">server/drive_cars.py</span></td><td>第 ③ 步验收</td><td>让车随机驾驶若干分钟，<strong>造轨迹数据</strong>供回放演示，结束自动刹停。</td><td>只用于演示造数据，日常运行不需要。</td></tr>
+      <tr><td><span class="file">web/fleet_console.html</span></td><td>第 ② 步展示页</td><td>早期的"车队控制台"，用表格列状态、按钮发命令（<code>/console/view</code>）。</td><td>后来被 <span class="file">monitor.html</span> 实时大屏取代，但路由仍保留作历史对照。</td></tr>
+      <tr><td><span class="file">docs/V3-开发路线图.md</span></td><td>开发前设计</td><td>八步计划、每步验收标准、风险表、进度记录。</td><td>过程管理文档，不是运行代码；学习"为什么这样演进"时很有价值。</td></tr>
+      <tr><td><span class="file">docs/V3-接口协议设计.md</span></td><td>开发前设计</td><td>协议 v1.1：包络、命令集、字段、错误码的<strong>最初约定</strong>。</td><td>设计稿。实际实现在 app.py，查接口请以接口文档为准。</td></tr>
+      <tr><td><span class="file">docs/V3-网络结构图.html</span></td><td>早期版本</td><td>四端点静态拓扑图（当时把轨迹回放画在客户端层内部）。</td><td>被后来的<strong>五端交互版</strong>取代，留作版本对照。</td></tr>
+      <tr><td><span class="file">README.md</span></td><td>随步骤更新</td><td>启动命令、目录结构、接口速查。</td><td>说明文档，且部分内容停留在第②步（如"27 项通过"），读时注意。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:18px 0 8px"><span class="pill gen">C 类 · 运行时自动生成</span> 不是源码，不要手改</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:27%">文件 / 目录</th><th>产生方式与用途</th></tr></thead>
+    <tbody>
+      <tr><td><span class="file">server/fleet.db</span>（含 <code>-wal</code> / <code>-shm</code>）</td><td>后端首次启动时由 track_store.init() 建库。WAL 两个伴生文件是 SQLite 的并发日志，删掉前需停后端。</td></tr>
+      <tr><td><span class="file">server/commands.log</span></td><td>每条命令/管理操作追加的 JSON Lines 审计日志，排问题时的第一现场。</td></tr>
+      <tr><td><span class="file">server/__pycache__</span>、<span class="file">device/__pycache__</span></td><td>Python 自动生成的字节码缓存，删了会自动重建。</td></tr>
+      <tr><td><span class="file">CarFleet/build/</span>、<span class="file">oh_modules/</span>、<span class="file">oh-package-lock.json5</span></td><td>DevEco / hvigor 的构建产物与依赖锁，由工具自动生成。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="font-size:16px;margin:18px 0 8px"><span class="pill doc">D 类 · 讲解文档</span> 学习资料，与运行无关</h3>
+  <div class="card" style="font-size:14px">
+    <p><span class="file">docs/V3-项目架构详解.md</span>（精确接口与踩坑）、<span class="file">docs/V3-笨蛋级详解.md</span>（生活比喻，入门首选）、<span class="file">docs/V3-分层架构与接口.md</span>（L1~L4 逐层）、<span class="file">docs/V3-接口文档.html</span>（22 端点速查）、<span class="file">docs/V3-网络组织结构图-交互版.html</span>（五端可点击）、<span class="file">docs/V3-学习导航.html</span>（学习地图）、<strong>以及本文件</strong>。</p>
+    <p style="margin:0" class="note">后续每份讲解文件都按 <span class="file">V3-学-主题.html</span> 命名，统一放在 docs 下，和导航互相链接。</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>文件之间谁读谁（依赖图）</h2><span class="tag">把"面"和"点"连起来</span></div>
+  <p class="lead">把上面的分类换成"读取关系"，就能看出为什么 <span class="file">devices.json</span> 和 <span class="file">app.py</span> 是全项目最不能动的两个文件。</p>
+
+  <div class="tree">
+<span class="c2">启动顺序</span>：先 <span class="c1">app.py</span>（后端 :8000）→ 再让各车<span class="c1">上线</span>（管理后台按钮 或 .bat）
+
+<span class="c2">[配置层] 被最多人读</span>
+  server/<span class="c1">devices.json</span>  ──被读──▶  app.py（注册表 / 颜色 / 冻结 / 端口）
+                          ──被读──▶  car_mqtt_client.py（身份 / 密钥 / 出生点）
+                          ──被读──▶  verify_step1.py、test_api.py、drive_cars.py
+  server/<span class="c1">cloud_config.json</span> ─被读──▶ app.py（SDK 鉴权）＋ car_mqtt_client.py（MQTT 接入）
+
+<span class="c2">[后端进程]</span>
+  app.py ──import──▶ track_store.py ──建/查──▶ fleet.db (SQLite WAL)
+  app.py ──追加────▶ commands.log
+  app.py ──send_file──▶ web/monitor.html / admin.html / track_demo.html / fleet_console.html
+  app.py ──subprocess 拉起/终止──▶ car_mqtt_client.py --device car_00N
+  app.py ──urllib 10Hz 直读────▶ 各车 :808N/state
+  app.py ──SDK (AK/SK)────────▶ 华为云 IoTDA
+
+<span class="c2">[设备进程 ×N]</span>
+  car_mqtt_client.py ──MQTT 8883──▶ IoTDA（car_status 上报 / car_control 命令）
+  每个进程 ──监听──▶ :808N/state（供后端旁路读取）
+
+<span class="c2">[客户端]</span>
+  monitor.html ──WebSocket /ws + POST /command──▶ app.py
+  admin.html   ──/admin/* + X-Auth-Token────────▶ app.py
+  track_demo.html ──GET /track──────────────────▶ app.py
+  CarFleet/FleetClient.ets ──HTTP :8000─────────▶ app.py
+  CarFleet/Index.ets ──Web 组件加载 /admin/view──▶ admin.html
+
+<span class="c3">过程性文件（虚线，仅开发期）：verify_step1.py / test_api.py / drive_cars.py
+它们只读配置、只调接口，不被任何运行时代码引用。</span>
+  </div>
+
+  <div class="q"><div class="lab">从这张图能读出的三件事</div>
+    <ul>
+      <li><strong>配置文件比代码更"中心"</strong>：devices.json 被 5 处读取，改字段格式会同时炸到后端、模拟器、测试脚本。</li>
+      <li><strong>app.py 是唯一枢纽</strong>：所有客户端、云端 SDK、模拟器进程、数据库都只与它相连。</li>
+      <li><strong>过程性文件全是"单向读取"</strong>：没有任何运行时代码 import 它们，所以删掉绝对安全。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>技术栈相关的常见坑 + 自测</h2></div>
+  <div class="grid2">
+    <div class="card"><h3>容易踩的 8 个坑</h3>
+      <ul style="font-size:13.5px">
+        <li><code>ListDevices</code> 的 device_id 过滤参数不生效 → 查在线必须用 <code>ShowDevice</code>；limit 上限 50，写 100 会报 400。</li>
+        <li>命令体类名是 <code>DeviceCommandRequest</code>，不是文档里的 CommandBody。</li>
+        <li>影子响应结构是 <code>response.shadow[].reported.properties</code>，值可能是 Decimal。</li>
+        <li>命令 service_id 必须是 <code>car_control</code>，属性上报才是 <code>car_status</code>。</li>
+        <li>node_id 要按<strong>第一个</strong>下划线切（完整 ID 里产品 ID 也含下划线）。</li>
+        <li>模拟器黑窗 = 车本体，关掉就下线；多个实例互踢会让命令被随机进程接收。</li>
+        <li>APP Web 组件吞掉原生 <code>confirm()</code>，弹窗必须自绘。</li>
+        <li>8000 端口曾同时挂新旧两个后端进程（SO_REUSEADDR），改了代码没生效要先查进程。</li>
+      </ul>
+    </div>
+    <div class="card"><h3>与前后知识点的连接</h3>
+      <ul style="font-size:13.5px">
+        <li><strong>往前</strong>：接《学习导航》的「面」——地图 C 文件地图就是本文件的第 4 节展开版。</li>
+        <li><strong>往后（线）</strong>：想看这些技术怎么协作 → 问「控车时序图」「状态上行链路」。</li>
+        <li><strong>往后（点）</strong>：想钻某个技术 → 问「乐观回显与守卫」「分段航位推算」「SQLite WAL 为什么用」。</li>
+        <li><strong>横向</strong>：接口字段细节查 <span class="file">V3-接口文档.html</span>；五端连接查交互版网络图。</li>
+      </ul>
+      <p style="margin:0" class="note">一句话定位：这份文档回答"<strong>用什么、文件在哪</strong>"，下一份该回答"<strong>它们怎么一起动起来的</strong>"。</p>
+    </div>
+  </div>
+
+  <h3 style="font-size:16px;margin:16px 0 8px">自测小问题（点开看答案）</h3>
+  <details><summary>1. 为什么项目不用 MySQL，而用 SQLite 一个文件？</summary><div class="body">
+    <p>教学项目、单机单进程、数据量小（4 台车 × 变化才插行）。SQLite 零安装、零配置，WAL 已足够应付"一个线程写、几个线程读"。引入 MySQL 会多出服务、账号、连接池三件事，却不会带来收益。</p></div></details>
+  <details><summary>2. <code>paho-mqtt</code> 和 <code>huaweicloudsdkiotda</code> 都是"连华为云"，区别在哪？</summary><div class="body">
+    <p>方向完全不同：<strong>paho-mqtt 是设备侧</strong>（模拟器/真车用，长连接、上报、收命令，走 8883）；<strong>SDK 是应用侧</strong>（后端用，HTTPS 短请求、查影子、下发命令、管理设备，用 AK/SK 鉴权）。两者从不混用。</p></div></details>
+  <details><summary>3. 后端为什么要同时开 REST 和 WebSocket 两种服务？</summary><div class="body">
+    <p>REST 负责"客户端主动问"（查询、发命令、管理）；WebSocket 负责"服务端主动推"（状态变化、乐观回显即时送达）。只靠 REST 就得高频轮询，命令回显会有明显延迟。</p></div></details>
+  <details><summary>4. <code>ThreadPoolExecutor</code> 在这里解决的是什么问题？</summary><div class="body">
+    <p>后端 10Hz 要拉 4 台车的 <code>/state</code>，没启动的车端口要等 0.15s 超时。串行时 3 个离线端口就吃掉 0.45s，刷新率掉到 2Hz。改成并发后超时重叠，仍能保持 10Hz。</p></div></details>
+  <details><summary>5. 哪些文件可以放心删掉而系统照样跑？</summary><div class="body">
+    <p>B 类过程性文件（<code>verify_step1.py</code>、<code>test_api.py</code>、<code>drive_cars.py</code>、<code>fleet_console.html</code> 需同时去掉路由引用）和 C 类自动生成产物（<code>__pycache__</code>、构建目录）。<strong>但 devices.json、cloud_config.json、app.py、track_store.py、car_mqtt_client.py 一个都不能少</strong>。</p></div></details>
+  <details><summary>6. 第⑧步接真车时，技术栈里哪一块会被替换？</summary><div class="body">
+    <p>只替换 L1：<code>car_mqtt_client.py</code> 由真车固件（同样的 MQTT 8883 + HMAC 鉴权 + car_status/car_control 报文）取代，同时用 <code>V3_LOCAL_FAST=0</code> 关闭只在本机有效的 /state 旁路、移除 subprocess 启停。L2/L3/L4 的代码与协议都不用改。</p></div></details>
+</section>
+
+<footer>
+  V3 学 · 技术栈与文件地图 ｜ 2026-11-08 ｜ 同系列：<span class="file">V3-学习导航.html</span> ｜ 信息核对自当前工程源码（app.py 1083 行 / 22 端点 / 4 台注册车）
+</footer>
+</div>
+</body>
+</html>

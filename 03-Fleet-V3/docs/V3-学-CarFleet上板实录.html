@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · 把 CarFleet 装到 DAYU200 实录</title>
+<style>
+  :root{--bg:#f5f8fc;--card:#fff;--ink:#1f2933;--dim:#5b6b7c;--line:#dde5ee;
+        --c0:#3f51b5;--c1:#0f8a8a;--c2:#d97706;--c3:#7c3aed;--hot:#b23b2e;--good:#2f9e56;
+        --shadow:0 2px 10px rgba(31,41,51,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.75;font-size:15px;
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,-apple-system,sans-serif}
+  a{color:#1d6fa5;text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;font-family:Consolas,monospace;color:#234}
+  pre{background:#1e2a38;color:#e9f2f8;border-radius:8px;padding:12px 14px;font-size:12.5px;
+      font-family:Consolas,monospace;line-height:1.65;overflow-x:auto;margin:8px 0 0;
+      white-space:pre-wrap;word-break:break-all}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a 0%,#1c5c6e 100%);color:#fff;padding:34px 20px 30px}
+  .hero .inner{max-width:1120px;margin:0 auto}
+  .hero h1{margin:0 0 8px;font-size:26px}
+  .hero .sub{font-size:14.5px;color:#c7dbe6;margin:0 0 12px}
+  .hero p{max-width:960px;margin:0 0 8px;color:#e6f0f5;font-size:14px}
+  .hero .back{display:inline-block;margin-top:12px;color:#a8f0dc;font-size:13px;margin-right:16px}
+  .topnav{position:sticky;top:0;z-index:9;background:#fff;border-bottom:1px solid var(--line);
+          box-shadow:0 1px 6px rgba(31,41,51,.05)}
+  .topnav .inner{max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;gap:2px;padding:8px 20px}
+  .topnav a{font-size:13px;color:var(--dim);padding:6px 11px;border-radius:20px}
+  .topnav a:hover{background:#eef3f9;color:var(--ink);text-decoration:none}
+  section{margin-top:34px;scroll-margin-top:58px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+  .sec-no{width:34px;height:34px;flex:none;border-radius:9px;color:#fff;font-weight:700;
+          display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--c1)}
+  .sec-head h2{margin:0;font-size:21px}
+  .sec-head .tag{font-size:12px;color:var(--dim);background:#eaf0f6;padding:3px 10px;border-radius:12px}
+  .lead{color:var(--dim);margin:0 0 14px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+  .card h3{margin:0 0 8px;font-size:16px}.card p{margin:0 0 8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.grid2,.grid3{grid-template-columns:1fr}}
+  .concl{background:linear-gradient(100deg,#eef7f6,#f2f5ff);border-left:5px solid var(--c1);
+         border-radius:10px;padding:18px 20px;font-size:17px;font-weight:600;line-height:1.85}
+  .concl small{display:block;font-weight:400;font-size:14px;color:var(--dim);margin-top:8px}
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px;background:#eaf0f6;
+        color:var(--dim);margin:0 5px 3px 0;white-space:nowrap}
+  .pill.ok{background:#e5f5e9;color:#237a3a}.pill.hot{background:#fdecea;color:#b23b2e}
+  .pill.l{background:#f0e9fb;color:#6632ad}.pill.d{background:#fdf0dc;color:#a35b06}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#eef3f9;font-weight:700}tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line)}
+  .file{font-family:Consolas,monospace;font-size:.88em;color:#7a4b00;background:#fff5e3;
+        padding:1px 5px;border-radius:4px}
+  ul{margin:6px 0 8px;padding-left:22px}li{margin:4px 0}
+  .note{font-size:13px;color:var(--dim)}
+  .okbox{background:#eef9f2;border-left:4px solid var(--good);padding:10px 14px;border-radius:6px;margin:10px 0}
+  .warn{background:#fff6f5;border-left:4px solid var(--hot);padding:10px 14px;border-radius:6px;margin:10px 0}
+  .bar{border-left:4px solid var(--c1);border-radius:4px;padding-left:14px;margin:10px 0}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .tabs button,.steps button{border:1px solid var(--line);background:#fff;border-radius:8px;
+        padding:7px 13px;font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--dim)}
+  .tabs button.on{background:var(--c1);border-color:var(--c1);color:#fff;font-weight:700}
+  .steps button.on{background:var(--c0);border-color:var(--c0);color:#fff}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+  .detail{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow)}
+  .detail h3{margin:0 0 8px;font-size:17px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:12.5px}
+  .meta b{background:#eaf0f6;color:var(--dim);padding:3px 8px;border-radius:5px;font-weight:600}
+  .meta span{background:#f6f9fc;padding:3px 8px;border-radius:5px;color:#334}
+  svg{width:100%;height:auto;display:block;background:#fbfdff;border:1px solid var(--line);border-radius:10px}
+  .nd{cursor:pointer}.nd rect{stroke-width:2;transition:fill .25s,stroke .25s}
+  .nd:hover rect{stroke:var(--c0)}
+  .nd text{font-size:12px;font-family:"Microsoft YaHei",sans-serif;pointer-events:none}
+  .nd .small{font-size:10px}
+  .q{border:1px solid var(--line);border-radius:9px;background:#fff;padding:13px 15px;margin-bottom:10px}
+  .q p{margin:0 0 8px;font-weight:600}
+  .q label{display:block;font-size:13.5px;padding:3px 0;cursor:pointer}
+  .q .fb{font-size:12.5px;margin-top:7px;padding:6px 9px;border-radius:5px;display:none}
+  .q .fb.y{display:block;background:#e9f7ee;color:#1d6b36}
+  .q .fb.n{display:block;background:#fdecea;color:#a13325}
+  .shot{max-width:340px;width:100%;border:1px solid var(--line);border-radius:10px;display:block;margin:6px 0}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <h1>把 CarFleet 装到 DAYU200：一次真实的「装上了，但跑不起来」</h1>
+    <p class="sub">第 ⑦ 步之后 · 设备适配专题 · 2026-11-08 17:02 实测 · 全部命令与输出均为真实执行结果</p>
+    <p>目标明确：<b>把 <span style="font-family:Consolas;background:#ffffff22;padding:1px 5px">E:\Harmony\Project\CarFleet</span> 这个 V3 车队 APP 装到板子上</b>。板子预装的「寻检车云控」不是你的软件，本页不再拿它当交付。</p>
+    <a class="back" href="V3-学习导航.html">← 返回学习导航</a>
+    <a class="back" href="V3-学-把软件装到DAYU200开发板.html">← 上一份（已订正）</a>
+    <a class="back" href="V3-学-HAP构建签名与真机安装.html">← HAP / 签名基础</a>
+  </div>
+</div>
+
+<div class="topnav"><div class="inner">
+  <a href="#s1">1 一句话结论</a><a href="#s2">2 生活比喻</a><a href="#s3">3 项目位置</a>
+  <a href="#s4">4 文件与接口</a><a href="#s5">5 逐步拆解配图</a><a href="#s6">6 常见坑</a><a href="#s7">7 自测</a>
+</div></div>
+
+<div class="wrap">
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>一句话结论</h2><span class="tag">先给答案</span></div>
+  <div class="concl">
+    <b>装上了，但一点开就崩。</b>CarFleet 的 HAP 经「改版本声明 + 换 OpenHarmony 官方调试签名」后，<code>hdc install</code> 返回 <code>install bundle successfully</code>，板子桌面出现了它的图标；<code>aa start</code> 也返回成功，但进程几秒后被系统杀掉，日志是 <code>Cpp Crash / signal 6</code>。
+    <small>根因不在签名、不在车、不在网络：<b>包里 <code>ets/modules.abc</code> 是 HarmonyOS 6.0.2(22) 的方舟字节码（<code>ark13.0.1.0</code>），而板子是 OpenHarmony 5.0.3.135 / API 15</b>。改 <code>module.json</code> 里的版本号只能骗过安装器的静态检查，骗不过真正执行代码的运行时。要真正跑起来，<b>必须用匹配板子的 SDK 把源码重新编译一遍</b>，没有第二条捷径。</small>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>这次到底做到了哪一步</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>环节</th><th>结果</th><th>证据</th></tr></thead>
+      <tbody>
+        <tr><td>确认目标软件</td><td><span class="pill ok">明确</span> 是 <code>CarFleet</code>，不是板子预装应用</td><td>用户两次确认；<code>v3-fleet</code> 目录内没有任何 <code>.ets</code> / <code>module.json5</code></td></tr>
+        <tr><td>原包直接装</td><td><span class="pill hot">失败</span> <code>9568322</code></td><td><code>signature verification failed due to not trusted app source</code>（HarmonyOS 商用调试签名）</td></tr>
+        <tr><td>换 OpenHarmony 官方调试签名</td><td><span class="pill ok">成功</span></td><td><code>sign-profile success</code> + <code>Sign Hap success!</code></td></tr>
+        <tr><td>按 OpenHarmony 规则降版本声明</td><td><span class="pill ok">安装成功</span></td><td><code>install bundle successfully</code>；<code>bm dump -a</code> 出现 <code>com.example.carfleet</code>；桌面出现图标</td></tr>
+        <tr><td>启动运行</td><td><span class="pill hot">崩溃</span></td><td><code>Kill Reason:Cpp Crash</code>、<code>exit with signal:6</code>、<code>SafeInsideStub: The stub file is not loaded</code></td></tr>
+        <tr><td>连后端控车</td><td><span class="pill d">未到这一步</span></td><td>PC 的 V3 后端当前<b>没在跑</b>（你取消了那个后台进程），而且 APP 本身还没跑起来</td></tr>
+      </tbody>
+    </table></div>
+    <div class="okbox"><b>交付给你的是：</b>一个真的进了板子的 CarFleet 安装包、一份能照着复现的完整命令链、一张桌面截图、以及一条明确的「下一步该编译什么」。<b>没有烧录系统、没有改动 CarFleet 源码、没有写入任何密钥。</b></div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>生活比喻</h2><span class="tag">为什么「能装」不等于「能跑」</span></div>
+  <div class="card">
+    <p>把装 APP 想成<b>拿一盘磁带去一台老录音机上播放</b>：</p>
+    <div class="grid3">
+      <div class="card" style="margin:0;background:#f2f6ff">
+        <h3>门票（签名）</h3>
+        <p>门卫先查你有没有进门资格。CarFleet 原来那张门票是 HarmonyOS 商场发的，板子不认 → <code>9568322</code>。换成 OpenHarmony 官方调试门票（绑定板子 UDID）后，门开了。</p>
+      </div>
+      <div class="card" style="margin:0;background:#fff8ec">
+        <h3>封面标签（版本声明）</h3>
+        <p>门卫还看封面上写「适用机型」。原标签写 <code>minAPIVersion=60002022</code>（HarmonyOS 的 8 位编码），板子按 OpenHarmony 规则一读，觉得「我版本太老」→ <code>9568297</code>。改成 <code>12</code> 后放行。</p>
+      </div>
+      <div class="card" style="margin:0;background:#fff6f5">
+        <h3>磁带内容（字节码）</h3>
+        <p>前两关都是<b>看包装</b>。真正放音时，老录音机读不懂新格式 → <code>Cpp Crash</code>。这就是 <code>ets/modules.abc</code>，它由 DevEco 用 API 22 工具链编译，改包装改不了它。</p>
+      </div>
+    </div>
+    <div class="warn"><b>一句话记住：</b>签名管「准不准进」，版本声明管「让不让装」，字节码管「跑不跑得动」。前两个能靠改包解决，第三个只能靠<b>重新编译源码</b>。</div>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>项目位置</h2><span class="tag">先搞清「你的软件」在哪</span></div>
+  <div class="card">
+    <div class="tblwrap"><table>
+      <thead><tr><th>对象</th><th>路径 / 值</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>V3 项目本体</td><td><span class="file">E:\Harmony\Project\v3-fleet</span></td><td><b>里面没有 APP 工程</b>：只有 <code>server/</code>（Flask 8000）、<code>device/</code>（模拟器）、<code>web/</code>（监控/后台/轨迹/AI 页面）、<code>docs/</code>。全项目 <code>find *.ets</code> 结果为 0</td></tr>
+        <tr><td>V3 的 APP</td><td><span class="file">E:\Harmony\Project\CarFleet</span></td><td>独立的 HarmonyOS 工程，<code>bundleName=com.example.carfleet</code>，四视图（车队/操控/轨迹/后台）+ 后来的 AI 控车入口</td></tr>
+        <tr><td>编译配置</td><td><span class="file">CarFleet\build-profile.json5</span></td><td><code>runtimeOS: HarmonyOS</code>、<code>targetSdkVersion/compatibleSdkVersion: 6.0.2(22)</code>、签名类型 HarmonyOS</td></tr>
+        <tr><td>包内真实声明</td><td><span class="file">entry-default-unsigned.hap → module.json</span></td><td><code>compileSdkType=HarmonyOS</code>、<code>minAPIVersion=60002022</code>、<code>virtualMachine=ark13.0.1.0</code>、<code>deviceTypes=["phone"]</code></td></tr>
+        <tr><td>板子</td><td>润和 HH-SCDAYU200 / RK3568</td><td><code>hdc</code> 序列号 <code>dd011a4144363141301012700805ac00</code>；系统 <b>OpenHarmony 5.0.3.135 / API 15</b>；UDID <code>5EEB7A6C...A071C</code></td></tr>
+        <tr><td>板子预装应用</td><td><code>com.example.smart_car_oh</code></td><td><code>appDistributionType: os_integration</code>，系统镜像自带，<b>不是你的软件</b>；「寻检车云控」是它</td></tr>
+        <tr><td>本机可用 SDK</td><td>API 20 / 22 / 26</td><td><span class="pill hot">关键缺口</span> 没有 API 12/15，所以暂时编不出板子能跑的包</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <h3>实际运行画面（板子截图，非模拟）</h3>
+    <img class="shot" src="DAYU200-CarFleet-运行截图.jpeg" alt="DAYU200 桌面，第二行右侧出现新装的 CarFleet 图标">
+    <p class="note">桌面第二行右侧那个标签显示 <code>$string:app</code> 的图标，就是刚装上的 <code>com.example.carfleet</code>。标签没解析出来也是资源索引与板子运行时不匹配的又一个信号；其余「寻检车云控」「遥控」等是板子原有应用。</p>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>文件与接口</h2><span class="tag">这次新增 / 用到的东西</span></div>
+  <div class="grid2">
+    <div class="card">
+      <h3>新增文件</h3>
+      <div class="tblwrap"><table>
+        <thead><tr><th>文件</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><span class="file">CarFleet\entry\build\default\outputs\default\carfleet-oh-unsigned.hap</span></td><td>从官方未签名包重打：版本声明改成 OpenHarmony 规则、补 <code>deviceTypes</code></td></tr>
+          <tr><td><span class="file">...\carfleet-oh-signed.hap</span></td><td><b>最终成品</b>，370128 字节，已装进板子</td></tr>
+          <tr><td><span class="file">OpenHarmonySDK\signing\carfleet-debug-profile.json / .p7b</span></td><td>绑定 <code>com.example.carfleet</code> + 板子 UDID 的调试 profile（p7b 为已签名版）</td></tr>
+          <tr><td><span class="file">OpenHarmonySDK\signing\profile-correct-chain.pem</span></td><td>从已验证 p7b 导出的 CA 签发 leaf，拼成 leaf → CA → root 三级证书链</td></tr>
+          <tr><td><span class="file">docs\DAYU200-CarFleet-运行截图.jpeg</span></td><td>安装后的板子桌面实拍</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">CarFleet 源码、<code>build-profile.json5</code>、<code>module.json5</code> <b>一行没改</b>；改动只发生在构建产物和签名材料上。</p>
+    </div>
+    <div class="card">
+      <h3>关键命令（三条骨架）</h3>
+<pre># 1) 生成绑定板子的调试 profile
+java -jar hap-sign-tool.jar sign-profile ^
+  -mode localSign ^
+  -keyAlias "openharmony application profile debug" ^
+  -profileCertFile profile-correct-chain.pem ^
+  -inFile carfleet-debug-profile.json ^
+  -signAlg SHA256withECDSA ^
+  -keystoreFile OpenHarmony.p12 ^
+  -keystorePwd 123456 -keyPwd 123456 ^
+  -outFile carfleet-debug-profile.p7b
+
+# 2) 用官方应用证书签 HAP
+java -jar hap-sign-tool.jar sign-app ^
+  -mode localSign ^
+  -keyAlias "openharmony application release" ^
+  -appCertFile app-sign-chain.pem ^
+  -profileFile carfleet-debug-profile.p7b ^
+  -inFile carfleet-oh-unsigned.hap ^
+  -signAlg SHA256withECDSA ^
+  -keystoreFile OpenHarmony.p12 ^
+  -keystorePwd 123456 -keyPwd 123456 ^
+  -outFile carfleet-oh-signed.hap
+
+# 3) 安装 / 启动 / 看日志
+hdc -t &lt;板子序列号&gt; install -r carfleet-oh-signed.hap
+hdc -t &lt;板子序列号&gt; shell aa start -b com.example.carfleet -a EntryAbility
+hdc -t &lt;板子序列号&gt; shell "hilog -x | grep -iE 'carfleet|crash|ArkCompiler'"</pre>
+      <p class="note">工具位置：<span class="file">E:\Harmony\AppData\Local\OPenHarmony\Sdk\20\toolchains\lib\hap-sign-tool.jar</span>；Java 用 <span class="file">DevEco Studio\jbr\bin\java.exe</span>。签名口令是 SDK 自带调试证书的公开默认值，不含你的账号密钥。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>逐步拆解配图</h2><span class="tag">点步骤看真实输出</span></div>
+  <p class="lead">下面 8 步是这次实际走过的顺序，<b>每一步的终端输出都是原样记录</b>。点按钮或按键盘左右键切换；点图中方块可看该层职责。</p>
+
+  <div class="card">
+    <svg id="topo" viewBox="0 0 1040 250" role="img" aria-label="CarFleet 上板的四道关卡">
+      <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#9aa9ba"></path></marker></defs>
+      <text x="16" y="22" font-size="13" fill="#5b6b7c" font-family="Microsoft YaHei">从「一个 HarmonyOS 包」到「板子上能点开的图标」· 前四关都过了，最后一关没过</text>
+      <g class="nd" data-node="n0"><rect x="18" y="52" width="180" height="66" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="108" y="80" text-anchor="middle" fill="#1f2933">CarFleet 源码</text>
+        <text class="small" x="108" y="100" text-anchor="middle" fill="#5b6b7c">ArkTS · API 22 编译</text></g>
+      <g class="nd" data-node="n1"><rect x="232" y="52" width="180" height="66" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="322" y="80" text-anchor="middle" fill="#1f2933">包内声明</text>
+        <text class="small" x="322" y="100" text-anchor="middle" fill="#5b6b7c">module.json / pack.info</text></g>
+      <g class="nd" data-node="n2"><rect x="446" y="52" width="180" height="66" rx="9" fill="#eef3f9" stroke="#9aa9ba"></rect>
+        <text x="536" y="80" text-anchor="middle" fill="#1f2933">签名</text>
+        <text class="small" x="536" y="100" text-anchor="middle" fill="#5b6b7c">profile + 证书链</text></g>
+      <g class="nd" data-node="n3"><rect x="660" y="52" width="180" height="66" rx="9" fill="#e5f5e9" stroke="#2f9e56"></rect>
+        <text x="750" y="80" text-anchor="middle" fill="#1f2933">安装进板子</text>
+        <text class="small" x="750" y="100" text-anchor="middle" fill="#2f7a45">install bundle successfully</text></g>
+      <g class="nd" data-node="n4"><rect x="874" y="52" width="150" height="66" rx="9" fill="#fdecea" stroke="#b23b2e"></rect>
+        <text x="949" y="80" text-anchor="middle" fill="#1f2933">运行时</text>
+        <text class="small" x="949" y="100" text-anchor="middle" fill="#a13325">Cpp Crash</text></g>
+      <path d="M198,85 L230,85" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path d="M412,85 L444,85" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path d="M626,85 L658,85" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <path d="M840,85 L872,85" stroke="#9aa9ba" stroke-width="2.5" fill="none" marker-end="url(#ar)"></path>
+      <text x="18" y="158" font-size="12" fill="#5b6b7c" font-family="Microsoft YaHei">已通过：静态检查（版本 / 设备类型）、签名信任（UDID 绑定）、包完整性</text>
+      <text x="18" y="182" font-size="12" fill="#b23b2e" font-family="Microsoft YaHei">未通过：ets/modules.abc 的 ark13.0.1.0 字节码 → 板子 API 15 方舟运行时加载失败</text>
+      <text x="18" y="212" font-size="12" fill="#5b6b7c" font-family="Microsoft YaHei">结论：前四步可以靠「改包」完成，最后一步只能靠「换 SDK 重新编译源码」</text>
+    </svg>
+  </div>
+
+  <div class="steps" id="stepBtns"></div>
+  <div class="detail" id="detail"></div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>错误码演进：每一条都在告诉你下一处该改什么</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>尝试</th><th>返回</th><th>含义</th><th>下一步</th></tr></thead>
+      <tbody>
+        <tr><td>原签名包直接装</td><td><code>9568322</code></td><td>签名来源不被信任（HarmonyOS 调试证书，板子不认）</td><td>换 OpenHarmony 官方调试签名</td></tr>
+        <tr><td><code>profile-debug-chain.pem</code> 签 profile</td><td><code>11013002</code></td><td>证书链签名不匹配（首张 leaf 是自签的）</td><td>从已验证 p7b 里导出 CA 签发的 leaf</td></tr>
+        <tr><td>单张 <code>profile-debug-leaf.pem</code></td><td><code>11013004</code></td><td>profile 证书必须是三级链，不能只给一张</td><td>拼 leaf → Application CA → Root CA</td></tr>
+        <tr><td>降版本但用 <code>50003015</code></td><td><code>9568297</code></td><td><code>older sdk version in the device</code>，HarmonyOS 8 位编码被按 OH 规则读</td><td>改成纯数字 <code>12</code>，与板上已装应用一致</td></tr>
+        <tr><td>最终包</td><td><span class="pill ok">install bundle successfully</span></td><td>静态检查全过，图标进桌面</td><td>启动 → 撞上运行时崩溃</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <h3>下一步：三条真正能让「你的 APP 跑起来」的路</h3>
+    <div class="tabs" id="routeTabs">
+      <button data-r="a" class="on">路线 A · 补 SDK 重编译（最正统）</button>
+      <button data-r="b">路线 B · 刷系统到 API 26</button>
+      <button data-r="c">路线 C · 不装原生 APP，走网页</button>
+    </div>
+    <div id="routeBox" class="detail"></div>
+    <div class="warn"><b>眼下最快的替代演示：</b>CarFleet 本来就是给 HarmonyOS 写的，PC 上那台 DevEco 虚拟手机模拟器（<code>127.0.0.1:5555</code>，API 22）能直接跑它 —— 但那是模拟器，不是这块板。<b>另外 PC 的 V3 后端现在没在跑</b>（你取消了后台进程），就算 APP 起来了也要先重启 <code>python server\app.py</code>，地址填 PC 局域网 IP 或借助 <code>rport</code> 转发。</div>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>常见坑</h2><span class="tag">这次踩过的和容易再踩的</span></div>
+  <div class="card">
+    <div class="tblwrap"><table>
+      <thead><tr><th>#</th><th>现象</th><th>原因 / 处理</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>以为 <code>v3-fleet</code> 目录里有 APP</td><td>那里只有 Python 后端 + 网页 + 模拟器；APP 工程在隔壁 <code>CarFleet</code>。找错目录会白忙</td></tr>
+        <tr><td>2</td><td>把板子预装的「寻检车云控」当成自己的软件</td><td>它是 <code>os_integration</code> 系统预置应用，界面像 V3 但不是；交付前先跟用户确认包名</td></tr>
+        <tr><td>3</td><td><code>9568322 not trusted app source</code></td><td>HarmonyOS 商用调试签名板子不认；要用 OpenHarmony SDK 自带证书 + 绑定设备 UDID 的 debug profile</td></tr>
+        <tr><td>4</td><td>profile 里 <code>bundle-name</code> 与包不一致</td><td>必须和 <code>module.json</code> 的 bundleName 完全一致，否则签名校验失败</td></tr>
+        <tr><td>5</td><td>profile 证书链随便拿一个 pem 就签</td><td>要三级链且 leaf 必须由 Application CA 签发；可从已 <code>verify-profile</code> 通过的 p7b 里导出正确 leaf</td></tr>
+        <tr><td>6</td><td><code>minAPIVersion=50003015</code> 仍报设备太旧</td><td>HarmonyOS 与 OpenHarmony 的版本编码规则不同，板子按纯 API 数字读；参照板上已装应用改成 <code>12</code></td></tr>
+        <tr><td>7</td><td><code>deviceTypes: ["phone"]</code></td><td>板子不是 phone；补 <code>default / tablet</code>，否则可能被设备类型过滤</td></tr>
+        <tr><td>8</td><td>装上了就以为成功</td><td>一定要 <code>aa start</code> + <code>ps -ef</code> + <code>hilog</code> 三连验收；<code>start ability successfully</code> 不代表进程活着</td></tr>
+        <tr><td>9</td><td>桌面图标显示 <code>$string:app</code></td><td>资源索引未按板子运行时正确解析，是字节码/资源格式不兼容的旁证</td></tr>
+        <tr><td>10</td><td>想靠改 <code>module.json</code> 骗过运行时</td><td>不行。<code>ets/modules.abc</code> 才是真正执行的代码，只能用匹配 SDK 重新编译</td></tr>
+        <tr><td>11</td><td>本机 SDK 只有 20/22/26 却想编 API 15 的包</td><td>先补 SDK（OpenHarmony 官方 API 12/15），或把板子刷到 7.0/API 26；本机没有刷机镜像</td></tr>
+        <tr><td>12</td><td>APP 起来了却连不上后端</td><td>PC 的 <code>server\app.py</code> 必须先跑；板子走 WiFi 要填 PC 局域网 IP 并放行防火墙 8000，走 USB 用 <code>hdc rport tcp:8000 tcp:8000</code> 后填 <code>127.0.0.1:8000</code></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>自测</h2><span class="tag">5 题判分</span></div>
+  <div id="quizBox"></div>
+  <div class="card">
+    <h3>动手复现（不需要板子也能做的两件）</h3>
+<pre># 看包里到底声明了什么
+python -c "import zipfile,json;z=zipfile.ZipFile(r'CarFleet\entry\build\default\outputs\default\entry-default-unsigned.hap');\
+j=json.loads(z.read('module.json'));print(j['app']['minAPIVersion'],j['module']['virtualMachine'])"
+
+# 看板子真实版本（别信「关于设备」页面）
+hdc -t &lt;板子序列号&gt; shell "param get const.ohos.apiversion; param get const.product.software.version"
+
+# 看装完是否活着
+hdc -t &lt;板子序列号&gt; shell "ps -ef | grep com.example.carfleet"</pre>
+    <p class="note">把两条版本数字摆在一起看，就能自己判断「这个包该不该装到这块板」。</p>
+  </div>
+  <div class="okbox"><b>本次交付清单：</b>板子上已安装 <code>com.example.carfleet</code>（会闪退，保留着以便你查看）；成品包 <span class="file">carfleet-oh-signed.hap</span>；签名材料 <span class="file">carfleet-debug-profile.*</span> / <span class="file">profile-correct-chain.pem</span>；截图 <span class="file">DAYU200-CarFleet-运行截图.jpeg</span>；本教材；上一份《把软件装到 DAYU200 开发板》已订正错误结论。<b>没有烧录系统、没有改 CarFleet 源码、没有写入任何账号密钥。</b></div>
+  <div class="footer">按「总体把控 → 面 → 线 → 点」的学习路径整理 · 所有路径、版本号、错误码与日志均来自 2026-11-08 17:00~17:03 的真实执行输出</div>
+</section>
+
+</div>
+
+<script>
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                              .replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function $(id){ return document.getElementById(id); }
+
+var STEPS = [
+  {name:'① 认清目标', title:'先确认「你的软件」是哪个工程',
+   desc:'<code>v3-fleet</code> 目录里没有任何 <code>.ets</code> / <code>module.json5</code> / <code>.hap</code>；用户确认目标是 <code>E:\\Harmony\\Project\\CarFleet</code>。板子预装的 <code>com.example.smart_car_oh</code> 是系统镜像自带的，不属于你。',
+   files:'v3-fleet 顶层 / CarFleet\\AppScope\\app.json5',
+   wire:'v3-fleet 顶层：.gitignore  README.md  device/  docs/  server/  web/  start_*.bat\nCarFleet：bundleName = com.example.carfleet',
+   tag:'定位'},
+  {name:'② 原包试装', title:'直接装签名包 → 9568322',
+   desc:'今天 16:16 的 <code>entry-default-signed.hap</code> 用的是 DevEco 的 HarmonyOS 商用调试签名（华为账号自动签名）。板子是 OpenHarmony 标准系统，不信任这条证书链，也不匹配它的 UDID。',
+   files:'entry-default-signed.hap',
+   wire:'hdc -t dd011a... install -r entry-default-signed.hap\n→ 9568322 error: signature verification failed due to not trusted app source.',
+   tag:'失败'},
+  {name:'③ 生成 profile', title:'绑定 carfleet + 板子 UDID 的调试 profile',
+   desc:'复制 <code>caroh-debug-profile.json</code>，把 <code>bundle-name</code> 改成 <code>com.example.carfleet</code>、<code>device-ids</code> 换成 <code>bm get --udid</code> 读到的板子 UDID。第一次用现成 chain 签 profile 报 <code>11013002</code>（首张 leaf 是自签的），单张 leaf 又报 <code>11013004</code>。',
+   files:'OpenHarmonySDK\\signing\\carfleet-debug-profile.json',
+   wire:'bm get --udid → <DEVICE_UDID>\n\nprofile-debug-chain.pem → 11013002 signature does not match\nprofile-debug-leaf.pem  → 11013004 Profile cert must a cert chain',
+   tag:'失败'},
+  {name:'④ 拼证书链', title:'从已验证 p7b 导出正确 leaf',
+   desc:'对 <code>caroh-debug-profile.p7b</code> 做 <code>openssl pkcs7 -print_certs</code>，发现里面的 Profile Debug 证书是 <b>由 Application CA 签发</b>的（而本地 pem 是自签的）。把它拼上 <code>app-ca.pem</code> + <code>app-root-ca.pem</code> 成三级链，<code>sign-profile</code> 立刻成功。',
+   files:'OpenHarmonySDK\\signing\\profile-correct-chain.pem',
+   wire:'openssl pkcs7 -inform DER -in caroh-debug-profile.p7b -print_certs\n  0  subject=...Profile Debug      issuer=...Application CA   ← 要这张\n  1  subject=...Root CA            issuer=...Root CA\n  2  subject=...Application CA     issuer=...Root CA\n\njava -jar hap-sign-tool.jar sign-profile ... → sign-profile success',
+   tag:'成功'},
+  {name:'⑤ 签 HAP', title:'用 OpenHarmony 官方应用证书签名',
+   desc:'<code>app-sign-chain.pem</code>（Release → CA → Root）+ 刚签好的 p7b + <code>OpenHarmony.p12</code> 里的 <code>openharmony application release</code> 私钥。签名是对<b>改过声明的干净未签名包</b>做的，不残留旧签名块。',
+   files:'carfleet-oh-unsigned.hap → carfleet-oh-signed.hap',
+   wire:'java -jar hap-sign-tool.jar sign-app ...\n→ Create a sign info successfully.\n→ Generate signing block success\n→ Sign Hap success!  /  sign-app success\n产物 370128 字节',
+   tag:'成功'},
+  {name:'⑥ 降版本', title:'把声明改成 OpenHarmony 规则',
+   desc:'第一版把 <code>minAPIVersion</code> 写成 <code>50003015</code>，仍报 <code>9568297 older sdk version in the device</code>。对照板上已装应用（<code>compatibleVersion: 12</code>、<code>compileSdkVersion: 5.0.0.71</code>、<code>virtualMachine: ""</code>）改成纯数字后放行。',
+   files:'module.json / pack.info（包内）',
+   wire:'改前：minAPIVersion=60002022  compileSdkType=HarmonyOS  virtualMachine=ark13.0.1.0\n改后：minAPIVersion=12  targetAPIVersion=12  compileSdkVersion=5.0.0.71\n      compileSdkType=OpenHarmony  virtualMachine=""  deviceTypes+=default/tablet\n\n9568297 → install bundle successfully.',
+   tag:'成功'},
+  {name:'⑦ 验收安装', title:'图标真的进桌面了',
+   desc:'<code>bm dump -a</code> 出现 <code>com.example.carfleet</code>；截屏看到桌面第二行右侧多了一个标签为 <code>$string:app</code> 的图标。<code>aa start</code> 返回成功、进程短暂存在。',
+   files:'DAYU200-CarFleet-运行截图.jpeg',
+   wire:'hdc install -r carfleet-oh-signed.hap → install bundle successfully.\nbm dump -a → com.example.carfleet\naa start -b com.example.carfleet -a EntryAbility → start ability successfully.\nps -ef → 20010045  5034 ... com.example.carfleet',
+   tag:'成功'},
+  {name:'⑧ 启动崩溃', title:'进程被系统杀掉：运行时不兼容',
+   desc:'再查进程已消失；<code>hilog</code> 明确写出 C++ 崩溃与方舟编译器的 stub 加载失败。这是<b>字节码层面</b>的不兼容，改包声明解决不了。',
+   files:'hilog / FaultLog',
+   wire:'Kill Reason:Cpp Crash\nexit with signal:6\nArkCompiler: [compiler] SafeInsideStub: The stub file is not loaded.\nApp OnRemoteDied, ability is EntryAbility, app is com.example.carfleet\n\n→ 结论：必须用匹配板子 API 的 SDK 重新编译源码。',
+   tag:'失败'}
+];
+
+var NODEINFO = {
+  n0:'CarFleet 源码：ArkTS，DevEco 用 HarmonyOS 6.0.2(22) 工具链编译，产出 ets/modules.abc（ark13.0.1.0）。这是唯一没法靠改包解决的一层。',
+  n1:'包内声明：module.json / pack.info 里的 minAPIVersion、compileSdkType、deviceTypes、virtualMachine。属于静态检查，可以改。',
+  n2:'签名：OpenHarmony 官方调试证书 + 绑定设备 UDID 的 profile(p7b)。决定「准不准进」。',
+  n3:'安装器：核对签名、版本、设备类型后把包放进 /data/app，桌面出现图标。本次已通过。',
+  n4:'方舟运行时：真正执行 modules.abc。板子 API 15 读不懂 API 22 的字节码，进程 Cpp Crash。'
+};
+
+var cur = 0;
+function setStep(i, scroll){
+  cur = (i + STEPS.length) % STEPS.length;
+  var s = STEPS[cur];
+  var btns = $('stepBtns').children;
+  for (var k=0;k<btns.length;k++) btns[k].className = (k===cur?'on':'');
+  $('detail').innerHTML =
+    '<h3>' + esc(s.name) + ' ' + esc(s.title) + '</h3>' +
+    '<div>' + s.desc + '</div>' +
+    '<div class="meta"><b>环节</b><span>' + esc(s.tag) + '</span>' +
+    '<b>涉及文件</b><span>' + esc(s.files) + '</span></div>' +
+    '<pre>' + esc(s.wire) + '</pre>';
+  if (scroll) $('detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+(function(){
+  var box = $('stepBtns');
+  for (var i=0;i<STEPS.length;i++){
+    var b = document.createElement('button');
+    b.textContent = STEPS[i].name;
+    (function(n){ b.addEventListener('click', function(){ setStep(n,false); }); })(i);
+    box.appendChild(b);
+  }
+  setStep(0,false);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight') setStep(cur+1,true);
+    else if (e.key === 'ArrowLeft') setStep(cur-1,true);
+  });
+  var nodes = document.querySelectorAll('#topo .nd');
+  for (var j=0;j<nodes.length;j++){
+    (function(g){ g.addEventListener('click', function(){
+      var key = g.getAttribute('data-node');
+      $('detail').innerHTML = '<h3>模块职责：' + esc(g.querySelector('text').textContent) + '</h3>' +
+        '<div>' + esc(NODEINFO[key] || '') + '</div>';
+    }); })(nodes[j]);
+  }
+})();
+
+var ROUTES = {
+  a:{big:'路线 A · 补 OpenHarmony API 12/15 SDK，重编译 CarFleet 源码',
+     t:'最正统、不改板子',
+     body:'<p>新建一个 <b>OpenHarmony 工程（CarFleetOH）</b>，把 <code>CarFleet\\entry\\src\\main\\ets</code> 的界面代码搬过去，把 <code>@kit.ArkUI / @kit.AbilityKit / @kit.CoreFileKit / @kit.PerformanceAnalysisKit</code> 换成对应的 <code>@ohos.*</code> 接口（这些基础能力 OpenHarmony 都有），<code>build-profile.json5</code> 设 <code>runtimeOS: OpenHarmony</code>、<code>compatibleSdkVersion: 12</code>，<code>module.json5</code> 的 <code>deviceTypes</code> 补 <code>default</code>。</p>' +
+         '<p>然后用本页第 4 段那套签名材料签出 HAP，直接 <code>hdc install</code>。产物是板子运行时能读的字节码，才能真正跑起来。</p>' +
+         '<div class="warn" style="margin-bottom:0"><b>当前唯一缺口：</b>本机只有 OpenHarmony SDK API 20 / 22 / 26，没有 12/15。需要先通过 DevEco 的 SDK Manager 或 OpenHarmony 官方发布包补一份。</div>'},
+  b:{big:'路线 B · 把板子刷成 OpenHarmony 7.0 / API 26',
+     t:'让系统去匹配现有包',
+     body:'<p><code>CarOH\\DAYU200部署指南.md</code> 假设的目标系统本来就是 OpenHarmony 7.0 / API 26；本机也确实有完整的 <b>API 26 SDK</b>（<code>E:\\Harmony\\OpenHarmonySDK\\ohos-sdk\\windows\\sdk-root\\26</code>）。刷成 7.0 后，用这套 SDK 编译 CarFleet 的 OpenHarmony 版就能装能跑。</p>' +
+         '<p>但我在本机<b>没有找到任何刷机镜像</b>（<code>*.img</code> / RK3568 固件），需要另外下载镜像与烧录工具；刷机会清空板子现有数据，属于不可逆操作，必须你明确同意后才做。</p>'},
+  c:{big:'路线 C · 不装原生 APP，用 V3 网页端当板子客户端',
+     t:'功能等价，但需要网页容器',
+     body:'<p>V3 的全部界面（监控大屏 / 管理后台 / 轨迹回放 / AI 控车）本来就是 <code>v3-fleet\\web\\*.html</code>，由 Flask 8000 提供。板子只要打开 <code>http://127.0.0.1:8000/monitor/view</code>（配合 <code>hdc rport tcp:8000 tcp:8000</code>）就是在跑<b>你自己的 V3 软件</b>。</p>' +
+         '<p>卡点：板子只有 <code>com.ohos.arkwebcore</code> Web 内核，<b>没有独立浏览器 APP</b>；我实测 <code>aa start -A ohos.want.action.viewData -U &lt;url&gt;</code> 与直接启动 <code>arkwebcore/MainAbility</code> 都返回 <code>failed to start ability</code>。要落地仍需编一个极简 ArkWeb 壳 —— 又回到「需要匹配 SDK」。</p>'}
+};
+(function(){
+  var box = $('routeTabs'), out = $('routeBox');
+  function show(k){
+    var r = ROUTES[k];
+    out.innerHTML = '<h3>' + esc(r.big) + '</h3>' +
+      '<div class="meta"><b>思路</b><span>' + esc(r.t) + '</span></div>' + r.body;
+    var bs = box.children;
+    for (var i=0;i<bs.length;i++) bs[i].className = (bs[i].getAttribute('data-r')===k?'on':'');
+  }
+  var bs = box.children;
+  for (var i=0;i<bs.length;i++){
+    (function(b){ b.addEventListener('click', function(){ show(b.getAttribute('data-r')); }); })(bs[i]);
+  }
+  show('a');
+})();
+
+var QUIZ = [
+  {q:'CarFleet 的 HAP 这次到底装到板子上了吗？', a:['装上了，但启动崩溃','完全没装上'], r:0,
+   why:'hdc install 返回 install bundle successfully，bm dump -a 出现 com.example.carfleet，桌面也有图标；随后 aa start 的进程被 Cpp Crash 杀掉。'},
+  {q:'9568322 是什么原因？', a:['版本太低','签名来源不被板子信任'], r:1,
+   why:'原包用 HarmonyOS 商用调试签名；换成 OpenHarmony 官方证书 + 绑定板子 UDID 的 profile 后这一关就过了。'},
+  {q:'为什么把 minAPIVersion 改成 50003015 仍报 older sdk version？', a:['板子真的太旧','HarmonyOS 与 OpenHarmony 的版本编码规则不同，要写纯 API 数字 12'], r:1,
+   why:'参照板上已装应用 compatibleVersion=12 / compileSdkVersion=5.0.0.71 改完后即安装成功。'},
+  {q:'装上之后为什么还是不能跑？', a:['后端没启动','ets/modules.abc 是 API 22 的 ark13 字节码，板子 API 15 运行时加载不了'], r:1,
+   why:'hilog 给出 Kill Reason:Cpp Crash、signal 6、SafeInsideStub: The stub file is not loaded。改声明改不了字节码。'},
+  {q:'要让 CarFleet 真正在板上运行，正路是哪条？', a:['继续改 module.json','用匹配板子 API 的 SDK 重新编译源码'], r:1,
+   why:'签名/版本/设备类型都是静态检查，可以改包；执行代码的字节码只能用对应工具链重新生成。'}
+];
+(function(){
+  var box = $('quizBox'), answered = {}, right = 0;
+  for (var i=0;i<QUIZ.length;i++){
+    (function(qi){
+      var item = QUIZ[qi], d = document.createElement('div');
+      d.className = 'q';
+      var html = '<p>' + (qi+1) + '. ' + esc(item.q) + '</p>';
+      for (var j=0;j<item.a.length;j++)
+        html += '<label><input type="radio" name="q'+qi+'" value="'+j+'"> ' + esc(item.a[j]) + '</label>';
+      html += '<div class="fb" id="fb'+qi+'"></div>';
+      d.innerHTML = html;
+      box.appendChild(d);
+      d.addEventListener('change', function(e){
+        if (!e.target.name) return;
+        var pick = parseInt(e.target.value,10), ok = pick === item.r;
+        if (answered[qi] === undefined && ok) right++;
+        answered[qi] = ok;
+        var fb = $('fb'+qi);
+        fb.className = 'fb ' + (ok?'y':'n');
+        fb.textContent = (ok?'答对。':'再想想。') + item.why;
+        var done = 0; for (var k in answered) if (answered.hasOwnProperty(k)) done++;
+        var score = $('quizScore');
+        if (score) score.textContent = '已答 ' + done + ' / ' + QUIZ.length + '，答对 ' + right + ' 题（改答案不重复计分）';
+      });
+    })(i);
+  }
+  var s = document.createElement('div');
+  s.className = 'okbox'; s.id = 'quizScore';
+  s.textContent = '已答 0 / ' + QUIZ.length + '，答对 0 题';
+  box.appendChild(s);
+})();
+</script>
+</body>
+</html>

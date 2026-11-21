@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · 长连接与短连接</title>
+<style>
+  :root{--bg:#f5f8fc;--card:#fff;--ink:#1f2933;--dim:#5b6b7c;--line:#dde5ee;
+        --short:#d97706;--long:#0f8a8a;--shadow:0 2px 10px rgba(31,41,51,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.75;
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+  a{color:#1d6fa5;text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:.9em;
+       font-family:Consolas,"Courier New",monospace;color:#234}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#20304a,#1c5c6e);color:#fff;padding:30px 20px 26px}
+  .hero .inner{max-width:1100px;margin:0 auto}
+  .hero h1{margin:0 0 6px;font-size:26px}.hero .sub{margin:0 0 12px;color:#c7dbe6;font-size:14px}
+  .hero p{margin:0;color:#e6f0f5;font-size:14px;max-width:900px}
+  .back{display:inline-block;margin-top:13px;font-size:13px;color:#a8f0dc;
+        border:1px solid rgba(168,240,220,.5);padding:5px 12px;border-radius:16px}
+  .topnav{position:sticky;top:0;z-index:9;background:#fff;border-bottom:1px solid var(--line)}
+  .topnav .inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px;padding:8px 20px}
+  .topnav a{font-size:13px;color:var(--dim);padding:6px 12px;border-radius:20px}
+  .topnav a:hover{background:#eef3f9;color:var(--ink);text-decoration:none}
+  section{margin-top:30px;scroll-margin-top:56px}
+  .sec-head{display:flex;align-items:center;gap:11px;margin:0 0 11px}
+  .sec-no{width:31px;height:31px;flex:none;border-radius:8px;background:#475569;color:#fff;
+          font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .sec-head h2{margin:0;font-size:20px}
+  .tag{font-size:12px;color:var(--dim);background:#eaf0f6;padding:3px 10px;border-radius:12px}
+  .lead{color:var(--dim);margin:0 0 13px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:14px 17px;box-shadow:var(--shadow);margin-bottom:11px}
+  .card h3{margin:0 0 7px;font-size:16px}.card p{margin:0 0 8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  @media(max-width:800px){.grid2{grid-template-columns:1fr}}
+  .concl{border-left:4px solid var(--long);background:#f0f9f8;padding:12px 16px;
+         border-radius:0 8px 8px 0;margin-bottom:13px}
+  .concl b{color:#0b6f6f}
+  .file{font-family:Consolas,monospace;font-size:.87em;color:#7a4b00;background:#fff5e3;
+        padding:1px 5px;border-radius:4px}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin:0 4px 3px 0}
+  .pill.s{background:#fff0dc;color:#a8600a}.pill.l{background:#e6f4f4;color:#0b6f6f}
+  pre{background:#0f1a2c;color:#d7e3f0;border-radius:8px;padding:12px 15px;overflow-x:auto;
+      font-size:12.5px;line-height:1.65;font-family:Consolas,"Courier New",monospace;margin:8px 0}
+  .cm{color:#7f9bb5}.kw{color:#f0c674}.num{color:#a8e6a3}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#eef3f9;font-weight:700}tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);margin-bottom:12px}
+  .tblwrap table{min-width:700px}
+  ul{margin:6px 0 8px;padding-left:22px}li{margin:4px 0}
+  details{background:#fff;border:1px solid var(--line);border-radius:9px;margin-bottom:9px}
+  details summary{cursor:pointer;padding:10px 15px;font-weight:600;font-size:14.5px;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+";display:inline-flex;width:19px;height:19px;margin-right:8px;
+      align-items:center;justify-content:center;background:#eef3f9;border-radius:5px;color:#1d6fa5}
+  details[open] summary::before{content:"-"}
+  details .body{padding:0 15px 13px 42px;font-size:14px}
+  .box{background:#fff;border:1px solid var(--line);border-radius:9px;padding:13px 16px;margin-bottom:11px}
+  .box.s{border-left:4px solid var(--short)}.box.l{border-left:4px solid var(--long)}
+  .box .t{font-weight:700;font-size:16px;margin-bottom:3px}
+  .box .meta{font-size:12.5px;color:var(--dim);margin-bottom:7px}
+  .why{background:#f2f7fb;border-radius:5px;padding:6px 10px;font-size:13.5px;margin-top:8px}
+  .warn{background:#fff4f2;border-left:4px solid #d9534f;padding:10px 14px;
+        border-radius:0 8px 8px 0;font-size:13.5px;margin-bottom:10px}
+  .note{font-size:13px;color:var(--dim)}
+  svg{max-width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);
+      border-radius:9px;margin:10px 0}
+  footer{margin-top:40px;padding-top:15px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="hero"><div class="inner">
+  <h1>V3 学 · 长连接与短连接</h1>
+  <p class="sub">具体区别、各自的优缺点与使用场景，配项目里的真实代码</p>
+  <p>这份属于「<strong>线</strong>」层的补强：把项目里四条连接按长短分类，就能看懂"为什么设备侧必须长连接、APP 却用轮询"这个看似矛盾的设计。</p>
+  <a class="back" href="V3-学习导航.html">← 返回学习导航</a>
+</div></div>
+
+<div class="topnav"><div class="inner">
+  <a href="#s0">结论</a><a href="#s1">看图理解</a><a href="#s2">项目里有哪些</a>
+  <a href="#s3">代码对照</a><a href="#s4">优缺点表</a><a href="#s5">怎么选</a>
+  <a href="#s6">本项目为何混用</a><a href="#s7">坑与自测</a>
+</div></div>
+
+<div class="wrap">
+
+<section id="s0">
+  <div class="sec-head"><div class="sec-no">0</div><h2>先给结论</h2></div>
+  <div class="concl">
+    <p><b>一句话</b>：区别不在于"这根线连了多久"，而在于<strong>一次握手能说几句话、以及谁可以先开口</strong>。<strong>短连接</strong>＝一问一答，答完就挂；<strong>长连接</strong>＝接通后一直不挂，双方随时都能说话，服务端可以主动推。</p>
+    <p style="margin:0"><b>生活比喻</b>：<strong>短连接像发短信</strong>——每发一条都要重新写收件人、等回复、结束；<strong>长连接像打电话</strong>——拨通一次，之后谁想说就说，直到有人挂断。项目里 APP 每 800ms 发一条"短信"问状态，网页大屏则是打通了"电话"等着后端念稿。</p>
+  </div>
+  <div class="warn"><strong>先纠正一个最容易混淆的点</strong>：HTTP/1.1 默认开启 <code>Connection: keep-alive</code>，会<strong>复用底层 TCP 连接</strong>，但它在语义上仍是短连接（每次还是"请求 → 响应"的一问一答，服务端不能主动开口）。<strong>"TCP 复用" ≠ "长连接"</strong>。真正的长连接要看有没有"服务端主动推"的能力：WebSocket、MQTT、SSE 才算。</div>
+</section>
+
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>看图理解</h2></div>
+  <svg viewBox="0 0 920 300" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei,sans-serif">
+    <rect x="0" y="0" width="920" height="300" fill="#ffffff"/>
+    <text x="20" y="26" font-size="15" font-weight="bold" fill="#a8600a">短连接（HTTP 一问一答）</text>
+    <rect x="20" y="40" width="120" height="34" rx="6" fill="#fff0dc" stroke="#d97706"/>
+    <text x="80" y="62" text-anchor="middle" font-size="12" fill="#1f2933">客户端</text>
+    <rect x="780" y="40" width="120" height="34" rx="6" fill="#fff0dc" stroke="#d97706"/>
+    <text x="840" y="62" text-anchor="middle" font-size="12" fill="#1f2933">服务端</text>
+    <line x1="140" y1="57" x2="780" y2="57" stroke="#dde5ee" stroke-width="1"/>
+    <g font-size="11" fill="#a8600a">
+      <path d="M170 62 L740 88" stroke="#d97706" stroke-width="1.5" marker-end="url(#aS)"/>
+      <text x="430" y="70" text-anchor="middle">请求 1（建连 + 握手）</text>
+      <path d="M740 100 L170 78" stroke="#8aa0b5" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="430" y="98" text-anchor="middle" fill="#5b6b7c">响应 1 → 断开</text>
+      <path d="M170 108 L740 134" stroke="#d97706" stroke-width="1.5"/>
+      <text x="430" y="128" text-anchor="middle">请求 2（又要重新建连）</text>
+      <path d="M740 146 L170 124" stroke="#8aa0b5" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="430" y="158" text-anchor="middle" fill="#5b6b7c">响应 2 → 断开 … 每 800ms 重复</text>
+    </g>
+    <line x1="20" y1="172" x2="900" y2="172" stroke="#dde5ee"/>
+    <text x="20" y="198" font-size="15" font-weight="bold" fill="#0b6f6f">长连接（WebSocket / MQTT 一次握手，持续双向）</text>
+    <rect x="20" y="212" width="120" height="34" rx="6" fill="#e6f4f4" stroke="#0f8a8a"/>
+    <text x="80" y="234" text-anchor="middle" font-size="12" fill="#1f2933">客户端</text>
+    <rect x="780" y="212" width="120" height="34" rx="6" fill="#e6f4f4" stroke="#0f8a8a"/>
+    <text x="840" y="234" text-anchor="middle" font-size="12" fill="#1f2933">服务端</text>
+    <line x1="140" y1="229" x2="780" y2="229" stroke="#0f8a8a" stroke-width="3"/>
+    <text x="455" y="222" text-anchor="middle" font-size="11" fill="#0b6f6f">一条连接一直保持（心跳保活）</text>
+    <g font-size="11" fill="#0b6f6f">
+      <path d="M740 246 L180 246" stroke="#0f8a8a" stroke-width="1.5"/>
+      <text x="455" y="262" text-anchor="middle">服务端主动推帧 1、2、3 …（无需请求）</text>
+      <path d="M180 272 L740 272" stroke="#0f8a8a" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="455" y="288" text-anchor="middle">客户端也能随时说话（命令 / 上报）</text>
+    </g>
+    <defs><marker id="aS" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#d97706"/></marker></defs>
+  </svg>
+  <p class="note">WebSocket 有个特别之处：它<strong>借 HTTP 完成开场</strong>（发一个带 <code>Upgrade: websocket</code> 的请求），握手成功后这条 TCP 连接就"改行"了，不再是 HTTP。所以代码里能看到 <code>ws://</code> 与 <code>http://</code> 共用同一个端口 8000。</p>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>项目里到底有哪些连接</h2><span class="tag">按长短分类</span></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:8%">类型</th><th style="width:23%">链路</th><th style="width:17%">协议 / 端口</th><th style="width:23%">谁先开口</th><th>为什么这样选</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill s">短</span></td><td>APP ↔ 后端（状态轮询）</td><td>HTTP :8000，800ms</td><td>APP 每次主动问</td><td>ArkTS 的 <code>@ohos.net.http</code> 最简单；教学项目不必上长连接</td></tr>
+      <tr><td><span class="pill s">短</span></td><td>网页发命令 / 拉轨迹</td><td>HTTP <code>fetch</code></td><td>浏览器主动</td><td>命令和查询天然"一问一答"，不需要保持会话</td></tr>
+      <tr><td><span class="pill s">短</span></td><td>后端 ↔ 华为云 SDK</td><td><strong>HTTPS</strong> 应用侧 API</td><td>后端主动（每 2s 一轮）</td><td>云端 REST API 本身就是短连接；AK/SK 每次签名</td></tr>
+      <tr><td><span class="pill s">短</span></td><td>后端 → 模拟器 <code>/state</code></td><td>http://127.0.0.1:808N，10Hz</td><td>后端主动</td><td>本机回环，建连开销几乎为零；并发拉取即可</td></tr>
+      <tr><td><span class="pill l">长</span></td><td><strong>模拟小车 ↔ IoTDA</strong></td><td>MQTT over TLS 8883</td><td><strong>双向</strong>：云端要主动下发命令</td><td>设备必须随时能被叫到，且云端要判断"在线/离线"——只有长连接能给这个信号</td></tr>
+      <tr><td><span class="pill l">长</span></td><td><strong>监控大屏 ↔ 后端</strong></td><td>WebSocket <code>ws://</code> :8000/ws</td><td><strong>服务端主动推帧</strong></td><td>乐观回显要 0.3 秒内到画面，等浏览器来问就来不及了</td></tr>
+    </tbody>
+  </table></div>
+  <div class="card"><h3>一个重要的连带结论</h3>
+    <p style="margin:0">项目里<strong>"车在线"这件事本身就是长连接的副产品</strong>：MQTT 连着 = ONLINE，断开 = OFFLINE（靠 <code>keepalive=60</code> 心跳判定）。后端用 <code>ShowDevice</code> 查到的"在线"，其实是云端在替你看这根长连接是否还活着。这也是为什么"下线"按钮必须去<strong>杀掉模拟器进程</strong>——只有断开长连接，云端才会改状态。</p></div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>代码对照：短连接长什么样、长连接长什么样</h2><span class="tag">均摘自当前工程</span></div>
+
+  <div class="box s"><div class="t">短连接 ① APP 每 800ms 发一次"短信"</div>
+    <div class="meta"><span class="file">CarFleet/.../net/FleetClient.ets : 55~62、89~96</span></div>
+<pre><span class="cm">// 每一次请求都 createHttp() 新建一个请求对象</span>
+<span class="kw">const</span> req = http.createHttp();
+<span class="kw">const</span> resp = <span class="kw">await</span> req.request(`http://${host}:${port}/fleet/status`, {
+  method: http.RequestMethod.GET,
+  connectTimeout: <span class="num">5000</span>,
+  readTimeout: <span class="num">5000</span>
+});
+
+<span class="cm">// connect() 里用定时器不断重复这个"一问一答"</span>
+<span class="kw">this</span>.baseUrl = `http://${host}:${port}`;
+<span class="kw">await</span> <span class="kw">this</span>.fetchFleet(host, port);   <span class="cm">// 先探活</span>
+<span class="kw">this</span>.timerId = setInterval(() =&gt; { <span class="kw">this</span>.pollOnce(); }, POLL_INTERVAL_MS);  <span class="cm">// 800ms</span></pre>
+    <p>特征：<strong>请求里带完整 URL + 方法 + 超时</strong>，拿到 <code>responseCode === 200</code> 就结束。<code>setInterval</code> 只是把很多次短连接串起来，<strong>并没有把它们变成一根长连接</strong>。</p>
+    <div class="why"><strong>课堂对应</strong>：请求-响应模型、无状态（服务端不记得上一次请求是谁，所以 APP 每次都要把选中的车 ID 一起发）。</div>
+  </div>
+
+  <div class="box s"><div class="t">短连接 ② 网页发命令 / 后端查云端</div>
+    <div class="meta"><span class="file">web/monitor.html : 194~197</span>　<span class="file">server/app.py : 135~140</span></div>
+<pre><span class="cm">// 网页：相对路径，一次 fetch 一次往返</span>
+<span class="kw">const</span> r = <span class="kw">await</span> fetch(<span class="kw">"/command"</span>, { method: <span class="kw">"POST"</span>,
+  headers: { <span class="kw">"Content-Type"</span>: <span class="kw">"application/json"</span> }, body: JSON.stringify(body) });
+
+<span class="cm"># 后端：SDK 每次调用都是一次独立的 HTTPS 请求</span>
+<span class="kw">def</span> cloud_show_status(device_id: str) -&gt; str:
+    req = ShowDeviceRequest()
+    req.device_id = device_id
+    resp = CLIENT.show_device(req)          <span class="cm"># 请求 → 响应 → 结束</span>
+    <span class="kw">return</span> getattr(resp, <span class="kw">"status"</span>, <span class="kw">"UNKNOWN"</span>)</pre>
+    <p>特征：<strong>无会话状态</strong>。后端每 2 秒对每台车重复一遍这个调用，云端并不"记得"上次是谁问的；鉴权靠每次请求里的 AK/SK 签名。</p>
+  </div>
+
+  <div class="box l"><div class="t">长连接 ① 网页 ↔ 后端的 WebSocket</div>
+    <div class="meta"><span class="file">server/app.py : 668~678</span>　<span class="file">web/monitor.html : 130~158</span></div>
+<pre><span class="cm"># 服务端：每个客户端一个线程，一根连接上反复 send</span>
+@sock.route(<span class="kw">"/ws"</span>)
+<span class="kw">def</span> ws_fleet(ws):
+    <span class="kw">try</span>:
+        <span class="kw">while</span> True:
+            ws.send(fleet_state_message())          <span class="cm"># 主动推，不等客户端问</span>
+            WS_DIRTY.wait(WS_BROADCAST_INTERVAL)    <span class="cm"># 0.5s 兜底 / 事件立即唤醒</span>
+            WS_DIRTY.clear()
+    <span class="kw">except</span> Exception:
+        logging.info(<span class="kw">"[WS] 客户端断开，广播线程退出"</span>)
+
+<span class="cm">// 客户端：只建一次，之后靠回调收数据</span>
+ws = <span class="kw">new</span> WebSocket(`${proto}://${location.host}/ws`);
+ws.onmessage = ev =&gt; { <span class="kw">const</span> msg = JSON.parse(ev.data); ... };</pre>
+    <p>特征：<code>while True</code> + <code>ws.send()</code> —— 服务端想推就推，客户端用 <code>onmessage</code> 被动接收。<strong>一根连接、N 次数据</strong>。</p>
+    <div class="why"><strong>配套机制（长连接必须有）</strong>：断线要重连，且不能疯狂重连。项目用的是指数退避：</div>
+<pre>ws.onclose = ws.onerror = () =&gt; {
+  <span class="kw">const</span> delay = Math.min(<span class="num">1000</span> * <span class="num">2</span> ** wsRetry, RETRY_MAX_DELAY);
+  wsRetry++;
+  setTimeout(wsConnect, delay);
+};</pre>
+  </div>
+
+  <div class="box l"><div class="t">长连接 ② 设备 ↔ 云端的 MQTT</div>
+    <div class="meta"><span class="file">device/car_mqtt_client.py : 153~157、253~272</span></div>
+<pre><span class="cm"># 连一次，之后一直挂着；keepalive=60 表示心跳周期</span>
+mqttc.connect(cloud_cfg[<span class="kw">"mqtt_host"</span>], cloud_cfg[<span class="kw">"mqtt_port"</span>], keepalive=<span class="num">60</span>)
+mqttc.loop_start()                                  <span class="cm"># 后台线程维持这根长连接</span>
+
+<span class="cm"># 连上后订阅命令 topic，云端随时可以主动下发</span>
+<span class="kw">def</span> on_connect(client, userdata, flags, reason_code, properties):
+    <span class="kw">if</span> reason_code == <span class="num">0</span>:
+        client.subscribe(f<span class="kw">"$oc/devices/{DEV['device_id']}/sys/commands/#"</span>, qos=<span class="num">1</span>)
+        connected.set()
+
+<span class="cm"># 断线自动重连（同样是指数退避）</span>
+mqttc.reconnect_delay_set(min_delay=<span class="num">1</span>, max_delay=<span class="num">30</span>)</pre>
+    <p>特征：<code>loop_start()</code> 会开一个后台线程持续收发心跳；<code>on_message</code> 是回调，云端命令到达时被动触发。<strong>如果这里改成短连接，云端就永远没法主动叫到车</strong>（设备没有公网地址，也不该一直轮询云端）。</p>
+  </div>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>优缺点对照表</h2></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:18%">维度</th><th style="width:41%">短连接（HTTP 请求-响应）</th><th>长连接（WebSocket / MQTT）</th></tr></thead>
+    <tbody>
+      <tr><td><strong>建立开销</strong></td><td>每次都要 TCP 三次握手（HTTPS 还要 TLS 握手）；高频时浪费明显</td><td>只握手一次，之后零建连成本</td></tr>
+      <tr><td><strong>实时性</strong></td><td>取决于轮询间隔；APP 800ms、后端 2s，天然滞后</td><td>服务端一有新数据立刻推，项目里命令回显约 0.33s 到画面</td></tr>
+      <tr><td><strong>谁先开口</strong></td><td>只能客户端先问，服务端不能主动找客户端</td><td>双向，服务端可主动下发命令 / 推帧</td></tr>
+      <tr><td><strong>服务端资源</strong></td><td>无状态、易横向扩展；请求完就释放</td><td>每个客户端要占一个连接 + 线程/内存，连接数上去要专门优化</td></tr>
+      <tr><td><strong>状态保持</strong></td><td>无状态，参数每次都要带全（device_id、token）</td><td>有会话，可记住"这个连接属于谁"；但要自己管心跳与重连</td></tr>
+      <tr><td><strong>断线处理</strong></td><td>简单：这次请求失败就重试，没有"连接"要维护</td><td>复杂：心跳、超时判定、指数退避、半开连接、消息补发都要考虑</td></tr>
+      <tr><td><strong>穿透与兼容</strong></td><td>最通用，任何代理 / 防火墙 / CDN 都认</td><td>可能被代理或 NAT 超时掐断；移动端切网络容易掉线</td></tr>
+      <tr><td><strong>调试难度</strong></td><td>低：curl、浏览器 F12 一条条看得清清楚楚</td><td>高：要看帧流、心跳、重连日志</td></tr>
+      <tr><td><strong>典型场景</strong></td><td>查数据、提交表单、下载文件、调用第三方 REST API</td><td>聊天、实时行情、在线游戏、IoT 设备管控、实时监控大屏</td></tr>
+      <tr><td><strong>项目里的例子</strong></td><td>APP 轮询、<code>fetch /command</code>、SDK 查影子、<code>/state</code> 旁路、test_api 自测</td><td><code>/ws</code> 广播、MQTT 8883 上下行</td></tr>
+    </tbody>
+  </table></div>
+  <div class="warn"><strong>别把"长连接"当成绝对更好</strong>：它用"服务端资源 + 断线复杂度"换"实时性 + 可推送"。项目里 APP 就故意选了短连接——因为手机上网络会切换、APP 会退到后台，维护长连接的收益抵不上复杂度。</div>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>怎么选：一张决策清单</h2></div>
+  <div class="grid2">
+    <div class="card"><h3>选短连接，如果……</h3><ul style="font-size:13.5px">
+      <li>操作是"我问你答"（查询、提交、下单、调第三方 API）</li>
+      <li>数据几秒变一次，秒级延迟可接受</li>
+      <li>客户端数量多但活跃度低（省服务端连接）</li>
+      <li>要穿过各种代理 / 要最简单好调试</li>
+      <li>运行在手机后台、网络常切换</li>
+    </ul></div>
+    <div class="card"><h3>选长连接，如果……</h3><ul style="font-size:13.5px">
+      <li><strong>服务端需要主动开口</strong>（云端要下发命令给车）</li>
+      <li>数据变化频繁且要求"立刻可见"（监控大屏 10Hz）</li>
+      <li>需要感知对端"在不在"（在线/离线状态）</li>
+      <li>同一次会话要来回说很多句，重建连接不划算</li>
+      <li>愿意承担心跳、重连、连接数管理</li>
+    </ul></div>
+  </div>
+  <div class="card"><h3>还有个中间方案：SSE / 长轮询（本项目没用，但值得知道）</h3>
+    <p style="margin:0;font-size:13.5px"><strong>长轮询</strong>：客户端发一个请求，服务端"憋着"不回，直到有数据或超时才响应，客户端立刻再发一个——用短连接模拟推送。<strong>SSE</strong>（Server-Sent Events）：一根 HTTP 长连接，只允许服务端单向推文本。两者都比 WebSocket 简单，但都不支持双向。项目里因为要"服务端推 + 命令双向"，直接选了 WebSocket 和 MQTT。</p></div>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>本项目为什么混用（最值得记住的一节）</h2></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:26%">位置</th><th style="width:12%">选择</th><th>真实原因</th></tr></thead>
+    <tbody>
+      <tr><td>设备 ↔ IoTDA</td><td><strong>长</strong>（MQTT）</td><td>设备在 NAT 后面、没有公网地址，<strong>只有它自己先连上云端并保持住，云端才能随时下发命令</strong>。这不是偏好，是物理约束。附带白送了"在线/离线"信号。</td></tr>
+      <tr><td>大屏 ↔ 后端</td><td><strong>长</strong>（WS）</td><td>后端有"乐观回显"要立刻送出去；若改用轮询，最快也要等下一次请求，0.33 秒的跟手感就没了。</td></tr>
+      <tr><td>APP ↔ 后端</td><td><strong>短</strong>（800ms 轮询）</td><td>ArkTS 的 HTTP 接口最简单、教学项目优先可读性；手机网络切换/后台时不必维护长连接。代价是 APP 比网页慢半拍（0.8s）。</td></tr>
+      <tr><td>后端 ↔ 云端 SDK</td><td><strong>短</strong>（HTTPS）</td><td>华为云应用侧本来就是 REST API，没有推送通道可选；配额也限制调用频率，2 秒一轮足够。</td></tr>
+      <tr><td>后端 → 模拟器 /state</td><td><strong>短</strong>（本机 10Hz）</td><td>127.0.0.1 回环，建连成本近乎为零；用线程池并发拉取就够快，不值得为它加长连接。</td></tr>
+    </tbody>
+  </table></div>
+  <div class="card"><h3>如果你想把 APP 也改成 WebSocket（练习方向）</h3>
+    <p style="font-size:13.5px">后端 <code>/ws</code> 已经现成，不用改服务端。APP 侧要做三件事：① 在 <span class="file">FleetClient.ets</span> 里用鸿蒙的 WebSocket 接口（<code>@ohos.net.webSocket</code>）建立连接并订阅 <code>fleet_state</code> 帧；② 把 <code>setInterval(pollOnce)</code> 换成 <code>on('message')</code> 回调解析同一份 cars 数组；③ 补心跳与指数退避（可照抄 <span class="file">monitor.html</span> 的 wsConnect）。<strong>收益</strong>：APP 画面从 0.8 秒一步变成与网页同步；<strong>代价</strong>：要重构建 APP、要处理后台断线。</p></div>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>常见坑 + 自测</h2></div>
+  <div class="grid2">
+    <div class="card"><h3>容易踩的坑</h3><ul style="font-size:13.5px">
+      <li>以为 <code>keep-alive</code> 就是长连接——它只复用 TCP，服务端仍不能主动推。</li>
+      <li>长连接忘了心跳：MQTT 的 <code>keepalive=60</code>、WS 的定期帧，缺了会被 NAT 静默掐断。</li>
+      <li>长连接忘了重连退避：后端重启时几十个页面同时每秒重连，形成风暴。</li>
+      <li>以为短连接"关了就查不到状态"：状态在后端 <code>STATE_CACHE</code> 里，与连接无关。</li>
+      <li>把"下线"理解成改数据库字段：必须<strong>断开 MQTT 长连接</strong>（杀进程），云端才会判离线。</li>
+      <li>WS 客户端用了 <code>ws://</code> 却访问 https 页面：会触发混合内容拦截，要用 <code>wss://</code>（项目里已有 <code>location.protocol</code> 判断）。</li>
+    </ul></div>
+    <div class="card"><h3>与前后知识点的连接</h3><ul style="font-size:13.5px">
+      <li><strong>往前</strong>：接《技术栈与文件地图》里的 flask-sock / paho-mqtt。</li>
+      <li><strong>平行</strong>：另一份《HTTP 与 HTTPS》讲"这根线加不加密"，本份讲"这根线挂不挂断"——两个维度别混。</li>
+      <li><strong>往后（线）</strong>：「控车时序图」里快通道依赖 WS 长连接、慢通道依赖 MQTT 长连接，短连接只负责发命令那一瞬间。</li>
+    </ul></div>
+  </div>
+  <h3 style="font-size:16px;margin:14px 0 8px">自测小问题</h3>
+  <details><summary>1. HTTP/1.1 的 keep-alive 算长连接吗？为什么？</summary><div class="body"><p>不算"长连接语义"。它只是让多次请求复用同一条 TCP，省掉重复握手；每次交互仍是"客户端请求 → 服务端响应"，服务端无法在客户端没问的时候主动发数据。判断标准看"能否服务端主动推"。</p></div></details>
+  <details><summary>2. 为什么设备侧不能用短连接？</summary><div class="body"><p>因为车在局域网/NAT 内、没有可被云端主动访问的地址；只有设备先建立并保持一条长连接，云端才有通道把 move/stop 命令推下来。另外在线/离线判定也依赖这条连接的心跳。</p></div></details>
+  <details><summary>3. 项目里哪条链路是"看起来高频但其实仍是短连接"？</summary><div class="body"><p>APP 的 800ms 轮询，以及后端 10Hz 拉模拟器 <code>/state</code>。两者都是"每次新建请求、拿到响应即结束"，高频只是把很多次短连接排得很密。</p></div></details>
+  <details><summary>4. 长连接最大的代价是什么？项目怎么应对？</summary><div class="body"><p>代价是服务端要为每个客户端保持连接/线程，且必须处理断线。项目应对：WS 每客户端一个线程 + <code>WS_DIRTY</code> 事件唤醒（避免空转）、指数退避重连；MQTT 用 paho 自带的 <code>loop_start()</code> + <code>reconnect_delay_set</code>。</p></div></details>
+  <details><summary>5. 如果把 APP 改成 WebSocket，后端要改吗？</summary><div class="body"><p>不需要，<code>/ws</code> 已存在且广播的是与 <code>/fleet/status</code> 同源的 <code>cars</code> 数据。只需改 APP 的 FleetClient 并重新构建，再补心跳与重连。</p></div></details>
+</section>
+
+<footer>
+  V3 学 · 长连接与短连接 ｜ 2026-11-08 ｜ 代码片段摘自 app.py / car_mqtt_client.py / monitor.html / FleetClient.ets ｜ 同系列 <span class="file">V3-学习导航.html</span>、<span class="file">V3-学-HTTP与HTTPS.html</span>
+</footer>
+</div>
+</body>
+</html>

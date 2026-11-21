@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 学 · qwen3.8-omni-flash：全模态模型能不能把 ASR + LLM 合成一步</title>
+<style>
+  :root{
+    --bg:#f5f8fc; --card:#ffffff; --ink:#1f2933; --dim:#5b6b7c; --line:#dde5ee;
+    --c0:#3f51b5; --c1:#0f8a8a; --c2:#d97706; --c3:#7c3aed;
+    --hot:#b23b2e; --shadow:0 2px 10px rgba(31,41,51,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:"Microsoft YaHei","PingFang SC","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+       line-height:1.75; font-size:15px;}
+  a{color:#1d6fa5; text-decoration:none} a:hover{text-decoration:underline}
+  code{background:#eef3f9; padding:1px 5px; border-radius:4px; font-size:.9em;
+       font-family:Consolas,"Courier New",monospace; color:#234;}
+  pre{background:#1e2a38; color:#e9f2f8; border-radius:8px; padding:12px 14px;
+      font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.6;
+      overflow-x:auto; margin:8px 0 0; white-space:pre-wrap; word-break:break-all}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#2a2350 0%,#1c5c6e 100%); color:#fff; padding:34px 20px 30px;}
+  .hero .inner{max-width:1120px; margin:0 auto}
+  .hero h1{margin:0 0 8px; font-size:25px; letter-spacing:.3px}
+  .hero .sub{font-size:14.5px; color:#cfd9ef; margin:0 0 12px}
+  .hero p{max-width:920px; margin:0 0 8px; color:#e7ecf7; font-size:14px}
+  .hero .back{display:inline-block; margin-top:12px; color:#a8f0dc; font-size:13px}
+  .topnav{position:sticky; top:0; z-index:9; background:#fff; border-bottom:1px solid var(--line);
+          box-shadow:0 1px 6px rgba(31,41,51,.05)}
+  .topnav .inner{max-width:1120px; margin:0 auto; display:flex; flex-wrap:wrap; gap:2px; padding:8px 20px}
+  .topnav a{font-size:13px; color:var(--dim); padding:6px 11px; border-radius:20px}
+  .topnav a:hover{background:#eef3f9; color:var(--ink); text-decoration:none}
+  section{margin-top:34px; scroll-margin-top:58px}
+  .sec-head{display:flex; align-items:center; gap:12px; margin:0 0 14px}
+  .sec-no{width:34px;height:34px;flex:none;border-radius:9px;color:#fff;font-weight:700;
+          display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--c1)}
+  .sec-head h2{margin:0; font-size:21px}
+  .sec-head .tag{font-size:12px; color:var(--dim); background:#eaf0f6; padding:3px 10px; border-radius:12px}
+  .lead{color:var(--dim); margin:0 0 14px; font-size:14px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px;
+        padding:16px 18px; box-shadow:var(--shadow); margin-bottom:12px}
+  .card h3{margin:0 0 8px; font-size:16px}
+  .card p{margin:0 0 8px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.grid2,.grid3{grid-template-columns:1fr}}
+  .concl{background:linear-gradient(100deg,#f3efff,#eef7f6); border-left:5px solid var(--c3);
+         border-radius:10px; padding:18px 20px; font-size:17px; font-weight:600; line-height:1.85}
+  .concl small{display:block; font-weight:400; font-size:14px; color:var(--dim); margin-top:8px}
+  .pill{display:inline-block; font-size:11px; padding:2px 9px; border-radius:10px;
+        background:#eaf0f6; color:var(--dim); margin:0 5px 3px 0; white-space:nowrap}
+  .pill.d{background:#fdf0dc; color:#a35b06} .pill.u{background:#e2f4f1; color:#0b6d68}
+  .pill.l{background:#f0e9fb; color:#6632ad} .pill.v{background:#e9ecfb; color:#34429c}
+  .pill.hot{background:#fdecea; color:#b23b2e} .pill.ok{background:#e5f5e9; color:#237a3a}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; background:#fff}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top}
+  th{background:#eef3f9; font-weight:700}
+  tbody tr:nth-child(even){background:#fafbfd}
+  .tblwrap{overflow-x:auto; border-radius:10px; border:1px solid var(--line)}
+  .file{font-family:Consolas,"Courier New",monospace; font-size:.88em; color:#7a4b00;
+        background:#fff5e3; padding:1px 5px; border-radius:4px}
+  ul{margin:6px 0 8px; padding-left:22px} li{margin:4px 0}
+  .note{font-size:13px; color:var(--dim)}
+  .bar{border-left:4px solid var(--c1); border-radius:4px; padding-left:14px; margin:10px 0}
+  .warn{border-left-color:var(--hot); background:#fff6f5; padding:10px 14px; border-radius:6px}
+  .okbox{background:#eef9f2; border-left:4px solid #2f9e56; padding:10px 14px; border-radius:6px; margin:10px 0}
+  .tabs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px}
+  .tabs button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 14px;
+               font-size:13px; cursor:pointer; font-family:inherit; color:var(--dim)}
+  .tabs button.on{background:#2a2350; color:#fff; border-color:#2a2350}
+  .pane{display:none} .pane.on{display:block}
+  .svgwrap{overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px}
+  svg{display:block; min-width:820px; width:100%; height:auto}
+  .ln{stroke:#cfd9e6; stroke-width:2.5; fill:none} .ln.hot{stroke:#7c3aed; stroke-width:4}
+  .nd rect{fill:#f3f6fb; stroke:#d5dfeb; stroke-width:1.5}
+  .nd text{fill:#415163; font-size:12px; text-anchor:middle}
+  .nd .t2{fill:#8090a2; font-size:10.5px}
+  .nd.on rect{fill:#2a2350; stroke:#7c3aed; stroke-width:2.5}
+  .nd.on text{fill:#fff} .nd.on .t2{fill:#d8cbff}
+  .nd{cursor:pointer}
+  .detail{border:1px solid var(--line); border-radius:9px; padding:14px 16px; background:#fbfcfe; margin-top:12px}
+  .detail h3{margin:0 0 6px; font-size:16px}
+  .btn{border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:7px;
+       padding:5px 12px; font-size:13px; cursor:pointer; font-family:inherit; float:right}
+  .btn:hover{background:#eef3f9}
+  .qitem{border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin-bottom:10px; background:#fff}
+  .qitem p{margin:0 0 8px; font-weight:600}
+  .qitem label{display:block; font-size:13.5px; margin:4px 0; cursor:pointer; font-weight:400}
+  .qitem .fb{margin-top:8px; font-size:13px; display:none}
+  .qitem .fb.show{display:block}
+  .qitem .fb.good{color:#237a3a} .qitem .fb.bad{color:var(--hot)}
+  footer{margin-top:36px; font-size:12.5px; color:var(--dim); text-align:center; line-height:2}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="inner">
+    <h1>qwen3.8-omni-flash：能不能把「语音转文字 + 大模型解析」合成一步？</h1>
+    <div class="sub">《自然语言控车与语音链路》的补充教材 · 方案 E · 仍按七段结构</div>
+    <p>先纠正一个写法：<code>qwen3.8-omni-flash</code> 是<strong>模型 ID（model 名）</strong>，不是 URL。真正的接口地址是百炼的 OpenAI 兼容端点 <code>https://dashscope.aliyuncs.com/compatible-mode/v1</code>（或你的工作空间专属域名）。这两个值在项目里对应 <code>base_url</code> 和 <code>model</code> 两个不同字段。</p>
+    <p>好消息：这个模型<strong>确实能一次调用把音频变成工具调用</strong>，技术上"一步到位"成立。要不要用在第 ⑦ 步，是另一回事——本页把两条链路摆在一起比给你看。</p>
+    <a class="back" href="V3-学-自然语言控车与语音链路.html">← 回到上一份教材</a>　<a class="back" href="V3-学习导航.html">学习导航</a>
+  </div>
+</div>
+<div class="topnav"><div class="inner">
+  <a href="#s1">① 一句话结论</a><a href="#s2">② 生活比喻</a><a href="#s3">③ 项目位置</a>
+  <a href="#s4">④ 文件与接口</a><a href="#s5">⑤ 逐步拆解</a><a href="#s6">⑥ 常见坑</a><a href="#s7">⑦ 自测</a>
+</div></div>
+
+<div class="wrap">
+
+  <div class="okbox" style="margin-top:18px;font-size:14px">
+    <strong>更新（2026-11-08）：第 ⑦ 步已落地实现。</strong>
+    最终采用的是本页对比后推荐的<strong>两段式主链路</strong>（同一个 <code>qwen3.8-omni-flash</code> 先做 ASR 逐字转写、再做 Function Calling 解析），
+    方案 E 的"一次调用直出"保留为后续可切换的备选。实际接口、实测报文与验收步骤见
+    <a href="V3-学-AI控车落地与验收.html"><strong>AI 控车落地与验收</strong></a>。
+  </div>
+
+<!-- 1 -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">1</div><h2>一句话结论</h2><span class="tag">能，但别拿它当主链路</span></div>
+  <div class="concl">
+    <code>qwen3.8-omni-flash</code> 是原生全模态模型：<strong>音频/图片/视频/文本都能进，文本和 Function Calling 出来</strong>，所以「ASR + LLM 两步」在技术上可以合并成一次 API 调用。
+    <small>但对这个教学项目，建议<strong>主链路仍保留两段式</strong>（ASR 出逐字稿 → Qwen 文本模型出 JSON → 白名单 → /command），把全模态一步式当作<b>演示爆点或备选方案 E</b>。理由不是"做不到"，而是：丢逐字稿没法审计和显示"我听到的是……"、深度思考默认开启让短指令又慢又贵、离线版面向长音视频分析而非短控车指令、以及教学上会把"听 / 懂 / 校验 / 执行"的分层黑盒化。<b>无论哪种链路，白名单校验和 /command 出口一步都不能省，密钥仍只在后端。</b></small>
+  </div>
+  <div class="grid3" style="margin-top:14px">
+    <div class="card"><h3><span class="pill v">是什么</span></h3><p>阿里 2026 年 9 月上线的原生全模态模型，云端托管、未开放权重；1M token 上下文，音频输入支持 113 种语言/方言，支持 Function Calling、结构化输出、联网搜索、上下文缓存；OpenAI 兼容的 Chat Completions / Responses。</p></div>
+    <div class="card"><h3><span class="pill l">能做什么</span></h3><p>把 <code>input_audio</code> 和文字指令一起放进 <code>messages</code>，配合 <code>tools</code> 定义「控车函数」，模型可以直接返回 <code>tool_calls</code>（车号、cmd、speed、angle），不必先单独跑一次 ASR。</p></div>
+    <div class="card"><h3><span class="pill hot">不能做什么</span></h3><p>它不是接口地址、不是本地模型、也不替你做安全校验；离线版输出只有<strong>文本</strong>（要语音播报得另配 TTS / <code>qwen3.5-omni</code> / <code>qwen3-tts</code>）；低延迟实时语音要用另一个 <code>qwen3.8-omni-flash-realtime</code>（WebSocket/WebRTC）。</p></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">2</div><h2>生活比喻：两个店员 vs 一个万能店员</h2><span class="tag">快，但你看不见他听成了什么</span></div>
+  <div class="grid2">
+    <div class="card">
+      <h3>两段式：速记员 + 点单顾问</h3>
+      <p>速记员先把你说的<strong>逐字记在纸上</strong>（"来份不太辣的牛肉面"），顾问再据此翻成菜单编号 <code>#27 / 微辣</code>。</p>
+      <ul><li>听错了？看纸就知道，能重说一遍</li><li>每一步都能单独换人（换 ASR、换 LLM）</li><li>账本上留着原话，事后可查</li></ul>
+      <p class="note">对应上一份教材的 7 跳链路。</p>
+    </div>
+    <div class="card">
+      <h3>一步式：一个既会听又懂菜的万能店员</h3>
+      <p>你直接对他说，他<strong>脑子里听完就下单</strong>，中间不给你纸面记录。</p>
+      <ul><li>少一次交接，理论上更快、少一个要维护的服务</li><li>但他说"我听到的是加辣"时，你<strong>没有证据</strong>核对</li><li>这位店员还有个习惯：回答前先在心里长篇推演一遍（默认开启深度思考），短句也照样</li></ul>
+      <p class="note">对应 <code>qwen3.8-omni-flash</code> 一次调用直出 <code>tool_calls</code>。</p>
+    </div>
+  </div>
+  <div class="bar warn"><strong>折中办法：</strong>在工具 schema 里强制加一个 <code>transcript</code> 字段，要求模型"先逐字转写用户原话，不要改写，再填指令槽位"。这样一步式也能拿回逐字稿用于界面显示与审计——但它是模型自己复述的，<b>不等价于独立 ASR 的原始转写</b>，需要提示词明确约束并实测。</div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">3</div><h2>项目位置：它插在哪、和谁并列</h2><span class="tag">对照上一份教材</span></div>
+  <div class="card">
+    <div class="tblwrap"><table>
+      <thead><tr><th style="width:22%">位置</th><th>内容</th><th style="width:28%">结论</th></tr></thead>
+      <tbody>
+        <tr><td><span class="file">docs/V3-开发路线图.md:133~145</span></td><td>⑦ 规定：后端加 <code>POST /ai/command</code>、LLM 解析成命令序列、<b>经既有 /command 链路执行</b>、base_url + key 存配置文件不入库不入仓</td><td>一步式<b>不违反</b>路线图，只是把"ASR + LLM"两个插件合成一个</td></tr>
+        <tr><td><a href="V3-学-自然语言控车与语音链路.html">上一份教材 §5 方案切换</a></td><td>已有四条路线：云 ASR + Qwen 文本模型 / 本地 ASR / APP 端侧 Core Speech Kit / 最快演示顺序</td><td>本页是<b>方案 E</b>：全模态一次调用</td></tr>
+        <tr><td><span class="file">server/ai_config.json</span>（待新增）</td><td><code>base_url</code>、<code>api_key</code>、<code>llm_model</code>、<code>asr_model</code></td><td>一步式只需把 <code>llm_model</code> 换成 <code>qwen3.8-omni-flash</code>，<b>base_url 不变</b>——这正说明模型名不是 URL</td></tr>
+        <tr><td><span class="file">server/app.py:449 / 453 / 608</span></td><td>命令白名单、参数校验、唯一执行出口</td><td><b>完全不动</b>。模型输出仍要先过这三关</td></tr>
+        <tr><td>工程现状</td><td>讲解写于实现前：当时无 AI/语音代码、无 <code>.gitignore</code>、<code>module.json5</code> 只有 INTERNET 权限</td><td>随后 ⑦ 已落地：新增 <code>ai_agent.py</code> / <code>ai_config.json</code> / <code>.gitignore</code> / <code>web/ai_chat.html</code>，见落地说明</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="okbox"><strong>一句话定位：</strong>方案 E 换掉的是<b>「翻译器内部的两个零件」</b>，不是架构。前端照旧把音频/文字交给后端 <code>:8000</code>，后端照旧校验、排程、调 <code>/command</code>，WebSocket <code>/ws</code> 照旧推结果给大屏。</div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">4</div><h2>文件与接口：base_url 与 model 别填反</h2><span class="tag">可复制的真实调用形状</span></div>
+  <div class="card">
+    <h3>两个字段对照<button class="btn" data-copy="c0">复制</button></h3>
+    <pre id="c0">// server/ai_config.json（示意；密钥用环境变量，不写进仓库）
+{
+  "base_url":  "https://dashscope.aliyuncs.com/compatible-mode/v1",
+               // ↑ 这才是 URL；华北2 也可用工作空间专属域名
+               //   https://&lt;WorkspaceId&gt;.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+  "api_key":   "YOUR_CREDENTIAL",
+  "llm_model": "qwen3.8-omni-flash",   // ↑ 这是模型 ID，不是 URL
+  "asr_model": "qwen3-asr-flash"       // 两步式才会用到；方案 E 可留空
+}
+
+// 请求时：
+POST {base_url}/chat/completions      ← URL
+{ "model": "qwen3.8-omni-flash", ... } ← model 名</pre>
+    <p class="note">你写的 <code>URL:qwen3.8-omni-flash</code> 如果是某个配置页里复制的一行，多半是把「模型名」误填进了「地址」栏。填错的表现是请求直接 404 / DNS 解析失败，而不是模型报错。</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>方案 E 请求体（音频直进、工具直出）<button class="btn" data-copy="c1">复制</button></h3>
+      <pre id="c1">from openai import OpenAI
+import os, json
+client = OpenAI(api_key=os.getenv("DASHSCOPE_API_KEY"),
+                base_url=os.getenv("DASHSCOPE_BASE_URL"))
+
+tools = [{
+  "type":"function",
+  "function":{
+    "name":"drive_car",
+    "description":"把一句话解析成车队规范指令计划",
+    "parameters":{"type":"object","properties":{
+      "transcript":{"type":"string","description":"逐字转写用户原话，不要改写"},
+      "device_id":{"type":"string","description":"必须是 devices.json 中存在的短名"},
+      "plan":{"type":"array","items":{"type":"object","properties":{
+        "cmd":{"type":"string","enum":["FORWARD","BACK","LEFT","RIGHT","MOVE","STOP"]},
+        "speed":{"type":"integer","minimum":0,"maximum":100},
+        "angle":{"type":"number","minimum":0,"maximum":360},
+        "duration_ms":{"type":"integer"}},"required":["cmd"]}}},
+    "required":["transcript","device_id","plan"]}}}]
+
+resp = client.chat.completions.create(
+  model="qwen3.8-omni-flash",
+  messages=[{"role":"system","content":
+     "你是车队指令解析器。先逐字转写用户原话，再填工具参数。"
+     "cmd 只能是白名单里的值；信息不足时不要调用工具，直接追问。"},
+    {"role":"user","content":[
+      {"type":"input_audio",
+       "input_audio":{"data":"&lt;可公网访问的 wav URL 或 base64&gt;",
+                      "format":"wav"}},
+      {"type":"text","text":"请解析这句话并调用 drive_car"}]}],
+  tools=tools,
+  # 短指令场景：关掉深度思考，否则慢且多计 reasoning tokens
+  extra_body={"enable_thinking": False},
+)
+args = json.loads(resp.choices[0].message.tool_calls[0].function.arguments)</pre>
+    </div>
+    <div class="card">
+      <h3>拿到 tool_calls 之后，仍然走老路<button class="btn" data-copy="c2">复制</button></h3>
+      <pre id="c2">// ① 逐条校验（后端，绝不跳过）
+CMD_WHITELIST = ("FORWARD","BACK","LEFT","RIGHT","MOVE","STOP")
+assert args["device_id"] in DEVICES          # devices.json
+for step in args["plan"]:
+    assert step["cmd"] in CMD_WHITELIST
+    paras, perr = build_move_paras(step["cmd"],
+                    step.get("speed"), angle=step.get("angle"))
+    if perr: return err(400, perr)           # 越界直接整单拒绝
+
+// ② 排程：现有 /command 没有时长字段
+//    t=0     POST /command {MOVE, angle, speed}
+//    t=3.0s  POST /command {STOP}
+
+// ③ 反馈只用真实返回值拼，不用模型自己的话
+reply = "已下发 %d 条命令，成功 %d 条" % (len(steps), ok_count)
+
+// ④ transcript 写进审计日志（commands.log / audit()）
+//    便于回溯"到底听成了什么"</pre>
+      <p class="note">响应里的 <code>reasoning_content</code>（思考过程）默认会有，且 thinking token 计入用量；关闭思考后就没有这一段。结构化输出/工具调用也不是 100% 保证，服务端必须能处理"没调用工具、返回一段文本"的情况。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">5</div><h2>逐步拆解：两条链路并排看</h2><span class="tag">点标签切换 / 点方块看详情</span></div>
+  <div class="card">
+    <div class="tabs" id="tabs">
+      <button class="on" data-pane="two">方案 A：两段式（推荐主链路）</button>
+      <button data-pane="one">方案 E：全模态一步式</button>
+      <button data-pane="compare">决策对比表</button>
+    </div>
+
+    <div class="pane on" id="two">
+      <p class="lead">音频 → 文字 → JSON → 校验 → 排程 → /command → 反馈。点任意方块看它在干什么。</p>
+      <div class="svgwrap">
+        <svg viewBox="0 0 1000 170" id="svg2" role="img" aria-label="两段式链路">
+          <path class="ln" d="M144 84 L158 84"></path><path class="ln" d="M284 84 L298 84"></path>
+          <path class="ln" d="M424 84 L438 84"></path><path class="ln" d="M564 84 L578 84"></path>
+          <path class="ln" d="M704 84 L718 84"></path><path class="ln" d="M844 84 L858 84"></path>
+          <g class="nd" data-i="0"><rect x="20" y="44" width="124" height="80" rx="10"></rect><text x="82" y="76">① 采集音频</text><text class="t2" x="82" y="98">麦克风</text></g>
+          <g class="nd" data-i="1"><rect x="160" y="44" width="124" height="80" rx="10"></rect><text x="222" y="76">② ASR</text><text class="t2" x="222" y="98">出逐字稿</text></g>
+          <g class="nd" data-i="2"><rect x="300" y="44" width="124" height="80" rx="10"></rect><text x="362" y="76">③ Qwen 文本</text><text class="t2" x="362" y="98">文字→JSON</text></g>
+          <g class="nd" data-i="3"><rect x="440" y="44" width="124" height="80" rx="10"></rect><text x="502" y="76">④ 白名单</text><text class="t2" x="502" y="98">车号/范围</text></g>
+          <g class="nd" data-i="4"><rect x="580" y="44" width="124" height="80" rx="10"></rect><text x="642" y="76">⑤ 排程</text><text class="t2" x="642" y="98">补发 STOP</text></g>
+          <g class="nd" data-i="5"><rect x="720" y="44" width="124" height="80" rx="10"></rect><text x="782" y="76">⑥ /command</text><text class="t2" x="782" y="98">云→MQTT→车</text></g>
+          <g class="nd" data-i="6"><rect x="860" y="44" width="124" height="80" rx="10"></rect><text x="922" y="76">⑦ 反馈</text><text class="t2" x="922" y="98">文字/TTS</text></g>
+          <text x="20" y="152" fill="#8090a2" font-size="11">两次独立的云端调用：ASR 服务 + 文本 LLM；中间产物「逐字稿」可见、可存、可换。</text>
+        </svg>
+      </div>
+      <div class="detail" id="d2"></div>
+    </div>
+
+    <div class="pane" id="one">
+      <p class="lead">音频 + 提示词直接进同一个模型，出来就是工具调用参数。少了两次交接，多了几项约束。</p>
+      <div class="svgwrap">
+        <svg viewBox="0 0 1000 170" id="svg1" role="img" aria-label="全模态一步式链路">
+          <path class="ln hot" d="M144 84 L238 84"></path><path class="ln hot" d="M364 84 L438 84"></path>
+          <path class="ln" d="M564 84 L578 84"></path><path class="ln" d="M704 84 L718 84"></path><path class="ln" d="M844 84 L858 84"></path>
+          <g class="nd" data-i="0"><rect x="20" y="44" width="124" height="80" rx="10"></rect><text x="82" y="76">① 采集音频</text><text class="t2" x="82" y="98">麦克风</text></g>
+          <g class="nd" data-i="1"><rect x="240" y="34" width="124" height="100" rx="12"></rect><text x="302" y="70">② 全模态模型</text><text class="t2" x="302" y="92">qwen3.8-omni-flash</text><text class="t2" x="302" y="112">听 + 懂 + 填槽</text></g>
+          <g class="nd" data-i="2"><rect x="440" y="44" width="124" height="80" rx="10"></rect><text x="502" y="76">③ 白名单</text><text class="t2" x="502" y="98">一步不能省</text></g>
+          <g class="nd" data-i="3"><rect x="580" y="44" width="124" height="80" rx="10"></rect><text x="642" y="76">④ 排程</text><text class="t2" x="642" y="98">补发 STOP</text></g>
+          <g class="nd" data-i="4"><rect x="720" y="44" width="124" height="80" rx="10"></rect><text x="782" y="76">⑤ /command</text><text class="t2" x="782" y="98">云→MQTT→车</text></g>
+          <g class="nd" data-i="5"><rect x="860" y="44" width="124" height="80" rx="10"></rect><text x="922" y="76">⑥ 反馈</text><text class="t2" x="922" y="98">文字/TTS</text></g>
+          <text x="20" y="152" fill="#8090a2" font-size="11">紫色一段 = 原来 ASR + LLM 两次调用合并；后半段与两段式完全相同。</text>
+        </svg>
+      </div>
+      <div class="detail" id="d1"></div>
+    </div>
+
+    <div class="pane" id="compare">
+      <div class="tblwrap"><table>
+        <thead><tr><th style="width:20%">维度</th><th>方案 A 两段式（ASR + Qwen 文本）</th><th>方案 E 一步式（qwen3.8-omni-flash）</th></tr></thead>
+        <tbody>
+          <tr><td><b>调用次数</b></td><td>2 次云端调用</td><td><span class="pill ok">1 次</span>更少的网络往返与代码</td></tr>
+          <tr><td><b>逐字稿</b></td><td><span class="pill ok">原生输出</span>可显示、可审计、可重跑</td><td><span class="pill hot">默认没有</span>要靠 schema 里的 <code>transcript</code> 让模型复述</td></tr>
+          <tr><td><b>短指令延迟</b></td><td>专用 ASR 快 + 小文本模型快</td><td>默认开启深度思考（reasoning_effort 高），短句也先推演；需显式关闭</td></tr>
+          <tr><td><b>费用结构</b></td><td>按 ASR 时长 + 文本 token，短句便宜</td><td>音频 token + 文本 token + <b>思考 token 也计费</b>；长上下文能力对短指令是浪费</td></tr>
+          <tr><td><b>擅长的场景</b></td><td>短语音指令、实时控车、需要留痕</td><td>长音视频理解、会议纪要、字幕、跨模态推理、多模态 Agent</td></tr>
+          <tr><td><b>实时语音对话</b></td><td>ASR 流式 + 文本 LLM 可拼</td><td>要换 <code>qwen3.8-omni-flash-realtime</code>，走 WebSocket/WebRTC 长连接（项目里没有这套设施）</td></tr>
+          <tr><td><b>语音播报</b></td><td>网页 speechSynthesis / APP textToSpeech</td><td>离线版只输出文本；想要 AI 语音输出需另配 TTS 模型</td></tr>
+          <tr><td><b>可替换性</b></td><td>ASR 与 LLM 能各自换供应商/换本地模型</td><td>绑死一个闭源云模型（未开放权重），离线/内网演示直接不可用</td></tr>
+          <tr><td><b>教学价值</b></td><td><span class="pill ok">分层清晰</span>正好讲「听 / 懂 / 校验 / 执行」</td><td>中间过程成黑盒，初学者更难定位"是听错了还是理解错了"</td></tr>
+          <tr><td><b>安全边界</b></td><td colspan="2"><b>完全相同</b>：密钥只在后端、输出必须过 <code>CMD_WHITELIST</code> + <code>build_move_paras()</code>、只经 <code>/command</code> 下发、反馈只认真实返回值</td></tr>
+        </tbody>
+      </table></div>
+      <div class="okbox"><strong>推荐用法：</strong>主链路按方案 A 做（阶段 0 纯文字 → 阶段 1 云 ASR → 阶段 2 HTTPS → 阶段 3 APP 原生语音），把方案 E 留成<strong>一行配置即可切换的备选</strong>：在 <code>ai_config.json</code> 里加个 <code>"mode": "two_stage" | "omni"</code>，两种解析都输出同一个 <code>plan</code> JSON，后面的校验/排程/执行完全复用。演示时切到 omni 讲"现在一个模型就能听懂并下单"，很有爆点；平时切回两段式讲分层与可审计。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">6</div><h2>常见坑</h2><span class="tag">按这个模型特有的坑排序</span></div>
+  <div class="grid2">
+    <div class="card"><h3><span class="pill hot">配置</span>把模型名当 URL 填</h3><p><code>qwen3.8-omni-flash</code> 填进 <code>base_url</code> 会 404 或 DNS 报错。它是 <code>model</code> 的值；URL 是 <code>…/compatible-mode/v1</code>。工作空间专属域名还要带 <code>WorkspaceId</code>，且<strong>不同地域的 API Key 不通用</strong>。</p></div>
+    <div class="card"><h3><span class="pill hot">延迟/费用</span>深度思考默认开启</h3><p>官方说明该模型默认开思考，响应带 <code>reasoning_content</code>，思考 token 计入账单。一句"往前开三秒"也会先推演一遍。短指令场景要关 <code>enable_thinking</code> 或把 <code>reasoning_effort</code> 调低，并实测首字延迟。</p></div>
+    <div class="card"><h3><span class="pill hot">可审计</span>拿不到原始逐字稿</h3><p>界面上没法显示"我听到的是……"，误识别也无从回溯。要么退回两段式，要么在工具 schema 里强制 <code>transcript</code> 并要求"逐字、不改写"，写进 <code>audit()</code> / <code>commands.log</code>。</p></div>
+    <div class="card"><h3><span class="pill hot">安全</span>以为"模型更聪明"就能跳过校验</h3><p>全模态模型一样会幻觉车号、编造 <code>cmd</code>、给越界 <code>speed</code>。<code>CMD_WHITELIST</code> + <code>build_move_paras()</code> + <code>devices.json</code> 复核 + 冻结判断，一条都不能少。</p></div>
+    <div class="card"><h3><span class="pill d">输入</span>音频怎么给</h3><p><code>input_audio</code> 的 <code>data</code> 要可公网访问的音频 URL 或 Base64，<code>format</code> 标明格式；浏览器录的 <code>webm/opus</code> 常不被接受，需要重采样成 wav/pcm。音频一律<strong>由后端转发</strong>，别在网页里直接带 API Key 调百炼。</p></div>
+    <div class="card"><h3><span class="pill d">连接</span>把 offline 版当实时语音用</h3><p><code>qwen3.8-omni-flash</code> 是 HTTP 请求/响应，适合上传一段录音做分析；要边说边出结果、要 AI 直接回语音，得用 <code>…-realtime</code> 变体的 WebSocket/WebRTC 长连接——那是一套新设施，项目现在的 <code>/ws</code> 只是后端→网页的状态广播。</p></div>
+    <div class="card"><h3><span class="pill d">输出</span>工具调用不是必然发生</h3><p>模型可能返回一段普通文本、或信息不足时拒绝调用工具。代码要处理 <code>tool_calls</code> 为空、JSON 解析失败、字段缺失、数组里混入非法 <code>cmd</code> 这几种情况，并返回 <code>need_clarify</code> 让用户补一句。</p></div>
+    <div class="card"><h3><span class="pill d">播报</span>以为它能顺便"说话"</h3><p>离线版输出模态只有<strong>文本</strong>。路线图⑦的"播报执行结果"仍要靠网页 <code>speechSynthesis</code>、APP <code>textToSpeech</code> 或单独调 TTS 模型；别在演示时才发现没声音。</p></div>
+    <div class="card"><h3><span class="pill l">架构</span>把模型接进前端</h3><p>不管选哪个模型，音频/文字都只交给后端 <code>:8000</code>。在 ArkTS 或网页 JS 里直连百炼会泄露密钥，也绕过了统一审计。</p></div>
+    <div class="card"><h3><span class="pill l">演示</span>断网 / 内网就哑火</h3><p>该模型云端托管、未开放权重，只走公网 API。断网演示要准备两条兜底：本地 ASR + 本地 LLM，或干脆退回"打字输入"模式。教学现场别把唯一路径押在一个云模型上。</p></div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">7</div><h2>自测</h2><span class="tag">5 题判分 + 动手验证</span></div>
+  <div class="card">
+    <div id="quizBox"></div>
+    <div class="okbox" id="quizScore">答对 0 / 5</div>
+  </div>
+  <div class="card">
+    <h3>动手验证（不需要真实密钥也能做前两条）</h3>
+    <pre># 1) 分清 URL 和 model：只看形状，不发起带密钥的请求
+#    URL   = https://dashscope.aliyuncs.com/compatible-mode/v1
+#    model = qwen3.8-omni-flash
+#    把 model 名填进 URL 栏 → 必然 404 / DNS 失败
+
+# 2) 检查你要改的两个配置字段是否存在（当前工程还没建 ai_config.json）
+python -c "import json,pathlib; p=pathlib.Path('server/ai_config.json'); print('exists:', p.exists()); print(json.dumps({'base_url':'&lt;endpoint&gt;','llm_model':'qwen3.8-omni-flash'},ensure_ascii=False,indent=2))"
+
+# 3) 百炼模型需在对应业务空间开通；用最小请求确认模型名可用
+curl -X POST "$DASHSCOPE_BASE_URL/chat/completions" -H "Authorization: Bearer $DASHSCOPE_API_KEY" -H "Content-Type: application/json" -d "{\"model\":\"qwen3.8-omni-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"说\\\"ok\\\"\"}]}"
+
+# 4) 地基检查：白名单仍拦得住任意模型产生的幻觉命令
+curl -X POST http://127.0.0.1:8000/command -H "Content-Type: application/json" -d "{\"device_id\":\"car_001\",\"cmd\":\"FLY\",\"speed\":50}"
+#    → 期望 400，说明无论方案 A 还是 E，执行出口都是安全的</pre>
+    <p class="note">第 4 条是核心：<strong>换不换模型，都不影响"车只允许执行白名单里的 6 个命令"这件事</strong>。如果它返回 200，就先别接任何 AI。</p>
+  </div>
+  <div class="card">
+    <h3>资料与口径</h3>
+    <p class="note">本页关于 <code>qwen3.8-omni-flash</code> 的能力（四模态输入 / 文本输出 / Function Calling / 结构化输出 / 深度思考默认开启 / 1M 上下文 / 113 种音频语言 / OpenAI 兼容 Chat Completions 与 Responses / 未开放权重 / 地域化 API Key）、以及 <code>qwen3.8-omni-flash-realtime</code> 的实时变体，按 2026-11-08 可查到的阿里云百炼官方文档、Qwen 官方博客与公开资料整理。模型名、参数名（如 <code>enable_thinking</code> / <code>reasoning_effort</code>）、计费与限流会随版本和地域变化，<strong>落地前请以你账号所在业务空间的当前文档为准</strong>。项目内行号与路径按讲解生成时的源码核对。本页作为讲解文档<strong>不含任何密钥</strong>；第 ⑦ 步随后已按两段式落地，改动清单与实测结果见《AI 控车落地与验收》。</p>
+  </div>
+</section>
+
+<footer>
+  V3 智能巡检车队 · 第 ⑦ 步 AI 增强「方案 E」补充教材 ｜ 生成于 2026-11-08<br>
+  <a href="V3-学-自然语言控车与语音链路.html">上一份：自然语言控车与语音链路</a> · <a href="V3-学-模块连接与协议全景.html">模块连接与协议全景</a> · <a href="V3-学习导航.html">返回学习导航</a>
+</footer>
+</div>
+
+<script>
+(function(){
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* 两条链路的节点详情 */
+  var TWO = [
+    {n:'① 采集音频', d:'网页 MediaRecorder / APP Core Speech Kit 录一段音频，交给后端。项目现状：HTTP + 局域网 IP 不是安全上下文，跨设备访问要先升 HTTPS。', f:'web/monitor.html；CarFleet/.../module.json5:13-17'},
+    {n:'② ASR 转写', d:'独立语音识别服务或模型输出<b>逐字稿</b>。这份文本是后面所有步骤的输入，也是审计与界面显示的依据；可以随时换供应商或换成本地模型。', f:'待新增 server/ai_agent.py；配置 asr_model'},
+    {n:'③ Qwen 文本模型', d:'纯文本 LLM（如 qwen-plus）配合 Function Calling / JSON Schema，把逐字稿填成 plan JSON。因为输入是文本，调试时可以直接拿 curl 复现。', f:'待新增 POST /ai/command；配置 llm_model'},
+    {n:'④ 白名单校验', d:'车号在 devices.json、设备未冻结、cmd 在白名单、speed 0~100、angle 0~360。任何一项不过整单拒绝。', f:'server/app.py:449、453、620（既有）'},
+    {n:'⑤ 任务排程', d:'现有 /command 没有时长字段，"开三秒"要后端定时器在 3 秒后补发 STOP，并支持中途取消。', f:'待新增 server/ai_agent.py + points.json'},
+    {n:'⑥ 既有 /command', d:'转成 move(vx,vy)/stop → 华为云 CreateCommand → MQTT 8883 → 车。与摇杆完全同一条链路。', f:'server/app.py:608；device/car_mqtt_client.py'},
+    {n:'⑦ 反馈 / 播报', d:'只用 /command 的真实返回值拼结果；可选 TTS 播报。逐字稿与 plan 一起写进审计日志。', f:'server/app.py:643 audit()；/ws:668'}
+  ];
+  var ONE = [
+    {n:'① 采集音频', d:'与两段式完全相同：网页/APP 只负责采集并交给后端 :8000，不在前端直连百炼。', f:'web/monitor.html；CarFleet/.../module.json5'},
+    {n:'② 全模态一次调用', d:'把 input_audio + 提示词 + tools 一起 POST 到 Chat Completions，模型内部完成"听 + 懂 + 填槽"，直接返回 tool_calls 参数。<b>记得关掉默认开启的深度思考</b>，否则短指令也慢且多计费。', f:'POST {base_url}/chat/completions；model=qwen3.8-omni-flash'},
+    {n:'③ 白名单校验', d:'与两段式<b>一模一样，不能省</b>。工具 schema 里的 enum/min/max 只是"建议"，服务端必须再验一次；还要处理模型没调用工具、返回纯文本的情况。', f:'server/app.py:449、453、620（既有）'},
+    {n:'④ 任务排程', d:'同样要补 duration 语义：到点补发 STOP，任一步失败就中止后续。', f:'待新增 server/ai_agent.py + points.json'},
+    {n:'⑤ 既有 /command', d:'与两段式完全相同。换模型不改变任何一条下发协议。', f:'server/app.py:608'},
+    {n:'⑥ 反馈 / 播报', d:'用真实返回值拼结果；若采用折中方案，把 schema 里模型复述的 transcript 写进审计日志，但要知道它不是独立 ASR 的原始输出。离线版只输出文本，播报另配 TTS。', f:'server/app.py:643 audit()'}
+  ];
+  function bindDetail(svgId, boxId, data){
+    var svg = document.getElementById(svgId), box = document.getElementById(boxId);
+    var nodes = Array.prototype.slice.call(svg.querySelectorAll('.nd'));
+    function show(i){
+      nodes.forEach(function(n,k){ n.className.baseVal = 'nd' + (k===i ? ' on' : ''); });
+      var s = data[i];
+      box.innerHTML = '<h3>' + esc(s.n) + '</h3><p>' + s.d + '</p>' +
+        '<div class="note"><b>文件 / 接口：</b><span class="file">' + esc(s.f) + '</span></div>';
+    }
+    nodes.forEach(function(n){ n.addEventListener('click', function(){ show(+n.dataset.i); }); });
+    show(0);
+  }
+  bindDetail('svg2','d2',TWO);
+  bindDetail('svg1','d1',ONE);
+
+  /* 标签切换 */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('#tabs button'));
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.className = ''; });
+      t.className = 'on';
+      Array.prototype.forEach.call(document.querySelectorAll('.pane'), function(p){
+        p.className = 'pane' + (p.id === t.dataset.pane ? ' on' : '');
+      });
+    });
+  });
+
+  /* 复制 */
+  Array.prototype.forEach.call(document.querySelectorAll('button[data-copy]'), function(b){
+    b.addEventListener('click', function(){
+      var t = document.getElementById(b.dataset.copy).textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ b.textContent='已复制'; setTimeout(function(){b.textContent='复制';},1400); });
+      } else { b.textContent = '请手动选中'; }
+    });
+  });
+
+  /* 自测 */
+  var QUIZ = [
+    {q:'qwen3.8-omni-flash 应该填在配置的哪个字段？', a:['base_url（接口地址）','api_key','model / llm_model（模型 ID）','mqtt_host'], r:2,
+     why:'它是模型 ID，不是 URL。base_url 才是 https://…/compatible-mode/v1 这样的接口地址。'},
+    {q:'用全模态模型一步到位后，下面哪件事仍然必须做？', a:['让模型直接生成 vx/vy 发给华为云','跳过 CMD_WHITELIST 和 build_move_paras() 校验','仍然逐条校验车号/命令/参数，再经 /command 下发','把 API Key 放到网页里方便调试'], r:2,
+     why:'换模型不改变安全边界：密钥只在后端、输出必须过白名单、执行出口只有 /command。'},
+    {q:'一步式相对两段式，最明显的"丢失"是什么？', a:['WebSocket 推送','独立的逐字稿（无法核对听错没有、无法留痕）','MQTT 8883 加密','小车的 5s 上报节奏'], r:1,
+     why:'ASR 的原生输出就是逐字稿；合并后只能在工具 schema 里要求模型复述一个 transcript，性质不同。'},
+    {q:'为什么短控车指令用离线版 qwen3.8-omni-flash 可能又慢又贵？', a:['因为它只能本地跑','因为默认开启深度思考，思考 token 也计费，且 1M 上下文能力对短句是浪费','因为 MQTT 8883 带宽不够','因为它不支持 Function Calling'], r:1,
+     why:'官方说明思考默认开启、响应含 reasoning_content 且计入用量；短指令场景应显式关闭或调低思考强度。'},
+    {q:'想做"边说边出结果"的低延迟语音交互，正确做法是？', a:['把离线版 qwen3.8-omni-flash 的请求频率调到 10Hz','换 qwen3.8-omni-flash-realtime，走 WebSocket/WebRTC 流式长连接','改用 SQLite 缓存','把音频写进设备影子'], r:1,
+     why:'离线版是 HTTP 请求/响应；实时语音要用 realtime 变体的持久连接，那是项目里目前没有的一套设施。'}
+  ];
+  var box = document.getElementById('quizBox'), answers = {};
+  QUIZ.forEach(function(item, qi){
+    var d = document.createElement('div'); d.className = 'qitem';
+    var html = '<p>' + (qi+1) + '. ' + esc(item.q) + '</p>';
+    item.a.forEach(function(t, ai){
+      html += '<label><input type="radio" name="q'+qi+'" value="'+ai+'"> ' + esc(t) + '</label>';
+    });
+    html += '<div class="fb" id="fb'+qi+'"></div>';
+    d.innerHTML = html;
+    d.addEventListener('change', function(e){
+      if (!e.target.name) return;
+      answers[qi] = +e.target.value;
+      var ok = answers[qi] === item.r;
+      var fb = document.getElementById('fb'+qi);
+      fb.className = 'fb show ' + (ok ? 'good' : 'bad');
+      fb.innerHTML = (ok ? '✓ 正确。' : '✗ 不对。') + esc(item.why);
+      var right = 0;
+      QUIZ.forEach(function(q,k){ if (answers[k] === q.r) right++; });
+      document.getElementById('quizScore').textContent = '答对 ' + right + ' / ' + QUIZ.length +
+        (right === QUIZ.length ? '　全对，方案 A / E 可以自己选了' : '　（改答案会实时重新计分）');
+    });
+    box.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>

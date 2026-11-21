@@ -1,0 +1,25 @@
+{
+  "devices": [
+    {
+      "manufacturer_name": "InspectionCarTeam",
+      "manufacturer_id": "ICT001",
+      "model": "CarSimV1",
+      "protocol_type": "MQTT",
+      "device_type": "InspectionCar",
+      "service_capabilities": [
+        {
+          "service_id": "car_status",
+          "service_type": "car_status",
+          "option": "Mandatory",
+          "description": "car realtime status"
+        },
+        {
+          "service_id": "car_control",
+          "service_type": "car_control",
+          "option": "Mandatory",
+          "description": "remote control commands"
+        }
+      ]
+    }
+  ]
+}

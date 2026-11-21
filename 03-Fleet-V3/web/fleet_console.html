@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>V3 车队控制台 · 第②步验收展示（L1 接口全流程）</title>
+<style>
+  :root { --bg:#f4f6f9; --panel:#fff; --line:#dfe7ee; --txt:#2c3e50; --sub:#7a8a99; --ok:#27ae60; --bad:#c0392b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font:14px/1.6 "Microsoft YaHei",sans-serif; background:var(--bg); color:var(--txt); }
+  header { padding:12px 20px; background:var(--panel); border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:16px; }
+  header .meta { color:var(--sub); font-size:12px; }
+  #grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; padding:20px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .card h2 { font-size:15px; display:flex; align-items:center; gap:8px; }
+  .dot { width:10px; height:10px; border-radius:50%; background:#b8c4cf; }
+  .dot.on { background:var(--ok); box-shadow:0 0 6px var(--ok); }
+  .stat { display:grid; grid-template-columns:repeat(3,1fr); gap:6px 12px; margin:10px 0; font-size:13px; }
+  .stat b { font-size:15px; }
+  .stat .lbl { color:var(--sub); font-size:11px; }
+  .compass { text-align:center; font-size:34px; line-height:1; transition:transform .4s; }
+  .ctrl { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px; }
+  .ctrl button { font:inherit; padding:8px 0; border:1px solid var(--line); border-radius:6px; background:#f8fafc; cursor:pointer; }
+  .ctrl button:hover { background:#e8f0fb; border-color:#2f6fed; }
+  .ctrl .stop { grid-column:2; background:#fdecea; border-color:#f5b7b1; color:var(--bad); font-weight:bold; }
+  .ctrl .stop:hover { background:#fadbd8; }
+  .speed { display:flex; align-items:center; gap:10px; margin:10px 0 4px; }
+  .speed input { flex:1; }
+  .resp { margin-top:8px; font-size:12px; color:var(--sub); background:#f8fafc; border:1px dashed var(--line); border-radius:6px; padding:6px 10px; min-height:34px; word-break:break-all; }
+  .resp.bad { color:var(--bad); background:#fdf3f2; }
+  .bar { height:8px; border-radius:4px; background:#eef2f6; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--ok); }
+  section.audit { margin:0 20px 24px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 16px; }
+  section.audit h2 { font-size:14px; margin-bottom:6px; }
+  #auditLog { font:12px/1.7 Consolas,monospace; color:var(--sub); max-height:180px; overflow:auto; white-space:pre-wrap; }
+  #errTest { color:var(--bad); }
+</style>
+</head>
+<body>
+<header>
+  <h1>V3 车队控制台 <span class="meta">第②步验收：L1 接口全流程演示</span></h1>
+  <span class="meta">/health: <b id="health">…</b></span>
+  <span class="meta">状态轮询: 每 2 秒</span>
+  <button onclick="unregisteredTest()" style="font:inherit;padding:4px 10px;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer">演示未注册 device_id → 400</button>
+</header>
+<div id="grid"></div>
+<section class="audit">
+  <h2>审计日志 commands.log（最近 6 条）</h2>
+  <div id="auditLog">加载中…</div>
+</section>
+
+<script>
+const CAR_FORM = {};   // device_id -> {els, timer}
+let HEALTH = {};
+
+async function init() {
+  const r = await (await fetch('/devices')).json();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (const d of r.devices) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <h2><span class="dot"></span>${d.name} <span class="meta">${d.device_id.split('_',1)[0]}…_${d.device_id.split('_').pop()}</span></h2>
+      <div class="stat">
+        <div class="compass" id="c-${d.device_id}">⬆</div>
+        <div><div class="lbl">位置 x, y (m)</div><b id="xy-${d.device_id}">-</b></div>
+        <div><div class="lbl">速度 (%)</div><b id="sp-${d.device_id}">-</b></div>
+        <div><div class="lbl">电量</div><b id="bat-${d.device_id}">-</b><div class="bar"><i id="bar-${d.device_id}"></i></div></div>
+        <div><div class="lbl">在线</div><b id="on-${d.device_id}">-</b></div>
+        <div><div class="lbl">影子时间</div><b id="tm-${d.device_id}" style="font-size:11px">-</b></div>
+      </div>
+      <div class="speed">速度 <input type="range" id="spd-${d.device_id}" min="0" max="100" value="50"><b id="spdv-${d.device_id}">50</b></div>
+      <div class="ctrl">
+        <button onclick="cmd('${d.device_id}','FORWARD')">↑ 前进</button>
+        <button onclick="cmd('${d.device_id}','STOP')" class="stop">■ 停止</button>
+        <button onclick="cmd('${d.device_id}','BACK')">↓ 后退</button>
+        <button onclick="cmd('${d.device_id}','LEFT')">← 左移</button>
+        <button onclick="cmd('${d.device_id}','RIGHT')">→ 右移</button>
+      </div>
+      <div class="resp" id="rp-${d.device_id}">就绪</div>`;
+    grid.appendChild(card);
+    card.querySelector('input[type=range]').oninput = e =>
+      document.getElementById('spdv-' + d.device_id).textContent = e.target.value;
+    CAR_FORM[d.device_id] = {};
+  }
+  pollAll();
+  setInterval(pollAll, 2000);
+  loadAudit();
+  setInterval(loadAudit, 5000);
+}
+
+async function pollAll() {
+  // /health 车队摘要
+  try {
+    HEALTH = await (await fetch('/health')).json();
+    document.getElementById('health').textContent =
+      `ok=${HEALTH.ok} total=${HEALTH.total} online=${HEALTH.online}`;
+  } catch (e) {
+    document.getElementById('health').textContent = '后端无响应: ' + e;
+  }
+  // 逐车 /status
+  for (const did of Object.keys(CAR_FORM)) {
+    try {
+      const s = await (await fetch('/status?device_id=' + encodeURIComponent(did))).json();
+      g('on-' + did).textContent = s.online ? '✅ 在线' : '⛔ 离线';
+      g('xy-' + did).textContent = (s.x ?? '-') + ', ' + (s.y ?? '-');
+      g('sp-' + did).textContent = s.speed + '%';
+      g('bat-' + did).textContent = s.battery == null ? '-' : s.battery + '%';
+      g('bar-' + did).style.width = (s.battery || 0) + '%';
+      g('tm-' + did).textContent = s.time || '-';
+      const arr = { 0:'⬆', 90:'➡', 180:'⬇', 270:'⬅' }[s.heading] ?? '⬆';
+      g('c-' + did).textContent = arr;
+      g('c-' + did).style.transform = `rotate(${[0,90,180,270].includes(s.heading)?0:s.heading}deg)`;
+      g('c-' + did).dataset.h = s.heading;
+      g('c-' + did).textContent = '➤';
+      g('c-' + did).style.transform = `rotate(${s.heading || 0}deg)`;
+    } catch (e) { g('on-' + did).textContent = '查询失败'; }
+  }
+}
+const g = id => document.getElementById(id);
+
+async function cmd(did, name) {
+  const rp = g('rp-' + did);
+  const speed = +g('spd-' + did).value;
+  const body = { device_id: did, cmd: name };
+  if (name !== 'STOP') body.speed = speed;
+  try {
+    const r = await (await fetch('/command', { method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body) })).json();
+    if (r.ok) {
+      rp.className = 'resp';
+      rp.textContent = `✔ ${name} 已受理  command_id=${(r.command_id||'').slice(0,13)}…  response_name=${r.response_name}`;
+    } else {
+      rp.className = 'resp bad';
+      rp.textContent = `✘ HTTP错误: ${r.error}`;
+    }
+  } catch (e) { rp.className = 'resp bad'; rp.textContent = '✘ ' + e; }
+  loadAudit();
+}
+
+async function unregisteredTest() {
+  // 演示协议 §4.5：未注册 device_id → 400
+  try {
+    const resp = await fetch('/status?device_id=car_999');
+    const r = await resp.json();
+    const grid = document.getElementById('grid');
+    let box = document.getElementById('errTest');
+    if (!box) { box = document.createElement('div'); box.id = 'errTest';
+      grid.parentNode.insertBefore(box, grid); }
+    box.textContent = `GET /status?device_id=car_999 → HTTP ${resp.status}（预期400） ${JSON.stringify(r)}`;
+  } catch (e) { }
+  loadAudit();
+}
+
+async function loadAudit() {
+  try {
+    const r = await (await fetch('/audit/recent')).json();
+    document.getElementById('auditLog').textContent =
+      (r.records || []).join('\n') || '（暂无记录）';
+  } catch (e) {
+    document.getElementById('auditLog').textContent = '（/audit/recent 不可用: ' + e + '）';
+  }
+}
+init();
+</script>
+</body>
+</html>

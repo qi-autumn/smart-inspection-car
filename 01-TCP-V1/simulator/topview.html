@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>巡检车俯视图</title>
+<style>
+  body { font-family: sans-serif; background: #f5f5f5; margin: 0; padding: 12px 16px; }
+  h1 { font-size: 16px; font-weight: 500; margin: 0 0 6px; }
+  #bar { font-size: 13px; color: #555; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #bar button { font-size: 13px; padding: 3px 12px; cursor: pointer; }
+  #wrap { width: 100%; }
+  canvas { background: #fff; border: 1px solid #ddd; border-radius: 8px; display: block; }
+</style>
+</head>
+<body>
+<h1>智能巡检车 · 俯视图（模拟）</h1>
+<div id="bar">
+  <span id="info">等待数据...</span>
+  <span style="margin-left:auto">
+    缩放 <button id="zoomOut">−</button><span id="zoomVal">40</span><button id="zoomIn">＋</button> px/米
+  </span>
+</div>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const info = document.getElementById('info');
+const trail = [];          // 轨迹点
+let car = null;
+let offline = false;
+let SCALE = 40;            // 每米像素数，可缩放
+
+// 画布全屏自适应 + 高分屏清晰化
+function resize() {
+  const w = document.getElementById('wrap').clientWidth;
+  const h = Math.max(window.innerHeight - 110, 420);
+  const dpr = window.devicePixelRatio || 1;
+  cv.style.width = w + 'px';
+  cv.style.height = h + 'px';
+  cv.width = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function logicalW() { return cv.width / (window.devicePixelRatio || 1); }
+function logicalH() { return cv.height / (window.devicePixelRatio || 1); }
+
+// 世界坐标 → 画布坐标（画布中心为原点，y 轴向上）
+function toPx(x, y) {
+  return [logicalW() / 2 + x * SCALE, logicalH() / 2 - y * SCALE];
+}
+
+/** 画小车俯视图（车头朝上，随 theta 旋转；size 为车身长的一半） */
+function drawCar(px, py, theta, color) {
+  const s = Math.max(14, Math.min(26, SCALE * 0.6));   // 车身半长随缩放
+  const rad = theta * Math.PI / 180;
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(rad);
+  // 车轮（前后各一对）
+  ctx.fillStyle = '#2C2C2A';
+  const ww = s * 0.18, wh = s * 0.36;
+  [[-s * 0.62, -s * 0.45], [s * 0.44, -s * 0.45], [-s * 0.62, s * 0.1], [s * 0.44, s * 0.1]].forEach(p => {
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(p[0], p[1], ww, wh, ww * 0.3) : ctx.rect(p[0], p[1], ww, wh);
+    ctx.fill();
+  });
+  // 车身
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  const bw = s * 0.52, bh = s;
+  if (ctx.roundRect) { ctx.roundRect(-bw, -bh, bw * 2, bh * 2, s * 0.2); } else { ctx.rect(-bw, -bh, bw * 2, bh * 2); }
+  ctx.fill();
+  // 前挡风
+  ctx.fillStyle = '#85B7EB';
+  ctx.beginPath();
+  if (ctx.roundRect) { ctx.roundRect(-bw * 0.72, -bh * 0.78, bw * 1.44, bh * 0.24, 2); } else { ctx.rect(-bw * 0.72, -bh * 0.78, bw * 1.44, bh * 0.24); }
+  ctx.fill();
+  // 车顶舱
+  ctx.fillStyle = '#3C3489';
+  ctx.beginPath();
+  if (ctx.roundRect) { ctx.roundRect(-bw * 0.58, -bh * 0.42, bw * 1.16, bh * 0.42, 3); } else { ctx.rect(-bw * 0.58, -bh * 0.42, bw * 1.16, bh * 0.42); }
+  ctx.fill();
+  // 前大灯
+  ctx.fillStyle = '#EF9F27';
+  ctx.fillRect(-bw * 0.62, -bh - 1, bw * 0.34, bh * 0.1);
+  ctx.fillRect(bw * 0.28, -bh - 1, bw * 0.34, bh * 0.1);
+  ctx.restore();
+}
+
+function draw() {
+  const W = logicalW(), H = logicalH();
+  ctx.clearRect(0, 0, W, H);
+
+  // 网格（每 1 米一条浅线）
+  const halfW = Math.ceil(W / 2 / SCALE), halfH = Math.ceil(H / 2 / SCALE);
+  ctx.strokeStyle = '#eee';
+  ctx.lineWidth = 1;
+  for (let gx = -halfW; gx <= halfW; gx++) {
+    const [px] = toPx(gx, 0);
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+  }
+  for (let gy = -halfH; gy <= halfH; gy++) {
+    const [, py] = toPx(0, gy);
+    ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(W, py); ctx.stroke();
+  }
+  // 坐标轴
+  ctx.strokeStyle = '#bbb';
+  ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+  // 比例尺标注
+  ctx.fillStyle = '#888780';
+  ctx.font = '11px sans-serif';
+  ctx.fillText(`${SCALE} px = 1 m`, 10, H - 10);
+
+  // 轨迹
+  if (trail.length > 1) {
+    ctx.strokeStyle = '#5DCAA5';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < trail.length; i++) {
+      const [px, py] = toPx(trail[i][0], trail[i][1]);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  // 小车（车形图形，指向 theta 方向）
+  if (car) {
+    const [px, py] = toPx(car.x, car.y);
+    drawCar(px, py, car.theta, offline ? '#E24B4A' : '#534AB7');
+  }
+}
+
+async function poll() {
+  try {
+    const res = await fetch('/state', { cache: 'no-store' });
+    const s = await res.json();
+    if (offline) { trail.length = 0; }
+    offline = false;
+    car = s;
+    const last = trail[trail.length - 1];
+    if (s.speed > 0.01 || !last) {
+      trail.push([s.x, s.y]);
+      if (trail.length > 800) trail.shift();
+    }
+    info.textContent =
+      `状态: 在线 | 坐标 (${s.x.toFixed(2)}, ${s.y.toFixed(2)}) m | ` +
+      `朝向 ${s.theta.toFixed(0)}° | 速度 ${s.speed.toFixed(2)} m/s | 电量 ${s.battery}%`;
+  } catch (e) {
+    if (!offline) { info.textContent = '状态: 服务端离线'; }
+    offline = true;
+  }
+  draw();
+}
+
+// 缩放按钮
+document.getElementById('zoomIn').onclick = () => { SCALE = Math.min(100, SCALE + 10); document.getElementById('zoomVal').textContent = SCALE; };
+document.getElementById('zoomOut').onclick = () => { SCALE = Math.max(10, SCALE - 10); document.getElementById('zoomVal').textContent = SCALE; };
+
+setInterval(poll, 200);
+poll();
+</script>
+</body>
+</html>

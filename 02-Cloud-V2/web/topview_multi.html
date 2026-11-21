@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>车队俯视图</title>
+<style>
+  html,body{margin:0;height:100%;background:#0f1720;color:#dfe7ee;
+    font-family:"Microsoft YaHei",sans-serif;overflow:hidden}
+  #bar{position:fixed;top:0;left:0;right:0;height:40px;display:flex;
+    align-items:center;gap:10px;padding:0 14px;background:rgba(15,23,32,.85);
+    border-bottom:1px solid #24313d;z-index:5;font-size:13px}
+  #bar b{color:#7fd0a0}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<div id="bar">车队俯视图 · <b id="cnt">0</b> 辆在线 · 自动跟随
+  <button id="zin">＋</button><button id="zout">－</button>
+  <span id="tip" style="opacity:.6">滚轮缩放 / 拖动平移</span>
+</div>
+<canvas id="cv"></canvas>
+<script>
+const COLORS=["#4fa3ff","#43d17c","#f2a33c","#e2564b","#b06ee8",
+              "#2ec5c9","#f26fb2","#a8c33a","#8b9dc3","#e8d44d"];
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+let cars={},zoom=1,offX=0,offY=0,drag=null;
+function resize(){cv.width=innerWidth;cv.height=innerHeight-40;}
+addEventListener("resize",resize);resize();
+
+async function poll(){
+  try{const r=await fetch("/api/cars");cars=(await r.json()).cars;}catch(e){}
+  draw();
+}
+setInterval(poll,200);
+
+function fit(){
+  const ks=Object.keys(cars);if(!ks.length)return;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const k of ks){const c=cars[k];
+    x0=Math.min(x0,c.x);x1=Math.max(x1,c.x);
+    y0=Math.min(y0,c.y);y1=Math.max(y1,c.y);}
+  const W=cv.width-120,H=cv.height-120;
+  const spanX=Math.max(x1-x0,8),spanY=Math.max(y1-y0,8);
+  zoom=Math.min(W/spanX,H/spanY);
+  const cx=(x0+x1)/2,cy=(y0+y1)/2;
+  offX=cv.width/2-cx*zoom;
+  // 画布顶部被 40px 顶栏遮住，可视区中心在 40+(H-40)/2
+  offY=40+((cv.height-40)/2)+cy*zoom;
+}
+// 世界坐标 → 画布坐标：x 向右、y 向上（与第一阶段 topview 一致）
+function toXY(x,y){return[x*zoom+offX,offY-y*zoom];}
+
+/** 画小车俯视图（与第一阶段 topview.html 同款：车轮+车身+挡风+车顶舱+大灯，
+ *  车头朝上，随 theta 顺时针旋转；s 为车身半长） */
+function drawCar(px,py,theta,color){
+  const s=Math.max(10,Math.min(26,zoom*0.8));
+  ctx.save();
+  ctx.translate(px,py);
+  ctx.rotate(theta*Math.PI/180);   // theta 0=正北(屏幕上方)，顺时针为正
+  // 车轮（前后各一对）
+  ctx.fillStyle='#2C2C2A';
+  const ww=s*0.18,wh=s*0.36;
+  [[-s*0.62,-s*0.45],[s*0.44,-s*0.45],[-s*0.62,s*0.1],[s*0.44,s*0.1]].forEach(p=>{
+    ctx.beginPath();
+    ctx.roundRect?ctx.roundRect(p[0],p[1],ww,wh,ww*0.3):ctx.rect(p[0],p[1],ww,wh);
+    ctx.fill();
+  });
+  // 车身
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  const bw=s*0.52,bh=s;
+  if(ctx.roundRect){ctx.roundRect(-bw,-bh,bw*2,bh*2,s*0.2);}else{ctx.rect(-bw,-bh,bw*2,bh*2);}
+  ctx.fill();
+  // 前挡风
+  ctx.fillStyle='#85B7EB';
+  ctx.beginPath();
+  if(ctx.roundRect){ctx.roundRect(-bw*0.72,-bh*0.78,bw*1.44,bh*0.24,2);}else{ctx.rect(-bw*0.72,-bh*0.78,bw*1.44,bh*0.24);}
+  ctx.fill();
+  // 车顶舱
+  ctx.fillStyle='rgba(15,23,32,.55)';
+  ctx.beginPath();
+  if(ctx.roundRect){ctx.roundRect(-bw*0.58,-bh*0.42,bw*1.16,bh*0.42,3);}else{ctx.rect(-bw*0.58,-bh*0.42,bw*1.16,bh*0.42);}
+  ctx.fill();
+  // 前大灯
+  ctx.fillStyle='#EF9F27';
+  ctx.fillRect(-bw*0.62,-bh-1,bw*0.34,bh*0.1);
+  ctx.fillRect(bw*0.28,-bh-1,bw*0.34,bh*0.1);
+  ctx.restore();
+}
+
+function draw(){
+  ctx.fillStyle="#0f1720";ctx.fillRect(0,0,cv.width,cv.height);
+  const ks=Object.keys(cars);
+  document.getElementById("cnt").textContent=ks.length;
+  if(!ks.length)return;
+  fit();
+  // 网格（10米一格）
+  ctx.strokeStyle="rgba(255,255,255,.06)";ctx.lineWidth=1;
+  const step=10*zoom;
+  if(step>12){
+    const[wx0,wy0]=toXY(-500,500),[wx1,wy1]=toXY(500,-500);
+    for(let gx=Math.floor(wx0/step)*step;gx<wx1;gx+=step){
+      ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,cv.height);ctx.stroke();}
+    for(let gy=Math.floor(wy0/step)*step;gy<wy1;gy+=step){
+      ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(cv.width,gy);ctx.stroke();}
+  }
+  // 原点
+  const[ox,oy]=toXY(0,0);
+  ctx.strokeStyle="rgba(127,208,160,.5)";
+  ctx.beginPath();ctx.arc(ox,oy,4,0,7);ctx.stroke();
+  // 车辆
+  ks.forEach((k,i)=>{
+    const c=cars[k],[px,py]=toXY(c.x,c.y),col=COLORS[i%COLORS.length];
+    if(c.online===false){ctx.globalAlpha=0.35;}
+    drawCar(px,py,c.theta,col);
+    ctx.globalAlpha=1;
+    ctx.fillStyle="#dfe7ee";ctx.font="12px sans-serif";ctx.textAlign="center";
+    ctx.fillText(`${k} ${c.speed.toFixed(1)}m/s ${c.battery.toFixed(0)}%`,px,py+34);
+  });
+}
+// 交互
+cv.addEventListener("wheel",e=>{e.preventDefault();
+  zoom*=e.deltaY<0?1.1:0.9;},{passive:false});
+cv.addEventListener("mousedown",e=>drag={x:e.clientX,y:e.clientY});
+addEventListener("mousemove",e=>{if(!drag)return;
+  offX+=e.clientX-drag.x;offY+=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};});
+addEventListener("mouseup",()=>drag=null);
+document.getElementById("zin").onclick=()=>{zoom*=1.2;};
+document.getElementById("zout").onclick=()=>{zoom/=1.2;};
+poll();
+</script>
+</body>
+</html>

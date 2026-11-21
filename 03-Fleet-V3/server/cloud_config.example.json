@@ -1,0 +1,10 @@
+{
+  "_说明": "示例模板：复制为 cloud_config.json 后填入自己的华为云参数，或用环境变量覆盖 AK/SK。切勿提交真实值。",
+  "ak": "YOUR_HUAWEI_AK",
+  "sk": "YOUR_HUAWEI_SK",
+  "project_id": "YOUR_PROJECT_ID",
+  "region_id": "cn-north-4",
+  "endpoint": "YOUR_APP_ENDPOINT",
+  "mqtt_host": "YOUR_MQTT_HOST",
+  "mqtt_port": 8883
+}

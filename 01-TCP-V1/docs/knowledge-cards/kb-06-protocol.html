@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>06 · 应用层协议设计 — 项目知识手册</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f4f6f9;
+         color: #1f2d3d; line-height: 1.75; padding: 28px 16px 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; margin-bottom: 20px; }
+  .topbar a, .nav a { color: #185FA5; text-decoration: none; }
+  .topbar a:hover, .nav a:hover { text-decoration: underline; }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  .sub { color: #7a8a9c; font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 20px; margin: 34px 0 12px; padding-left: 10px;
+       border-left: 4px solid #185FA5; }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: #2c3e50; }
+  p { margin: 8px 0; }
+  .card { background: #fff; border-radius: 12px; padding: 18px 22px;
+          box-shadow: 0 2px 8px rgba(31,45,61,.06); margin: 14px 0; }
+  pre { background: #1f2d3d; color: #d8e2ec; border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6;
+        margin: 10px 0; }
+  code { font-family: Consolas, "Courier New", monospace; }
+  p code, li code { background: #e8eef5; color: #185FA5; border-radius: 4px;
+                    padding: 1px 6px; font-size: 0.92em; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid #d5dde6; padding: 8px 12px; text-align: left; }
+  th { background: #eef3fa; }
+  .tip { border-left: 4px solid #22a35c; background: #eef8f2;
+         padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .warn { border-left: 4px solid #d9822b; background: #fdf5ec;
+          padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .qa { margin: 14px 0; }
+  .qa .q { font-weight: 600; color: #185FA5; }
+  .nav { display: flex; justify-content: space-between; margin-top: 40px;
+         font-size: 14px; padding-top: 14px; border-top: 1px solid #d5dde6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <a href="index.html">← 知识手册主页</a>
+    <span>06 / 06</span>
+    <a href="index.html">回到主页 →</a>
+  </div>
+
+  <h1>应用层协议设计：粘包、分帧与"消息"的诞生</h1>
+  <div class="sub">对应项目文件：car_server.py / test_client.py / CarClient.ets（三处都写了分帧）</div>
+
+  <h2>一、为什么这是重点（也是马老师没说、但必须补的一点）</h2>
+  <p>这是整个项目<b>含金量最高、面试最区分水平</b>的知识点，我们在课程里前后踩了三次：
+  服务端单元 2 踩、客户端收 STATE 时踩、APP 的 CarClient.ets 又踩。
+  它回答一个根本问题：<b>TCP 只负责把字节送到，"一条消息"是应用层自己造出来的概念。</b></p>
+
+  <h2>二、核心概念：字节流没有消息边界</h2>
+  <div class="card">
+    <p>假设客户端连续 send 三次：</p>
+    <pre><code>send("CMD:FORWARD\n")   # 第一次
+send("CMD:LEFT\n")      # 第二次
+send("CMD:STOP\n")      # 第三次</code></pre>
+    <p>接收端 recv 到的可能是——</p>
+    <table>
+      <tr><th>情况</th><th>recv 一次收到</th><th>名称</th></tr>
+      <tr><td>理想</td><td><code>CMD:FORWARD\n</code></td><td>刚好一帧</td></tr>
+      <tr><td>拼接</td><td><code>CMD:FORWARD\nCMD:LEFT\nCMD:STOP\n</code></td><td><b>粘包</b>（三条并一条）</td></tr>
+      <tr><td>截断</td><td><code>CMD:FORW</code></td><td><b>半包</b>（一条被劈开）</td></tr>
+      <tr><td>杂交</td><td><code>CMD:FORWARD\nCMD:LEF</code></td><td>前粘后断</td></tr>
+    </table>
+    <p>TCP 是<b>字节流</b>协议：它保证字节顺序和不丢不重，但从不保证"你 send 一次 = 对方 recv 一次"。
+    发送端缓冲、Nagle 合包、接收端读取时机都会改变切割点。100ms 高频推 STATE 的本项目，
+    粘包几乎必然发生。</p>
+  </div>
+
+  <h2>三、解法：应用层约定帧边界</h2>
+  <div class="card">
+    <p>本项目的约定：<b>一帧 = 一行文本（UTF-8），以 <code>\n</code> 结尾</b>。
+    接收端不" recv 一次算一条"，而是把数据攒进缓冲区，按 <code>\n</code> 切：</p>
+    <pre><code># 服务端侧（asyncio 自带 readline，一行就是一帧）
+line = await reader.readline()          # 读到 \n 才返回
+
+# 客户端侧（test_client.py / CarClient.ets 手工分帧，逻辑完全一致）
+buf += data                             # 新到的字节先攒着
+while "\n" in buf:                      # 缓冲区里有完整的行吗？
+    line, buf = buf.split("\n", 1)      # 切出第一行，剩余留在缓冲区
+    handle(line)                        # 逐帧处理</code></pre>
+    <p>无论 TCP 怎么切割，这个循环都能正确重组出一条条完整的消息——
+    <b>半包等下一片凑齐，粘包循环逐条吃掉</b>。理解了这个循环，你就理解了所有流式协议的底层。</p>
+    <p>其他常见的分帧方案（对比记忆）：</p>
+    <table>
+      <tr><th>方案</th><th>原理</th><th>代表</th></tr>
+      <tr><td>分隔符（本项目）</td><td>约定 \n 结尾，按行切</td><td>Redis、SMTP、行协议</td></tr>
+      <tr><td>定长帧</td><td>每帧固定 N 字节</td><td>嵌入式串口协议、老金融报文</td></tr>
+      <tr><td>长度前缀</td><td>帧头先写"正文长度 n"，再读 n 字节</td><td>HTTP body、MQTT、游戏网络包</td></tr>
+      <tr><td>自带边界</td><td>协议层自己定义帧结构</td><td>WebSocket、消息队列</td></tr>
+    </table>
+    <div class="tip">回看 04 课的伏笔：本项目 WebSocket 侧（俯视图）从不写分帧代码，直接 JSON.parse——
+    因为 WebSocket 协议自带帧边界；TCP Socket 侧则三处都要手写分帧。这就是"选不同协议"对代码量的直接影响。</div>
+  </div>
+
+  <h2>四、我们定了一门"语言"：CMD-STATE 协议</h2>
+  <div class="card">
+    <p>分帧解决"一条消息从哪到哪"，协议解决"消息什么意思"。本项目 8888 端口上的完整语法：</p>
+    <table>
+      <tr><th>方向</th><th>帧</th><th>含义</th></tr>
+      <tr><td>↑ 客户端 → 车</td><td><code>PING</code></td><td>心跳探测</td></tr>
+      <tr><td>↑</td><td><code>CMD:FORWARD[:speed]</code> / BACK / LEFT / RIGHT / STOP / STATUS</td><td>控制指令（速度 0~100，可省略）</td></tr>
+      <tr><td>↓ 车 → 客户端</td><td><code>ACK:FORWARD:70</code></td><td>回执：已收到并执行</td></tr>
+      <tr><td>↓</td><td><code>STATE:x=..,y=..,heading=..,speed=..,battery=..</code></td><td>状态帧，100ms 广播</td></tr>
+      <tr><td>↓</td><td><code>PONG</code> / <code>ERR:UNKNOWN_CMD:FOO</code> / <code>ERR:BAD_FRAME</code></td><td>心跳应答 / 错误帧</td></tr>
+    </table>
+    <p>四个设计决策，每个都值得在面试里展开：</p>
+    <p><b>① 为什么每条指令要 ACK？</b>TCP 的可靠只保证"字节送到了"，不保证"对方理解并执行了"。
+    ACK 是应用层确认，让 APP 能区分"发了"和"生效了"——可靠控制的最低要求。</p>
+    <p><b>② 为什么必须有 ERR 帧？</b><code>CMD:FOO</code>、<code>BADLINE</code>、<code>CMD:FORWARD:abc</code>
+    都回 ERR 且<b>服务端永不崩溃</b>。面向网络的程序要假设对面是"不怀好意的小孩"：
+    非法输入是常态，健壮性是设计出来的。</p>
+    <p><b>③ 为什么 PING/PONG？</b>长连接的"假在线"问题（02 课）：TCP 断了不会立刻通知对端，
+    心跳是主动体检。</p>
+    <p><b>④ 坐标契约写死在三处代码的注释里</b>：场地 800×600、(0,0) 左上角、heading 0°=朝上顺时针增——
+    协议不仅是消息格式，还包括所有字段的<b>语义约定</b>（见 05 课"三处一致"）。</p>
+    <div class="warn">改协议 = 改两端，还可能改中间。所以单元 4 之后车端"封版"：协议契约一旦冻结，
+    后续所有单元只消费不修改——这是真实的工程纪律，也是为什么第一个单元就值得把协议想清楚。</div>
+  </div>
+
+  <h2>五、面试高频问答</h2>
+  <div class="card qa">
+    <p class="q">Q1：什么是粘包？怎么解决？（超高频）</p>
+    <p>A：TCP 是字节流，没有消息边界，多次发送的数据可能被合并接收（粘包）或一次数据被截断（半包）。
+    根因在 TCP 的缓冲与合包机制——本质上 TCP 从来没有"包"的概念，是应用层误以为有。
+    解法是应用层定界：分隔符（\n）、定长、长度前缀三选一。本项目用 \n 分帧，
+    接收端维护缓冲区循环切割；APP 端 CarClient.ets 里的实现与服务端完全一致。</p>
+
+    <p class="q">Q2：UDP 会有粘包吗？</p>
+    <p>A：不会。UDP 是数据报协议，天然一次收发一个完整报文（有边界），但不可靠、可能丢包乱序。
+    经典对比：TCP = 可靠的字节流水管，UDP = 便宜但可能丢的明信片。实时语音/游戏常用 UDP，
+    宁可丢帧不可延迟。</p>
+
+    <p class="q">Q3：为什么不用 JSON 传 STATE？（结合项目答更好）</p>
+    <p>A：STATE 每 100ms 一帧、字段短小，文本键值对 ~50 字节；JSON 加上字段名和引号要翻倍，
+    还要序列化/解析开销。控车链路追求轻快，用自定义文本帧；而浏览器俯视图 10Hz 用 JSON
+    ——可读性和开发效率优先。同一项目两种编码并存，本身就是"按场景选格式"的示范。</p>
+
+    <p class="q">Q4：TCP 已经可靠了，为什么应用层还要 ACK / 心跳？</p>
+    <p>A：TCP 可靠的是"传输"：字节不丢不乱。但"对方进程是否活着、是否正确处理"它管不着。
+    ACK 提供业务级确认（已执行），心跳提供活性探测（假在线检测）——应用层的可靠性要自己负责。</p>
+
+    <p class="q">Q5：如果让你重新设计协议，你会改什么？</p>
+    <p>A：开放题，答出思考深度即可。可选方向：长度前缀替代分隔符（支持二进制/多行正文）；
+    STATE 加单调递增序号（检测丢帧乱序）；CMD 加 requestId（并发指令的回执匹配）；
+    二进制定长帧（带宽敏感场景）；加版本号字段（协议演进兼容）。</p>
+  </div>
+
+  <h2>六、动手验证与思考题</h2>
+  <div class="card">
+    <p><b>验证 1（亲眼看粘包）</b>：起 step2 服务端，用 python 一行命令连续发两条指令不打延时：
+    <code>python -c "import socket;s=socket.create_connection(('127.0.0.1',8888));s.sendall(b'PING\nPING\n');print(s.recv(1024))"</code>
+    ——大概率一次 recv 收到两个 PONG，这就是"两次 send 一次 recv"。</p>
+    <p><b>验证 2（半包）</b>：把 <code>sendall(b'PING\nPING\n')</code> 改成 <code>sendall(b'PIN')</code>
+    再 <code>sendall(b'G\n')</code>——服务端照常回 PONG，因为 readline 会等到 \n 才处理。</p>
+    <p><b>思考</b>：STATE 帧里 battery 是 <code>87</code> 而 WS JSON 里是 <code>87.0</code>——
+    两个端解析时要不要紧？这说明"字段语义契约"还应包含什么？（类型、精度、取值范围——
+    真正的接口文档比语法重要得多。）</p>
+  </div>
+
+  <div class="nav">
+    <a href="index.html">← 返回主页</a>
+    <a href="index.html">回到主页 →</a>
+  </div>
+
+</div>
+</body>
+</html>
